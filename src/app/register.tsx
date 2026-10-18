@@ -258,24 +258,6 @@ export default function RegisterScreen() {
                 autoCorrect={false}
                 returnKeyType="next"
               />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  showPassword ? 'Hide password' : 'Show password'
-                }
-                onPress={() => setShowPassword((current) => !current)}
-                hitSlop={8}
-                style={styles.passwordToggle}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={17}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.passwordToggleText}>
-                  {showPassword ? 'Hide password' : 'Show password'}
-                </Text>
-              </Pressable>
             </View>
 
             <View style={styles.passwordGroup}>
@@ -295,30 +277,6 @@ export default function RegisterScreen() {
                 returnKeyType="done"
                 onSubmitEditing={handleRegister}
               />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  showConfirmPassword
-                    ? 'Hide confirmation password'
-                    : 'Show confirmation password'
-                }
-                onPress={() =>
-                  setShowConfirmPassword((current) => !current)
-                }
-                hitSlop={8}
-                style={styles.passwordToggle}
-              >
-                <Ionicons
-                  name={
-                    showConfirmPassword ? 'eye-off-outline' : 'eye-outline'
-                  }
-                  size={17}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.passwordToggleText}>
-                  {showConfirmPassword ? 'Hide password' : 'Show password'}
-                </Text>
-              </Pressable>
             </View>
 
             <Text style={styles.helperText}>

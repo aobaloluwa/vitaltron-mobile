@@ -72,21 +72,21 @@ export default function WelcomeScreen() {
 
         <View style={styles.footer}>
           <PrimaryButton
-            title="Get started"
-            onPress={() => router.push('/register')}
+            title="Log in"
+            onPress={() => router.push('/login')}
           />
 
           <View style={styles.loginRow}>
             <Text style={styles.loginPrompt}>
-              Already have an account?
+              Don't have an account?
             </Text>
 
             <Text
               accessibilityRole="link"
-              onPress={() => router.push('/login')}
+              onPress={() => router.push('/register')}
               style={styles.loginLink}
             >
-              Log in
+              Get started
             </Text>
           </View>
 

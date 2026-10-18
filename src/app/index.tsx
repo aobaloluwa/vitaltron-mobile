@@ -1,57 +1,43 @@
+import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStoredAccessToken } from '../services/auth';
 import { colors } from '../theme';
 
 const ONBOARDING_KEY = '@vitaltron/onboarding-completed';
+type Destination = '/onboarding' | '/welcome' | '/login' | '/(tabs)';
 
-export default function HomeScreen() {
-  const [checking, setChecking] = useState(true);
+export default function IndexRoute() {
+  const [destination, setDestination] = useState<Destination | null>(null);
 
   useEffect(() => {
     let active = true;
 
-    async function checkOnboarding() {
+    async function chooseDestination() {
       try {
-        const completed = await AsyncStorage.getItem(ONBOARDING_KEY);
-
-        if (!active) return;
-
-        if (completed !== 'true') {
-          router.replace('/onboarding');
+        const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_KEY);
+        if (onboardingCompleted !== 'true') {
+          if (active) setDestination('/onboarding');
           return;
         }
 
-        router.replace('/welcome');
+        const token = await getStoredAccessToken();
+        if (active) setDestination(token ? '/(tabs)' : '/welcome');
       } catch {
-        if (active) {
-          router.replace('/onboarding');
-        }
-      } finally {
-        if (active) {
-          setChecking(false);
-        }
+        if (active) setDestination('/onboarding');
       }
     }
 
-    void checkOnboarding();
-
-    return () => {
-      active = false;
-    };
+    void chooseDestination();
+    return () => { active = false; };
   }, []);
 
+  if (destination) return <Redirect href={destination} />;
+
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: colors.background,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {checking && <ActivityIndicator size="small" color={colors.text} />}
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+      <ActivityIndicator color={colors.primary} />
     </View>
   );
 }

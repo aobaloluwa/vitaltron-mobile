@@ -270,7 +270,6 @@ export default function OnboardingScreen() {
                   name="arrow-forward"
                   size={17}
                   color="#FFFFFF"
-                  style={styles.nextButtonIcon}
                 />
               )}
             </Pressable>

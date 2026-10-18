@@ -22,6 +22,20 @@ type AuthResponse = {
   user: AuthUser;
 };
 
+
+export async function storeAuthSession(response: {
+  accessToken: string;
+  refreshToken: string;
+  user?: AuthUser | null;
+}): Promise<void> {
+  const entries: [string, string][] = [
+    [ACCESS_TOKEN_KEY, response.accessToken],
+    [REFRESH_TOKEN_KEY, response.refreshToken],
+  ];
+  if (response.user) entries.push([USER_KEY, JSON.stringify(response.user)]);
+  await AsyncStorage.multiSet(entries);
+}
+
 export async function signInWithGoogleIdToken(
   idToken: string,
 ): Promise<AuthResponse> {
