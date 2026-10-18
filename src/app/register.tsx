@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppTextInput from '../components/ui/AppTextInput';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import { apiRequest } from '../services/api';
+import { signInWithGoogleIdToken } from '../services/auth';
 import { colors, spacing, typography } from '../theme';
 
 type RegisterResponse = {
@@ -109,14 +110,15 @@ export default function RegisterScreen() {
         }),
       });
 
-      if (result.requiresEmailVerification) {
+      if (result.requiresEmailVerification && result.user?.email) {
         router.replace({
           pathname: '/verify-email',
           params: { email: result.user.email },
         });
       } else {
         setErrorMessage(
-          result.message || 'Your account was created, but verification is required.',
+          result.message ||
+            'Your account was created, but verification is required.',
         );
       }
     } catch (error) {
@@ -130,10 +132,37 @@ export default function RegisterScreen() {
     }
   };
 
-  const handleGoogleSignUp = () => {
-    setErrorMessage(
-      'Google sign-up setup is the next step. You can register with your email for now.',
-    );
+  const handleGoogleSignUp = async () => {
+    if (isSubmitting) return;
+
+    Keyboard.dismiss();
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    try {
+      // Load Google Sign-In only when the user taps the button.
+      // This avoids loading its native module when the route is opened.
+      const googleSignIn = await import('../services/googleSignIn');
+
+      await googleSignIn.configureGoogleSignIn();
+
+      const idToken = await googleSignIn.signInWithGoogle();
+
+      // The user may cancel the Google sign-in flow.
+      if (!idToken) return;
+
+      await signInWithGoogleIdToken(idToken);
+
+      router.replace('/');
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Google sign-in failed. Please try again.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -177,7 +206,8 @@ export default function RegisterScreen() {
             <Text style={styles.eyebrow}>YOUR HEALTH, YOUR STORY</Text>
             <Text style={styles.title}>Create your account.</Text>
             <Text style={styles.subtitle}>
-              One secure place for your health information, wherever life takes you.
+              One secure place for your health information, wherever life takes
+              you.
             </Text>
           </View>
 
@@ -230,7 +260,9 @@ export default function RegisterScreen() {
               />
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                accessibilityLabel={
+                  showPassword ? 'Hide password' : 'Show password'
+                }
                 onPress={() => setShowPassword((current) => !current)}
                 hitSlop={8}
                 style={styles.passwordToggle}
@@ -330,7 +362,9 @@ export default function RegisterScreen() {
               ]}
             >
               <FontAwesome name="google" size={18} color="#4285F4" />
-              <Text style={styles.googleLabel}>Continue with Google</Text>
+              <Text style={styles.googleLabel}>
+                {isSubmitting ? 'Please wait…' : 'Continue with Google'}
+              </Text>
             </Pressable>
 
             <View style={styles.loginRow}>
