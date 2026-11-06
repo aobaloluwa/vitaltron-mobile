@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -7,116 +7,133 @@ import {
   TextInputProps,
   View,
 } from 'react-native';
-import { colors, radii, spacing } from '../../theme';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../../theme';
 
-type AppTextInputProps = TextInputProps & {
-  label: string;
+interface AppTextInputProps extends TextInputProps {
+  label?: string;
+  iconName?: keyof typeof Ionicons.glyphMap;
   error?: string;
-};
+}
 
-export default function AppTextInput({
+export function AppTextInput({
   label,
+  iconName,
   error,
   secureTextEntry,
   style,
-  ...textInputProps
+  onFocus,
+  onBlur,
+  ...props
 }: AppTextInputProps) {
-  const [focused, setFocused] = useState(false);
-  const [passwordVisible, setPasswordVisible] = useState(false);
-
-  const isPassword = Boolean(secureTextEntry);
-  const hidePassword = isPassword && !passwordVisible;
+  const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(!secureTextEntry);
+  const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      {label && <Text style={styles.label}>{label}</Text>}
 
-      <View
+      <Pressable
+        onPress={() => inputRef.current?.focus()}
         style={[
           styles.inputWrapper,
-          focused && styles.inputFocused,
-          error && styles.inputError,
+          isFocused && styles.inputWrapperFocused,
+          !!error && styles.inputWrapperError,
         ]}
       >
+        {iconName && (
+          <Ionicons
+            name={iconName}
+            size={20}
+            color={isFocused ? colors.primary : colors.textMuted}
+            style={styles.leftIcon}
+          />
+        )}
+
         <TextInput
-          {...textInputProps}
-          secureTextEntry={hidePassword}
-          onFocus={(event) => {
-            setFocused(true);
-            textInputProps.onFocus?.(event);
-          }}
-          onBlur={(event) => {
-            setFocused(false);
-            textInputProps.onBlur?.(event);
-          }}
-          placeholderTextColor={colors.placeholder}
-          selectionColor={colors.primary}
+          ref={inputRef}
           style={[styles.input, style]}
-          accessibilityLabel={label}
+          placeholderTextColor="#9CA3AF"
+          secureTextEntry={secureTextEntry && !showPassword}
+          onFocus={(e) => {
+            setIsFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setIsFocused(false);
+            onBlur?.(e);
+          }}
+          {...props}
         />
 
-        {isPassword && (
+        {secureTextEntry && (
           <Pressable
-            onPress={() => setPasswordVisible((visible) => !visible)}
-            accessibilityRole="button"
-            accessibilityLabel={
-              passwordVisible ? 'Hide password' : 'Show password'
-            }
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.rightIcon}
             hitSlop={8}
           >
-            <Text style={styles.passwordToggle}>
-              {passwordVisible ? 'Hide' : 'Show'}
-            </Text>
+            <Ionicons
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={colors.textMuted}
+            />
           </Pressable>
         )}
-      </View>
+      </Pressable>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {!!error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.sm,
+    width: '100%',
+    marginBottom: 16,
   },
   label: {
-    color: '#111111',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '700',
+    color: colors.darkText,
+    marginBottom: 6,
+    letterSpacing: -0.2,
   },
   inputWrapper: {
-    minHeight: 56,
+    height: 56,
+    backgroundColor: colors.inputBackground,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    borderRadius: radii.input,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: 16,
   },
-  inputFocused: {
-    borderColor: '#111111',
+  inputWrapperFocused: {
+    borderColor: colors.primary,
+    backgroundColor: colors.white,
   },
-  inputError: {
+  inputWrapperError: {
     borderColor: colors.error,
+  },
+  leftIcon: {
+    marginRight: 10,
+  },
+  rightIcon: {
+    paddingLeft: 10,
   },
   input: {
     flex: 1,
-    minWidth: 0,
-    paddingVertical: spacing.lg,
-    color: '#111111',
     fontSize: 15,
-  },
-  passwordToggle: {
-    color: '#111111',
-    fontSize: 13,
+    color: colors.darkText,
     fontWeight: '500',
-    paddingLeft: spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingVertical: 0,
   },
   errorText: {
-    color: colors.error,
     fontSize: 12,
+    color: colors.error,
+    marginTop: 4,
+    marginLeft: 4,
+    fontWeight: '500',
   },
 });

@@ -1,33 +1,99 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-export const API_BASE_URL = 'http://10.0.2.2:3000/api/v1';
-
-export async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const response = await fetch(
-    `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`,
-    {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    },
-  );
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const message =
-      data?.message ??
-      data?.error ??
-      'Something went wrong. Please try again.';
-
-    throw new Error(
-      Array.isArray(message) ? message.join(', ') : message,
-    );
+function getDynamicApiBaseUrl(): string {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  return data as T;
+  const hostUri = Constants.expoConfig?.hostUri || (Constants as any).developerLauncherConfig?.host;
+  if (hostUri) {
+    const hostIp = hostUri.split(':')[0];
+    if (hostIp && hostIp !== 'localhost' && hostIp !== '127.0.0.1') {
+      return `http://${hostIp}:3000/api/v1`;
+    }
+  }
+
+  return 'http://10.134.50.94:3000/api/v1';
+}
+
+export const API_BASE_URL = getDynamicApiBaseUrl();
+
+const ACCESS_TOKEN_KEY = '@vitaltron/access-token';
+const REFRESH_TOKEN_KEY = '@vitaltron/refresh-token';
+
+export async function getStoredAccessToken(): Promise<string | null> {
+  return AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+export async function getStoredRefreshToken(): Promise<string | null> {
+  return AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export async function setStoredTokens(accessToken: string, refreshToken?: string): Promise<void> {
+  await AsyncStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+  if (refreshToken) {
+    await AsyncStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  }
+}
+
+export async function clearStoredTokens(): Promise<void> {
+  await AsyncStorage.removeItem(ACCESS_TOKEN_KEY);
+  await AsyncStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+export async function apiRequest<T = any>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const token = await getStoredAccessToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    const text = await response.text();
+    let data: any;
+
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { message: text };
+    }
+
+    if (!response.ok) {
+      let errorMessage = `Request failed with status ${response.status}`;
+      if (Array.isArray(data.message)) {
+        errorMessage = data.message.join('; ');
+      } else if (data.message) {
+        errorMessage = data.message;
+      } else if (data.error) {
+        errorMessage = data.error;
+      }
+      throw new Error(errorMessage);
+    }
+
+    return data as T;
+  } catch (error: any) {
+    throw new Error(error.message || 'Network request failed. Please check your connection.');
+  }
 }

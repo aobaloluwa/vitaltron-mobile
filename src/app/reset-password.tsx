@@ -1,9 +1,6 @@
-
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,151 +10,141 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import AppTextInput from '../components/ui/AppTextInput';
-import PrimaryButton from '../components/ui/PrimaryButton';
-import { colors, spacing, typography } from '../theme';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { AppLogo } from '../components/ui/AppLogo';
+import { AppTextInput } from '../components/ui/AppTextInput';
+import { PrimaryButton } from '../components/ui/PrimaryButton';
+import { resetPassword } from '../services/auth';
+import { colors } from '../theme';
 
 export default function ResetPasswordScreen() {
-  const params = useLocalSearchParams<{ token?: string }>();
+  const params = useLocalSearchParams<{ email?: string }>();
+  const emailParam = params.email || '';
 
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState(emailParam);
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleResetPassword = () => {
-    Keyboard.dismiss();
+  const handleResetPassword = async () => {
+    setErrorMessage('');
 
-    if (!password || !confirmPassword) {
-      Alert.alert(
-        'Missing information',
-        'Please enter and confirm your new password.',
-      );
+    if (!email.trim()) {
+      setErrorMessage('Please enter your email address.');
+      return;
+    }
+    if (!code.trim()) {
+      setErrorMessage('Please enter the 6-digit reset code.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 12) {
+      setErrorMessage('New password must be at least 12 characters.');
       return;
     }
 
-    if (password.length < 8) {
-      Alert.alert(
-        'Password too short',
-        'Your new password must contain at least 8 characters.',
-      );
-      return;
-    }
+    setLoading(true);
+    try {
+      await resetPassword({
+        email: email.trim().toLowerCase(),
+        code: code.trim(),
+        newPassword,
+      });
 
-    if (password !== confirmPassword) {
       Alert.alert(
-        'Passwords do not match',
-        'Please make sure both passwords are the same.',
+        'Password Reset!',
+        'Your password has been successfully reset. Please log in with your new password.',
+        [{ text: 'Log In', onPress: () => router.replace('/login') }]
       );
-      return;
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Failed to reset password. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    if (!params.token) {
-      Alert.alert(
-        'Reset link required',
-        'Open the password reset link sent to your email to reset your password.',
-      );
-      return;
-    }
-
-    Alert.alert(
-      'Ready to continue',
-      'Your passwords match. We will connect this screen to the Vitaltron password-reset API next.',
-    );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <Text style={styles.backLink}>‹  Back</Text>
-          </Pressable>
-
-          <View style={styles.brandRow}>
-            <View style={styles.brandMark}>
-              <Text style={styles.brandMarkText}>v</Text>
-            </View>
-            <Text style={styles.brandName}>vitaltron</Text>
+          {/* Header Bar */}
+          <View style={styles.headerBar}>
+            <Pressable
+              onPress={() => router.back()}
+              style={styles.backButton}
+              hitSlop={10}
+            >
+              <Ionicons name="arrow-back" size={24} color={colors.darkText} />
+            </Pressable>
+            <AppLogo size="small" showText={true} />
+            <View style={styles.headerPlaceholder} />
           </View>
 
-          <View style={styles.illustration}>
-            <View style={styles.iconCircle}>
-              <Text style={styles.lockIcon}>⌑</Text>
-              <View style={styles.checkBadge}>
-                <Text style={styles.checkIcon}>✓</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.heading}>
-            <Text style={styles.eyebrow}>ACCOUNT SECURITY</Text>
-            <Text style={styles.title}>Create a new password</Text>
+          {/* Titles */}
+          <View style={styles.titleSection}>
+            <Text style={styles.title}>Reset Password</Text>
             <Text style={styles.subtitle}>
-              Choose a strong password to help keep your Vitaltron account and
-              health information secure.
+              Enter the code sent to your email along with your new password.
             </Text>
           </View>
 
-          <View style={styles.form}>
+          {/* Error Banner */}
+          {!!errorMessage && (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={20} color={colors.error} />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          )}
+
+          {/* Form */}
+          <View style={styles.formSection}>
+            {!emailParam && (
+              <AppTextInput
+                label="Email Address"
+                placeholder="name@example.com"
+                iconName="mail-outline"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            )}
+
             <AppTextInput
-              label="New password"
-              placeholder="At least 8 characters"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="new-password"
-              textContentType="newPassword"
-              returnKeyType="next"
+              label="Reset Code"
+              placeholder="123456"
+              iconName="key-outline"
+              value={code}
+              onChangeText={setCode}
+              keyboardType="number-pad"
+              maxLength={6}
             />
 
             <AppTextInput
-              label="Confirm new password"
-              placeholder="Enter your new password again"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="new-password"
-              textContentType="newPassword"
-              returnKeyType="done"
-              onSubmitEditing={handleResetPassword}
+              label="New Password"
+              placeholder="Min. 6 characters"
+              iconName="lock-closed-outline"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry={true}
             />
-
-            <Text style={styles.helperText}>
-              Use at least 8 characters. Avoid reusing a password from another
-              account.
-            </Text>
 
             <PrimaryButton
-              title="Reset password"
+              title="Reset Password"
               onPress={handleResetPassword}
-              style={styles.submitButton}
+              loading={loading}
+              variant="primary"
+              style={styles.submitBtn}
             />
-
-            <Pressable
-              accessibilityRole="link"
-              onPress={() => router.replace('/login')}
-              style={styles.loginButton}
-            >
-              <Text style={styles.loginLink}>Return to log in</Text>
-            </Pressable>
           </View>
-
-          <Text style={styles.footerNote}>
-            Your health information belongs to you.
-          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -165,137 +152,72 @@ export default function ResetPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.white,
   },
-  keyboardView: {
+  flex: {
     flex: 1,
   },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xl,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
   },
-  backButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: spacing.sm,
-  },
-  backLink: {
-    color: colors.primary,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  brandRow: {
+  headerBar: {
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.md,
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  brandMark: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.softBackground,
     justifyContent: 'center',
-  },
-  brandMarkText: {
-    color: colors.surface,
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  brandName: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.6,
-  },
-  illustration: {
     alignItems: 'center',
-    marginTop: spacing.xxl,
-    marginBottom: spacing.xl,
   },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerPlaceholder: {
+    width: 40,
   },
-  lockIcon: {
-    color: colors.primary,
-    fontSize: 48,
-    fontWeight: '600',
-  },
-  checkBadge: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.primary,
-    borderWidth: 3,
-    borderColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkIcon: {
-    color: colors.surface,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  heading: {
-    marginBottom: spacing.xl,
-  },
-  eyebrow: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.8,
-    marginBottom: spacing.md,
+  titleSection: {
+    marginBottom: 24,
   },
   title: {
-    color: colors.text,
-    fontSize: typography.heading,
-    fontWeight: '700',
-    letterSpacing: -0.7,
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.darkText,
+    letterSpacing: -0.5,
+    marginBottom: 6,
   },
   subtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.body,
-    lineHeight: 23,
-    marginTop: spacing.md,
+    fontSize: 15,
+    color: colors.darkText,
+    opacity: 0.7,
+    lineHeight: 22,
   },
-  form: {
-    gap: spacing.lg,
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    borderWidth: 1,
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 18,
   },
-  helperText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: -spacing.sm,
+  errorText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.error,
+    fontWeight: '600',
   },
-  submitButton: {
-    marginTop: spacing.sm,
+  formSection: {
+    width: '100%',
   },
-  loginButton: {
-    alignSelf: 'center',
-    padding: spacing.sm,
-  },
-  loginLink: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  footerNote: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 'auto',
-    paddingTop: spacing.xxl,
+  submitBtn: {
+    marginTop: 12,
   },
 });

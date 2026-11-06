@@ -1,4 +1,10 @@
 :root {
+  --color-primary: #5B2A86;
+  --color-secondary: #C8A2E8;
+  --color-soft-bg: #EDE7F6;
+  --color-dark-text: #171717;
+  --color-white: #FFFFFF;
+
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
     Segoe UI Symbol, Noto Color Emoji;

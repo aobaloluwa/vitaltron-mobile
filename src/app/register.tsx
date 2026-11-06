@@ -1,11 +1,6 @@
-
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Keyboard,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,337 +10,220 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import AppTextInput from '../components/ui/AppTextInput';
-import PrimaryButton from '../components/ui/PrimaryButton';
-import { apiRequest } from '../services/api';
-import { signInWithGoogleIdToken } from '../services/auth';
-import { colors, spacing, typography } from '../theme';
-
-type RegisterResponse = {
-  message: string;
-  user: {
-    id: string;
-    email: string;
-    displayName: string;
-    createdAt: string;
-  };
-  requiresEmailVerification: boolean;
-};
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { AppLogo } from '../components/ui/AppLogo';
+import { AppTextInput } from '../components/ui/AppTextInput';
+import { PrimaryButton } from '../components/ui/PrimaryButton';
+import { registerUser, resendVerification } from '../services/auth';
+import { colors } from '../theme';
 
 export default function RegisterScreen() {
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const backScale = useRef(new Animated.Value(1)).current;
-
-  const animateBack = (toValue: number) => {
-    Animated.timing(backScale, {
-      toValue,
-      duration: 140,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  };
-
   const handleBack = () => {
-    Keyboard.dismiss();
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/welcome');
+    }
   };
 
   const handleRegister = async () => {
-    if (isSubmitting) return;
-
-    Keyboard.dismiss();
     setErrorMessage('');
 
-    const displayName = fullName.trim();
-    const normalizedEmail = email.trim().toLowerCase();
+    const formattedEmail = email.trim().toLowerCase();
 
-    if (!displayName || !normalizedEmail || !password || !confirmPassword) {
-      setErrorMessage('Please complete all fields to continue.');
+    if (!firstName.trim()) {
+      setErrorMessage('Please enter your first name.');
       return;
     }
-
-    if (displayName.length > 100) {
-      setErrorMessage('Your name must be 100 characters or fewer.');
+    if (!lastName.trim()) {
+      setErrorMessage('Please enter your last name.');
       return;
     }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      setErrorMessage('Enter a valid email address.');
+    if (!formattedEmail) {
+      setErrorMessage('Please enter your email address.');
       return;
     }
-
+    if (!password) {
+      setErrorMessage('Please enter a password.');
+      return;
+    }
     if (password.length < 12) {
-      setErrorMessage('Your password must contain at least 12 characters.');
+      setErrorMessage('Password must be at least 12 characters long.');
       return;
     }
-
-    if (password.length > 128) {
-      setErrorMessage('Your password must be 128 characters or fewer.');
+    if (!confirmPassword) {
+      setErrorMessage('Please confirm your password.');
       return;
     }
-
     if (password !== confirmPassword) {
-      setErrorMessage('Your passwords do not match. Please check them.');
+      setErrorMessage('Passwords do not match. Please check and try again.');
       return;
     }
 
-    setIsSubmitting(true);
-
+    setLoading(true);
     try {
-      const result = await apiRequest<RegisterResponse>('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({
-          displayName,
-          email: normalizedEmail,
-          password,
-        }),
+      const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
+
+      await registerUser({
+        email: formattedEmail,
+        password,
+        displayName,
       });
 
-      if (result.requiresEmailVerification && result.user?.email) {
-        router.replace({
-          pathname: '/verify-email',
-          params: { email: result.user.email },
-        });
-      } else {
-        setErrorMessage(
-          result.message ||
-            'Your account was created, but verification is required.',
+      // Navigate to Email Verification Screen passing the email
+      router.push({
+        pathname: '/verify-email',
+        params: { email: formattedEmail },
+      });
+    } catch (error: any) {
+      const msg = error.message || '';
+
+      if (msg.toLowerCase().includes('already exists')) {
+        try {
+          // Automatically resend verification code in case they haven't verified
+          await resendVerification({ email: formattedEmail });
+        } catch {
+          // Ignore resend errors
+        }
+
+        Alert.alert(
+          'Account Exists',
+          "An account with this email already exists. If you haven't verified it yet, we have sent a new 6-digit code to your email.",
+          [
+            {
+              text: 'Verify Email',
+              onPress: () => {
+                router.push({
+                  pathname: '/verify-email',
+                  params: { email: formattedEmail },
+                });
+              },
+            },
+            {
+              text: 'Log In Instead',
+              onPress: () => router.push('/login'),
+            },
+          ]
         );
+        return;
       }
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'We could not create your account. Please try again.',
-      );
+
+      setErrorMessage(msg || 'Registration failed. Please try again.');
     } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    if (isSubmitting) return;
-
-    Keyboard.dismiss();
-    setErrorMessage('');
-    setIsSubmitting(true);
-
-    try {
-      // Load Google Sign-In only when the user taps the button.
-      // This avoids loading its native module when the route is opened.
-      const googleSignIn = await import('../services/googleSignIn');
-
-      await googleSignIn.configureGoogleSignIn();
-
-      const idToken = await googleSignIn.signInWithGoogle();
-
-      // The user may cancel the Google sign-in flow.
-      if (!idToken) return;
-
-      await signInWithGoogleIdToken(idToken);
-
-      router.replace('/');
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Google sign-in failed. Please try again.',
-      );
-    } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View
-            style={[
-              styles.backButtonWrapper,
-              { transform: [{ scale: backScale }] },
-            ]}
-          >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              onPress={handleBack}
-              onPressIn={() => animateBack(0.92)}
-              onPressOut={() => animateBack(1)}
-              hitSlop={8}
-              style={styles.backButton}
-            >
-              <Ionicons name="arrow-back" size={20} color={colors.text} />
+          {/* Header Bar */}
+          <View style={styles.headerBar}>
+            <Pressable onPress={handleBack} style={styles.backButton} hitSlop={10}>
+              <Ionicons name="arrow-back" size={24} color={colors.darkText} />
             </Pressable>
-          </Animated.View>
-
-          <View style={styles.brandRow}>
-            <View style={styles.brandMark}>
-              <FontAwesome name="heart" size={17} color="#FFFFFF" />
-            </View>
-            <Text style={styles.brandName}>vitaltron</Text>
+            <AppLogo size="small" showText={true} />
+            <View style={styles.headerPlaceholder} />
           </View>
 
-          <View style={styles.heading}>
-            <Text style={styles.eyebrow}>YOUR HEALTH, YOUR STORY</Text>
-            <Text style={styles.title}>Create your account.</Text>
+          {/* Titles */}
+          <View style={styles.titleSection}>
+            <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>
-              One secure place for your health information, wherever life takes
-              you.
+              Start your journey with a portable, intelligent health identity.
             </Text>
           </View>
 
-          <View style={styles.form}>
-            <AppTextInput
-              label="Full name"
-              placeholder="Enter your full name"
-              value={fullName}
-              onChangeText={(value) => {
-                setFullName(value);
-                setErrorMessage('');
-              }}
-              autoCapitalize="words"
-              autoComplete="name"
-              textContentType="name"
-              returnKeyType="next"
-            />
+          {/* Error Banner */}
+          {!!errorMessage && (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={20} color={colors.error} />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          )}
+
+          {/* Form */}
+          <View style={styles.formSection}>
+            <View style={styles.nameRow}>
+              <View style={styles.halfInput}>
+                <AppTextInput
+                  label="First Name"
+                  placeholder="John"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                />
+              </View>
+              <View style={styles.halfInput}>
+                <AppTextInput
+                  label="Last Name"
+                  placeholder="Doe"
+                  value={lastName}
+                  onChangeText={setLastName}
+                />
+              </View>
+            </View>
 
             <AppTextInput
-              label="Email address"
-              placeholder="you@example.com"
+              label="Email Address"
+              placeholder="name@example.com"
+              iconName="mail-outline"
               value={email}
-              onChangeText={(value) => {
-                setEmail(value);
-                setErrorMessage('');
-              }}
+              onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              autoComplete="email"
-              textContentType="emailAddress"
-              returnKeyType="next"
             />
 
-            <View style={styles.passwordGroup}>
-              <AppTextInput
-                label="Password"
-                placeholder="At least 12 characters"
-                value={password}
-                onChangeText={(value) => {
-                  setPassword(value);
-                  setErrorMessage('');
-                }}
-                secureTextEntry={!showPassword}
-                autoComplete="new-password"
-                textContentType="newPassword"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="next"
-              />
-            </View>
+            <AppTextInput
+              label="Password"
+              placeholder="Min. 12 characters"
+              iconName="lock-closed-outline"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={true}
+            />
 
-            <View style={styles.passwordGroup}>
-              <AppTextInput
-                label="Confirm password"
-                placeholder="Enter your password again"
-                value={confirmPassword}
-                onChangeText={(value) => {
-                  setConfirmPassword(value);
-                  setErrorMessage('');
-                }}
-                secureTextEntry={!showConfirmPassword}
-                autoComplete="new-password"
-                textContentType="newPassword"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handleRegister}
-              />
-            </View>
-
-            <Text style={styles.helperText}>
-              Use 12–128 characters. Choose a password you don't use elsewhere.
-            </Text>
-
-            {errorMessage ? (
-              <View style={styles.errorBox} accessibilityRole="alert">
-                <Ionicons
-                  name="alert-circle-outline"
-                  size={19}
-                  color={colors.error}
-                />
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              </View>
-            ) : null}
+            <AppTextInput
+              label="Confirm Password"
+              placeholder="Re-enter your password"
+              iconName="shield-checkmark-outline"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={true}
+            />
 
             <PrimaryButton
-              title="Create account"
+              title="Create Account"
               onPress={handleRegister}
-              loading={isSubmitting}
-              disabled={isSubmitting}
-              style={styles.submitButton}
+              loading={loading}
+              variant="primary"
+              style={styles.submitBtn}
             />
-
-            <View style={styles.dividerRow}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.divider} />
-            </View>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Continue with Google"
-              disabled={isSubmitting}
-              onPress={handleGoogleSignUp}
-              style={({ pressed }) => [
-                styles.googleButton,
-                pressed && styles.googleButtonPressed,
-                isSubmitting && styles.disabledButton,
-              ]}
-            >
-              <FontAwesome name="google" size={18} color="#4285F4" />
-              <Text style={styles.googleLabel}>
-                {isSubmitting ? 'Please wait…' : 'Continue with Google'}
-              </Text>
-            </Pressable>
-
-            <View style={styles.loginRow}>
-              <Text style={styles.loginPrompt}>Already have an account?</Text>
-              <Pressable
-                accessibilityRole="link"
-                onPress={() => router.push('/login')}
-                hitSlop={8}
-              >
-                <Text style={styles.loginLink}>Log in</Text>
-              </Pressable>
-            </View>
           </View>
 
-          <View style={styles.footer}>
-            <Ionicons
-              name="shield-checkmark-outline"
-              size={15}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.footerNote}>
-              Your health information belongs to you.
-            </Text>
+          {/* Footer Link */}
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <Pressable onPress={() => router.push('/login')} hitSlop={8}>
+              <Text style={styles.loginText}>Log In</Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -354,192 +232,95 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
   flex: {
     flex: 1,
   },
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
   },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xl,
-  },
-  backButtonWrapper: {
-    alignSelf: 'flex-start',
-    marginBottom: spacing.md,
+  headerBar: {
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.softBackground,
     justifyContent: 'center',
-    backgroundColor: '#F4F4F2',
-    borderWidth: 1,
-    borderColor: '#EBEBE8',
-  },
-  brandRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
   },
-  brandMark: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerPlaceholder: {
+    width: 40,
   },
-  brandName: {
-    color: colors.text,
-    fontSize: 21,
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: -0.7,
-  },
-  heading: {
-    marginTop: spacing.xxl,
-    marginBottom: spacing.xl,
-  },
-  eyebrow: {
-    color: '#8A7045',
-    fontSize: 10,
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: 1.8,
-    marginBottom: spacing.md,
+  titleSection: {
+    marginBottom: 24,
   },
   title: {
-    color: colors.text,
-    fontSize: 29,
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: -1,
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.darkText,
+    letterSpacing: -0.5,
+    marginBottom: 6,
   },
   subtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.body,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 23,
-    marginTop: spacing.sm,
-    maxWidth: 360,
-  },
-  form: {
-    gap: spacing.lg,
-  },
-  passwordGroup: {
-    gap: spacing.xs,
-  },
-  passwordToggle: {
-    alignSelf: 'flex-end',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-  },
-  passwordToggleText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontFamily: 'Inter_500Medium',
-  },
-  helperText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 18,
-    marginTop: -spacing.sm,
+    fontSize: 15,
+    color: colors.darkText,
+    opacity: 0.7,
+    lineHeight: 22,
   },
   errorBox: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: 14,
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
     borderWidth: 1,
-    borderColor: '#F1CECE',
-    backgroundColor: '#FFF7F7',
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 18,
   },
   errorText: {
     flex: 1,
+    fontSize: 13,
     color: colors.error,
-    fontSize: 13,
-    fontFamily: 'Inter_500Medium',
-    lineHeight: 19,
+    fontWeight: '600',
   },
-  submitButton: {
-    marginTop: spacing.xs,
+  formSection: {
+    width: '100%',
+    marginBottom: 24,
   },
-  dividerRow: {
+  nameRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginVertical: spacing.xs,
+    gap: 12,
   },
-  divider: {
+  halfInput: {
     flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
   },
-  dividerText: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontFamily: 'Inter_600SemiBold',
-    letterSpacing: 1.2,
+  submitBtn: {
+    marginTop: 12,
   },
-  googleButton: {
-    minHeight: 54,
+  footerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
   },
-  googleButtonPressed: {
-    backgroundColor: '#F7F7F5',
-    transform: [{ scale: 0.99 }],
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  googleLabel: {
-    color: colors.text,
+  footerText: {
     fontSize: 14,
-    fontFamily: 'Inter_600SemiBold',
+    color: colors.darkText,
+    opacity: 0.7,
   },
-  loginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  loginPrompt: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    fontFamily: 'Inter_400Regular',
-  },
-  loginLink: {
-    color: colors.text,
-    fontSize: 13,
-    fontFamily: 'Inter_700Bold',
-    padding: spacing.xs,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginTop: 'auto',
-    paddingTop: spacing.xxl,
-  },
-  footerNote: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontFamily: 'Inter_400Regular',
+  loginText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.primary,
   },
 });

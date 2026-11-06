@@ -1,11 +1,6 @@
-
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Keyboard,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,280 +10,184 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import AppTextInput from '../components/ui/AppTextInput';
-import PrimaryButton from '../components/ui/PrimaryButton';
-import { apiRequest } from '../services/api';
-import { signInWithGoogleIdToken, storeAuthSession } from '../services/auth';
-import { colors, spacing, typography } from '../theme';
-
-type LoginResponse = {
-  accessToken?: string;
-  refreshToken?: string;
-  user?: {
-    id?: string;
-    email?: string;
-    emailVerified?: boolean;
-  };
-  message?: string | string[];
-};
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { AppLogo } from '../components/ui/AppLogo';
+import { AppTextInput } from '../components/ui/AppTextInput';
+import { PrimaryButton } from '../components/ui/PrimaryButton';
+import { loginUser, resendVerification } from '../services/auth';
+import { colors } from '../theme';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  const backScale = useRef(new Animated.Value(1)).current;
-
-  const animateBack = (toValue: number) => {
-    Animated.timing(backScale, {
-      toValue,
-      duration: 140,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
-  };
 
   const handleBack = () => {
-    Keyboard.dismiss();
-    router.back();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/welcome');
+    }
   };
 
   const handleLogin = async () => {
-    if (isLoading) return;
-
-    Keyboard.dismiss();
     setErrorMessage('');
 
-    const cleanEmail = email.trim().toLowerCase();
+    const formattedEmail = email.trim().toLowerCase();
 
-    if (!cleanEmail || !password) {
-      setErrorMessage('Please enter your email address and password.');
+    if (!formattedEmail) {
+      setErrorMessage('Please enter your email address.');
+      return;
+    }
+    if (!password) {
+      setErrorMessage('Please enter your password.');
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-      setErrorMessage('Enter a valid email address.');
-      return;
-    }
-
-    setIsLoading(true);
-
+    setLoading(true);
     try {
-      const response = await apiRequest<LoginResponse>('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: cleanEmail,
-          password,
-        }),
+      await loginUser({
+        email: formattedEmail,
+        password,
       });
 
-      if (!response.accessToken || !response.refreshToken) {
-        throw new Error('The server returned an unexpected login response.');
+      // Successful login
+      Alert.alert('Success', 'Logged in successfully!', [
+        {
+          text: 'OK',
+          onPress: () => router.replace('/welcome'),
+        },
+      ]);
+    } catch (error: any) {
+      const msg = (error.message || '').toString();
+      const lowerMsg = msg.toLowerCase();
+
+      // If account is unverified, immediately resend code & redirect to verify-email
+      if (
+        lowerMsg.includes('verify') ||
+        lowerMsg.includes('verification') ||
+        lowerMsg.includes('unverified')
+      ) {
+        try {
+          await resendVerification({ email: formattedEmail });
+        } catch {
+          // Ignore resend rate limit error if a code was sent recently
+        }
+
+        // Immediately redirect to verify-email screen
+        router.push({
+          pathname: '/verify-email',
+          params: { email: formattedEmail },
+        });
+        return;
       }
 
-      await storeAuthSession({ accessToken: response.accessToken, refreshToken: response.refreshToken, user: response.user ? { id: response.user.id ?? '', email: response.user.email ?? cleanEmail, displayName: null } : null });
-      router.replace('/(tabs)');
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Unable to log in. Please check your details and try again.',
-      );
+      setErrorMessage(msg || 'Failed to log in. Please try again.');
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    if (isLoading) return;
-
-    Keyboard.dismiss();
-    setErrorMessage('');
-    setIsLoading(true);
-
-    try {
-      const googleSignIn = await import('../services/googleSignIn');
-
-      await googleSignIn.configureGoogleSignIn();
-
-      const idToken = await googleSignIn.signInWithGoogle();
-
-      // A null token means the user cancelled Google Sign-In.
-      if (!idToken) return;
-
-      await signInWithGoogleIdToken(idToken);
-
-      router.replace('/(tabs)');
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Google sign-in failed. Please try again.',
-      );
-    } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View
-            style={[
-              styles.backButtonWrapper,
-              { transform: [{ scale: backScale }] },
-            ]}
-          >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              onPress={handleBack}
-              onPressIn={() => animateBack(0.92)}
-              onPressOut={() => animateBack(1)}
-              hitSlop={8}
-              style={styles.backButton}
-            >
-              <Ionicons name="arrow-back" size={20} color={colors.text} />
+          {/* Header Bar */}
+          <View style={styles.headerBar}>
+            <Pressable onPress={handleBack} style={styles.backButton} hitSlop={10}>
+              <Ionicons name="arrow-back" size={24} color={colors.darkText} />
             </Pressable>
-          </Animated.View>
-
-          <View style={styles.brandRow}>
-            <View style={styles.brandMark}>
-              <FontAwesome name="heart" size={17} color="#FFFFFF" />
-            </View>
-            <Text style={styles.brandName}>vitaltron</Text>
+            <AppLogo size="small" showText={true} />
+            <View style={styles.headerPlaceholder} />
           </View>
 
-          <View style={styles.heading}>
-            <Text style={styles.eyebrow}>YOUR HEALTH, YOUR STORY</Text>
-            <Text style={styles.title}>Welcome back.</Text>
+          {/* Titles */}
+          <View style={styles.titleSection}>
+            <Text style={styles.title}>Welcome back</Text>
             <Text style={styles.subtitle}>
-              Your health journey is waiting for you. Sign in securely to
-              access your personal health records.
+              Sign in to manage your portable health records securely.
             </Text>
           </View>
 
-          <View style={styles.form}>
+          {/* Error Banner */}
+          {!!errorMessage && (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={20} color={colors.error} />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          )}
+
+          {/* Form */}
+          <View style={styles.formSection}>
             <AppTextInput
-              label="Email address"
-              placeholder="you@example.com"
+              label="Email Address"
+              placeholder="name@example.com"
+              iconName="mail-outline"
               value={email}
-              onChangeText={(value) => {
-                setEmail(value);
-                setErrorMessage('');
-              }}
+              onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              autoComplete="email"
-              textContentType="emailAddress"
-              returnKeyType="next"
             />
 
-            <View style={styles.passwordGroup}>
-              <AppTextInput
-                label="Password"
-                placeholder="Enter your password"
-                value={password}
-                onChangeText={(value) => {
-                  setPassword(value);
-                  setErrorMessage('');
-                }}
-                secureTextEntry={!showPassword}
-                autoComplete="current-password"
-                textContentType="password"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-              />
-            </View>
+            <AppTextInput
+              label="Password"
+              placeholder="••••••••"
+              iconName="lock-closed-outline"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={true}
+            />
 
+            {/* Forgot Password Link */}
             <Pressable
               onPress={() => router.push('/forgot-password')}
-              style={styles.forgotButton}
-              accessibilityRole="link"
-              hitSlop={8}
+              style={styles.forgotPassWrapper}
             >
-              <Text style={styles.forgotText}>Forgot password?</Text>
+              <Text style={styles.forgotPassText}>Forgot password?</Text>
             </Pressable>
 
-            {errorMessage ? (
-              <View style={styles.errorBox} accessibilityRole="alert">
-                <Ionicons
-                  name="alert-circle-outline"
-                  size={19}
-                  color={colors.error}
-                />
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              </View>
-            ) : null}
-
+            {/* Submit Button */}
             <PrimaryButton
-              title="Log in"
+              title="Log In"
               onPress={handleLogin}
-              loading={isLoading}
-              disabled={isLoading}
-              style={styles.loginButton}
+              loading={loading}
+              variant="primary"
+              style={styles.submitBtn}
             />
-
-            <View style={styles.dividerRow}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.divider} />
-            </View>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Continue with Google"
-              onPress={handleGoogleSignIn}
-              disabled={isLoading}
-              style={({ pressed }) => [
-                styles.googleButton,
-                pressed && styles.googleButtonPressed,
-                isLoading && styles.disabledButton,
-              ]}
-            >
-              <FontAwesome name="google" size={18} color="#4285F4" />
-              <Text style={styles.googleLabel}>
-                {isLoading ? 'Please wait…' : 'Continue with Google'}
-              </Text>
-            </Pressable>
-
-            <View style={styles.registerRow}>
-              <Text style={styles.registerPrompt}>
-                Don't have an account?
-              </Text>
-              <Pressable
-                onPress={() => router.push('/register')}
-                accessibilityRole="link"
-                hitSlop={8}
-              >
-                <Text style={styles.registerLink}>Sign up</Text>
-              </Pressable>
-            </View>
           </View>
 
-          <View style={styles.footer}>
-            <Ionicons
-              name="shield-checkmark-outline"
-              size={15}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.footerNote}>
-              Your health information belongs to you.
-            </Text>
+          {/* Divider */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Google Sign In */}
+          <Pressable
+            style={styles.googleBtn}
+            onPress={() => Alert.alert('Google Sign-In', 'Google Sign-In integration ready.')}
+          >
+            <Ionicons name="logo-google" size={20} color={colors.primary} />
+            <Text style={styles.googleBtnText}>Continue with Google</Text>
+          </Pressable>
+
+          {/* Footer Link */}
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Pressable onPress={() => router.push('/register')} hitSlop={8}>
+              <Text style={styles.signupText}>Sign Up</Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -297,194 +196,130 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
   flex: {
     flex: 1,
   },
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
   },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xl,
-  },
-  backButtonWrapper: {
-    alignSelf: 'flex-start',
-    marginBottom: spacing.md,
+  headerBar: {
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.softBackground,
     justifyContent: 'center',
-    backgroundColor: '#F4F4F2',
-    borderWidth: 1,
-    borderColor: '#EBEBE8',
-  },
-  brandRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
   },
-  brandMark: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerPlaceholder: {
+    width: 40,
   },
-  brandName: {
-    color: colors.text,
-    fontSize: 21,
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: -0.7,
-  },
-  heading: {
-    marginTop: spacing.xxl,
-    marginBottom: spacing.xl,
-  },
-  eyebrow: {
-    color: '#8A7045',
-    fontSize: 10,
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: 1.8,
-    marginBottom: spacing.md,
+  titleSection: {
+    marginBottom: 24,
   },
   title: {
-    color: colors.text,
-    fontSize: 29,
-    fontFamily: 'Inter_700Bold',
-    letterSpacing: -1,
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.darkText,
+    letterSpacing: -0.5,
+    marginBottom: 6,
   },
   subtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.body,
-    fontFamily: 'Inter_400Regular',
-    lineHeight: 23,
-    marginTop: spacing.sm,
-    maxWidth: 360,
-  },
-  form: {
-    gap: spacing.lg,
-  },
-  passwordGroup: {
-    gap: spacing.xs,
-  },
-  passwordToggle: {
-    alignSelf: 'flex-end',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-  },
-  passwordToggleText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontFamily: 'Inter_500Medium',
-  },
-  forgotButton: {
-    alignSelf: 'flex-end',
-    marginTop: -spacing.sm,
-  },
-  forgotText: {
-    color: colors.primary,
-    fontSize: 13,
-    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+    color: colors.darkText,
+    opacity: 0.7,
+    lineHeight: 22,
   },
   errorBox: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: 14,
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
     borderWidth: 1,
-    borderColor: '#F1CECE',
-    backgroundColor: '#FFF7F7',
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 18,
   },
   errorText: {
     flex: 1,
-    color: colors.error,
     fontSize: 13,
-    fontFamily: 'Inter_500Medium',
-    lineHeight: 19,
+    color: colors.error,
+    fontWeight: '600',
   },
-  loginButton: {
-    marginTop: spacing.xs,
+  formSection: {
+    width: '100%',
+  },
+  forgotPassWrapper: {
+    alignSelf: 'flex-end',
+    marginBottom: 20,
+    marginTop: -4,
+  },
+  forgotPassText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  submitBtn: {
+    marginTop: 4,
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    marginVertical: spacing.xs,
+    marginVertical: 24,
   },
-  divider: {
+  dividerLine: {
     flex: 1,
     height: 1,
     backgroundColor: colors.border,
   },
   dividerText: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontFamily: 'Inter_600SemiBold',
-    letterSpacing: 1.2,
+    paddingHorizontal: 16,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textMuted,
   },
-  googleButton: {
-    minHeight: 54,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    borderWidth: 1,
+  googleBtn: {
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1.5,
     borderColor: colors.border,
-    borderRadius: 999,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.white,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 28,
   },
-  googleButtonPressed: {
-    backgroundColor: '#F7F7F5',
-    transform: [{ scale: 0.99 }],
+  googleBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.darkText,
   },
-  disabledButton: {
-    opacity: 0.6,
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  googleLabel: {
-    color: colors.text,
+  footerText: {
     fontSize: 14,
-    fontFamily: 'Inter_600SemiBold',
+    color: colors.darkText,
+    opacity: 0.7,
   },
-  registerRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  registerPrompt: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    fontFamily: 'Inter_400Regular',
-  },
-  registerLink: {
-    color: colors.text,
-    fontSize: 13,
-    fontFamily: 'Inter_700Bold',
-    padding: spacing.xs,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginTop: 'auto',
-    paddingTop: spacing.xxl,
-  },
-  footerNote: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontFamily: 'Inter_400Regular',
+  signupText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.primary,
   },
 });

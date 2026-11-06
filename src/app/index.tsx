@@ -1,43 +1,129 @@
-import { Redirect } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getStoredAccessToken } from '../services/auth';
+import { AppLogo } from '../components/ui/AppLogo';
 import { colors } from '../theme';
 
 const ONBOARDING_KEY = '@vitaltron/onboarding-completed';
-type Destination = '/onboarding' | '/welcome' | '/login' | '/(tabs)';
 
-export default function IndexRoute() {
-  const [destination, setDestination] = useState<Destination | null>(null);
+export default function OpenSplashScreen() {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.85)).current;
+  const pulseAnim = useRef(new Animated.Value(0.9)).current;
 
   useEffect(() => {
-    let active = true;
+    // Logo entrance animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 900,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-    async function chooseDestination() {
+    // Pulse animation loop
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.12,
+          duration: 1200,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.9,
+          duration: 1200,
+          useNativeDriver: true,
+          easing: Easing.inOut(Easing.ease),
+        }),
+      ])
+    );
+    pulseLoop.start();
+
+    // Destination check & transition timer
+    const timer = setTimeout(async () => {
       try {
-        const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_KEY);
-        if (onboardingCompleted !== 'true') {
-          if (active) setDestination('/onboarding');
-          return;
+        const completed = await AsyncStorage.getItem(ONBOARDING_KEY);
+        if (completed === 'true') {
+          router.replace('/welcome');
+        } else {
+          router.replace('/onboarding');
         }
-
-        const token = await getStoredAccessToken();
-        if (active) setDestination(token ? '/(tabs)' : '/welcome');
       } catch {
-        if (active) setDestination('/onboarding');
+        router.replace('/onboarding');
       }
-    }
+    }, 2200);
 
-    void chooseDestination();
-    return () => { active = false; };
+    return () => {
+      clearTimeout(timer);
+      pulseLoop.stop();
+    };
   }, []);
 
-  if (destination) return <Redirect href={destination} />;
-
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
-      <ActivityIndicator color={colors.primary} />
-    </View>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Background Pulsing Glow Circle */}
+      <Animated.View
+        style={[
+          styles.pulseCircle,
+          {
+            transform: [{ scale: pulseAnim }],
+            opacity: fadeAnim,
+          },
+        ]}
+      />
+
+      {/* Main Animated Branding Content */}
+      <Animated.View
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
+        <AppLogo size="large" showText={true} />
+        <Text style={styles.tagline}>Portable Intelligent Health Identity</Text>
+      </Animated.View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+  },
+  pulseCircle: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: colors.softBackground,
+  },
+  content: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tagline: {
+    marginTop: 16,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+    letterSpacing: 0.8,
+    textAlign: 'center',
+    opacity: 0.85,
+  },
+});
