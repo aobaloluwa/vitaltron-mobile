@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppLogo } from '../components/ui/AppLogo';
+import { getStoredAccessToken } from '../services/api';
 import { colors } from '../theme';
 
 const ONBOARDING_KEY = '@vitaltron/onboarding-completed';
@@ -52,6 +53,12 @@ export default function OpenSplashScreen() {
     // Destination check & transition timer
     const timer = setTimeout(async () => {
       try {
+        const token = await getStoredAccessToken();
+        if (token) {
+          router.replace('/(tabs)' as any);
+          return;
+        }
+
         const completed = await AsyncStorage.getItem(ONBOARDING_KEY);
         if (completed === 'true') {
           router.replace('/welcome');

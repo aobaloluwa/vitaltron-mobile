@@ -53,13 +53,8 @@ export default function LoginScreen() {
         password,
       });
 
-      // Successful login
-      Alert.alert('Success', 'Logged in successfully!', [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/welcome'),
-        },
-      ]);
+      // Successful login -> Redirect to Home Page (Tabs)
+      router.replace('/(tabs)' as any);
     } catch (error: any) {
       const msg = (error.message || '').toString();
       const lowerMsg = msg.toLowerCase();

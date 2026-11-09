@@ -14,7 +14,7 @@ function getDynamicApiBaseUrl(): string {
     }
   }
 
-  return 'http://10.134.50.94:3000/api/v1';
+  return 'https://vitaltron.onrender.com/api/v1';
 }
 
 export const API_BASE_URL = getDynamicApiBaseUrl();
