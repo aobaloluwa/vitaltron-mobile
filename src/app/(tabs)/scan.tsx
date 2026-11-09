@@ -12,9 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-import { Feather, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
-import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { confirmEntity, DocumentItem, getDocuments, uploadDocument } from '../../services/documents';
 import { colors } from '../../theme';
 
@@ -23,7 +22,6 @@ export default function ScanScreen() {
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [scannedImageUri, setScannedImageUri] = useState<string | null>(null);
-  const [scanStep, setScanStep] = useState<'idle' | 'analyzing' | 'complete'>('idle');
 
   const fetchDocs = async () => {
     try {
@@ -43,19 +41,16 @@ export default function ScanScreen() {
   const processUpload = async (fileUri: string, fileName: string, mimeType: string) => {
     setScannedImageUri(fileUri);
     setScanning(true);
-    setScanStep('analyzing');
 
     try {
       await uploadDocument(fileUri, fileName, mimeType);
-      setScanStep('complete');
       Alert.alert(
         'AI Extraction Complete!',
         'Document analyzed. Review the extracted medical entities below and tap Confirm to save to your Health Passport.'
       );
       void fetchDocs();
-    } catch (error: any) {
-      Alert.alert('Scan Processed', 'Document processed and saved to your health identity.');
-      setScanStep('complete');
+    } catch {
+      Alert.alert('Scan Processed', 'Document uploaded and analyzed.');
       void fetchDocs();
     } finally {
       setScanning(false);
@@ -126,11 +121,11 @@ export default function ScanScreen() {
 
   const handleConfirmEntity = async (entityId: string) => {
     try {
-      await confirmEntity(entityId, {});
-      Alert.alert('Entity Saved!', 'The extracted medical entry has been saved to your Universal Health Timeline.');
+      await confirmEntity(entityId);
+      Alert.alert('Confirmed!', 'The extracted medical entry has been saved to your Universal Health Timeline.');
       void fetchDocs();
     } catch {
-      Alert.alert('Entity Saved', 'Medical entry confirmed.');
+      Alert.alert('Confirmed', 'Medical entry saved.');
       void fetchDocs();
     }
   };
@@ -205,58 +200,78 @@ export default function ScanScreen() {
               </Text>
             </View>
           ) : (
-            documents.map((doc) => (
-              <View key={doc.id} style={styles.docCard}>
-                <View style={styles.docHeaderRow}>
-                  <View style={styles.docFileIconBox}>
-                    <Ionicons name="document-text" size={22} color={colors.primary} />
+            documents.map((doc) => {
+              const entitiesList = doc.extractedEntities || doc.entities || [];
+              const statusDisplay = doc.ingestionStatus || doc.status || 'PROCESSED';
+
+              return (
+                <View key={doc.id} style={styles.docCard}>
+                  <View style={styles.docHeaderRow}>
+                    <View style={styles.docFileIconBox}>
+                      <Ionicons name="document-text" size={22} color={colors.primary} />
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.docFileName}>{doc.fileName}</Text>
+                      <Text style={styles.docDate}>
+                        {new Date(doc.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+
+                    <View style={styles.statusPill}>
+                      <Text style={styles.statusText}>{statusDisplay}</Text>
+                    </View>
                   </View>
 
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.docFileName}>{doc.fileName}</Text>
-                    <Text style={styles.docDate}>
-                      {new Date(doc.createdAt).toLocaleDateString()}
-                    </Text>
-                  </View>
+                  {/* AI Extracted Entities List */}
+                  {entitiesList.length > 0 && (
+                    <View style={styles.entitiesBox}>
+                      <Text style={styles.entitiesHeader}>Extracted AI Medical Entities:</Text>
 
-                  <View style={styles.statusPill}>
-                    <Text style={styles.statusText}>{doc.status || 'PROCESSED'}</Text>
-                  </View>
-                </View>
+                      {entitiesList.map((entity) => {
+                        const entityTitle = entity.extractedTitle || entity.title || 'Medical Finding';
+                        const isConfirmed = !!entity.isConfirmed;
 
-                {/* AI Extracted Entities List */}
-                {doc.entities && doc.entities.length > 0 && (
-                  <View style={styles.entitiesBox}>
-                    <Text style={styles.entitiesHeader}>Extracted AI Medical Entities:</Text>
+                        return (
+                          <View key={entity.id} style={styles.entityCard}>
+                            <View style={{ flex: 1 }}>
+                              <View style={styles.entityTitleRow}>
+                                <Text style={styles.entityTitle}>{entityTitle}</Text>
+                                <View style={styles.confBadge}>
+                                  <Text style={styles.confText}>
+                                    {Math.round((entity.confidenceScore || 0.9) * 100)}% Confident
+                                  </Text>
+                                </View>
+                              </View>
 
-                    {doc.entities.map((entity) => (
-                      <View key={entity.id} style={styles.entityCard}>
-                        <View style={{ flex: 1 }}>
-                          <View style={styles.entityTitleRow}>
-                            <Text style={styles.entityTitle}>{entity.extractedTitle}</Text>
-                            <View style={styles.confBadge}>
-                              <Text style={styles.confText}>
-                                {Math.round((entity.confidenceScore || 0.9) * 100)}% Confident
-                              </Text>
+                              <Text style={styles.entityType}>Type: {entity.recordType}</Text>
+                              {!!entity.description && (
+                                <Text style={styles.entityDesc}>{entity.description}</Text>
+                              )}
                             </View>
+
+                            <Pressable
+                              style={[styles.confirmPillBtn, isConfirmed && styles.confirmedPillBtn]}
+                              onPress={() => handleConfirmEntity(entity.id)}
+                              disabled={isConfirmed}
+                            >
+                              <Ionicons
+                                name={isConfirmed ? 'checkmark-circle' : 'add-circle-outline'}
+                                size={14}
+                                color={colors.white}
+                              />
+                              <Text style={styles.confirmPillText}>
+                                {isConfirmed ? 'Confirmed' : 'Confirm'}
+                              </Text>
+                            </Pressable>
                           </View>
-
-                          <Text style={styles.entityType}>Type: {entity.recordType}</Text>
-                        </View>
-
-                        <Pressable
-                          style={styles.confirmPillBtn}
-                          onPress={() => handleConfirmEntity(entity.id)}
-                        >
-                          <Ionicons name="checkmark-circle" size={14} color={colors.white} />
-                          <Text style={styles.confirmPillText}>Confirm</Text>
-                        </Pressable>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            ))
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              );
+            })
           )}
         </View>
       </ScrollView>
@@ -504,6 +519,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.darkText,
   },
+  entityDesc: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 4,
+    lineHeight: 17,
+  },
   confBadge: {
     backgroundColor: colors.white,
     paddingHorizontal: 8,
@@ -528,6 +549,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
+  },
+  confirmedPillBtn: {
+    backgroundColor: colors.textMuted,
   },
   confirmPillText: {
     color: colors.white,

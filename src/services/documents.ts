@@ -5,9 +5,12 @@ export interface DocumentEntity {
   id: string;
   documentId: string;
   recordType: RecordType;
-  extractedTitle: string;
+  extractedTitle?: string;
+  title?: string;
+  description?: string;
   confidenceScore: number;
-  extractedData: Record<string, any>;
+  extractedData?: Record<string, any>;
+  isConfirmed?: boolean;
   confirmedAt?: string | null;
 }
 
@@ -16,10 +19,13 @@ export interface DocumentItem {
   userId: string;
   fileName: string;
   fileUrl: string;
-  mimeType: string;
-  fileSize: number;
-  status: 'PENDING' | 'PROCESSED' | 'FAILED';
+  mimeType?: string;
+  fileType?: string;
+  fileSize?: number;
+  status?: string;
+  ingestionStatus?: string;
   entities?: DocumentEntity[];
+  extractedEntities?: DocumentEntity[];
   createdAt: string;
 }
 
@@ -40,9 +46,6 @@ export async function uploadDocument(fileUri: string, fileName: string, mimeType
   return apiRequest('/documents/upload', {
     method: 'POST',
     body: formData,
-    headers: {
-      // Content-Type is handled automatically by fetch for FormData
-    },
   });
 }
 
@@ -54,9 +57,9 @@ export async function getDocumentById(id: string): Promise<DocumentItem> {
   return apiRequest(`/documents/${id}`, { method: 'GET' });
 }
 
-export async function confirmEntity(entityId: string, dto: ConfirmEntityDto): Promise<{ success: boolean }> {
+export async function confirmEntity(entityId: string, dto?: ConfirmEntityDto): Promise<{ success: boolean }> {
   return apiRequest(`/documents/entities/${entityId}/confirm`, {
     method: 'POST',
-    body: JSON.stringify(dto),
+    body: JSON.stringify(dto || {}),
   });
 }
