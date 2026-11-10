@@ -82,27 +82,48 @@ export default function ScanScreen() {
     setCurrentDoc(doc);
 
     const rawList = doc.extractedEntities || doc.entities || [];
-    const entities = rawList.map((e) => {
-      const cleanTitle = (e.extractedTitle || e.title || doc.fileName || 'Medical Finding')
-        .replace(/[\r\n]+/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      const cleanDesc = (e.description || '')
-        .replace(/[\r\n]+/g, ' | ')
-        .replace(/\s+/g, ' ')
-        .trim();
+    const formattedEntities: any[] = [];
 
-      return {
-        id: e.id,
-        title: cleanTitle,
-        recordType: e.recordType || 'LAB_TEST',
-        description: cleanDesc,
-        confidenceScore: e.confidenceScore || 0.94,
-        isConfirmed: !!e.isConfirmed,
-      };
-    });
+    for (const e of rawList) {
+      const desc = e.description || '';
+      const title = e.extractedTitle || e.title || doc.fileName || 'Medical Finding';
 
-    setEditableEntities(entities);
+      // Split legacy combined multi-item descriptions into individual test cards
+      if (desc.includes('→') || (desc.includes('1.') && desc.includes('2.'))) {
+        const rawLines = desc
+          .split(/[\r\n]+|\b\d+\.\s*/)
+          .map((l) => l.trim())
+          .filter((l) => l.length > 3);
+
+        for (let i = 0; i < rawLines.length; i++) {
+          const line = rawLines[i];
+          const parts = line.split('→');
+          const testPart = parts[0]?.trim() || line;
+          const statusPart = parts[1]?.trim() ? `Status: ${parts[1].trim()}` : '';
+          const testName = testPart.split(':')[0]?.trim() || testPart;
+
+          formattedEntities.push({
+            id: `${e.id}_${i}`,
+            title: testName.replace(/^\d+\.\s*/, '').trim(),
+            recordType: e.recordType || 'LAB_TEST',
+            description: `${testPart} | ${statusPart}`.replace(/\|\s*$/, '').trim(),
+            confidenceScore: e.confidenceScore || 0.94,
+            isConfirmed: !!e.isConfirmed,
+          });
+        }
+      } else {
+        formattedEntities.push({
+          id: e.id,
+          title: title.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim(),
+          recordType: e.recordType || 'LAB_TEST',
+          description: desc.replace(/[\r\n]+/g, ' | ').replace(/\s+/g, ' ').trim(),
+          confidenceScore: e.confidenceScore || 0.94,
+          isConfirmed: !!e.isConfirmed,
+        });
+      }
+    }
+
+    setEditableEntities(formattedEntities);
     setAnalysisModalVisible(true);
   };
 
