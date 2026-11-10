@@ -333,71 +333,71 @@ export default function LabResultsScreen() {
         </View>
       </ScrollView>
 
-      {/* Lab Item Detail Modal */}
+      {/* Lab Item Detail Modal - Matches Universal Timeline Modal Exactly */}
       {selectedLabItem && (
         <Modal visible={!!selectedLabItem} animationType="fade" transparent={true}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalCard}>
-              {(() => {
-                const data = parseLabCardData(selectedLabItem);
-                return (
-                  <>
-                    <View style={styles.modalHeaderRow}>
-                      <View style={styles.modalTitleBox}>
-                        <MaterialCommunityIcons name="flask" size={24} color={colors.primary} />
-                        <Text style={styles.modalTitleText} numberOfLines={2}>{data.cleanTitle}</Text>
-                      </View>
-                      <Pressable onPress={() => setSelectedLabItem(null)} hitSlop={10}>
-                        <Ionicons name="close" size={24} color={colors.darkText} />
-                      </Pressable>
-                    </View>
+              <View style={styles.modalHeaderRow}>
+                <View style={styles.modalTitleBox}>
+                  <MaterialCommunityIcons name="flask-outline" size={24} color={colors.primary} />
+                  <Text style={styles.modalTitleText} numberOfLines={2}>
+                    {selectedLabItem.title
+                      .replace(/^Lab Test:\s*/i, '')
+                      .replace(/\[Below Range\]/gi, '')
+                      .replace(/\[Above Range\]/gi, '')
+                      .trim()}
+                  </Text>
+                </View>
+                <Pressable onPress={() => setSelectedLabItem(null)} hitSlop={10}>
+                  <Ionicons name="close" size={24} color={colors.darkText} />
+                </Pressable>
+              </View>
 
-                    <View style={styles.modalValueContainer}>
-                      <Text style={styles.modalResultVal}>{data.resultVal}</Text>
+              <View style={styles.modalTypePill}>
+                <Text style={styles.modalTypePillText}>
+                  {(selectedLabItem.type || 'LAB_TEST').replace('_', ' ')}
+                </Text>
+                <View style={styles.verifiedTag}>
+                  <Ionicons name="checkmark-circle" size={13} color={colors.primary} />
+                  <Text style={styles.verifiedTagText}>
+                    {selectedLabItem.verificationStatus || 'PATIENT_CONFIRMED'}
+                  </Text>
+                </View>
+              </View>
 
-                      <View style={[styles.statusBadge, { backgroundColor: data.statusBg, alignSelf: 'center' }]}>
-                        <Ionicons
-                          name={data.isBelow || data.isAbove ? 'alert-circle' : 'checkmark-circle'}
-                          size={14}
-                          color={data.statusColor}
-                        />
-                        <Text style={[styles.statusBadgeText, { color: data.statusColor, fontSize: 11 }]} numberOfLines={1}>
-                          {data.statusLabel}
-                        </Text>
-                      </View>
-                    </View>
+              {selectedLabItem.description ? (
+                <View style={styles.modalDescContainer}>
+                  <Text style={styles.modalDescLabel}>Clinical Details / Findings:</Text>
+                  <Text style={styles.modalDescVal}>{selectedLabItem.description}</Text>
+                </View>
+              ) : null}
 
-                    <View style={styles.modalDetailRow}>
-                      <Text style={styles.modalDetailLabel}>Normal Reference Range:</Text>
-                      <Text style={styles.modalDetailVal}>{data.refRange}</Text>
-                    </View>
+              <View style={styles.modalDetailRow}>
+                <Text style={styles.modalDetailLabel}>Facility / Provider:</Text>
+                <Text style={styles.modalDetailVal}>
+                  {selectedLabItem.facilityName ||
+                    selectedLabItem.description?.match(/(?:Hospital|Facility):\s*([^\n|]+)/i)?.[1]?.trim() ||
+                    'Not Specified'}
+                </Text>
+              </View>
 
-                    <View style={styles.modalDetailRow}>
-                      <Text style={styles.modalDetailLabel}>Performing Facility:</Text>
-                      <Text style={styles.modalDetailVal}>{data.facilityStr}</Text>
-                    </View>
+              <View style={styles.modalDetailRow}>
+                <Text style={styles.modalDetailLabel}>Event Date:</Text>
+                <Text style={styles.modalDetailVal}>
+                  {selectedLabItem.eventDate
+                    ? new Date(selectedLabItem.eventDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : 'Recent'}
+                </Text>
+              </View>
 
-                    <View style={styles.modalDetailRow}>
-                      <Text style={styles.modalDetailLabel}>Ordering Physician:</Text>
-                      <Text style={styles.modalDetailVal}>{data.doctorStr}</Text>
-                    </View>
-
-                    <View style={styles.modalDetailRow}>
-                      <Text style={styles.modalDetailLabel}>Verification Status:</Text>
-                      <Text style={[styles.modalDetailVal, { color: colors.primary }]}>
-                        {selectedLabItem.verificationStatus || 'PATIENT_CONFIRMED'}
-                      </Text>
-                    </View>
-
-                    <Pressable
-                      style={styles.modalCloseBtn}
-                      onPress={() => setSelectedLabItem(null)}
-                    >
-                      <Text style={styles.modalCloseBtnText}>Close Details</Text>
-                    </Pressable>
-                  </>
-                );
-              })()}
+              <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedLabItem(null)}>
+                <Text style={styles.modalCloseBtnText}>Close Record Details</Text>
+              </Pressable>
             </View>
           </View>
         </Modal>
@@ -781,6 +781,48 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.darkText,
     flex: 1,
+  },
+  modalTypePill: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: colors.softBackground,
+    borderRadius: 14,
+  },
+  modalTypePillText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.darkText,
+  },
+  verifiedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  verifiedTagText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.primary,
+  },
+  modalDescContainer: {
+    backgroundColor: '#FAF8FC',
+    borderRadius: 14,
+    padding: 12,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.softBackground,
+  },
+  modalDescLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+  },
+  modalDescVal: {
+    fontSize: 13,
+    color: colors.darkText,
+    lineHeight: 18,
   },
   modalValueContainer: {
     flexDirection: 'row',
