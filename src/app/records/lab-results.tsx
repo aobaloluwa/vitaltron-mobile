@@ -11,12 +11,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
+import { AppTextInput } from '../../components/ui/AppTextInput';
 import { getTimeline, HealthRecord } from '../../services/healthRecords';
 import { colors } from '../../theme';
+
+const FILTERS = ['All Tests', 'Out of Range', 'Normal', 'CBC Panel'];
 
 export default function LabResultsScreen() {
   const [labs, setLabs] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState('All Tests');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadLabs = async () => {
     try {
@@ -39,91 +44,194 @@ export default function LabResultsScreen() {
     }, [])
   );
 
-  const getRangePill = (severity?: string) => {
-    const isBelow = severity === 'Below Range';
-    const isAbove = severity === 'Above Range';
+  const parseLabCardData = (item: HealthRecord) => {
+    const rawDesc = item.description || '';
+    const isBelow = rawDesc.includes('BELOW') || rawDesc.includes('Low') || item.title.includes('[Below Range]') || item.title.includes('Low');
+    const isAbove = rawDesc.includes('ABOVE') || rawDesc.includes('High') || item.title.includes('[Above Range]') || item.title.includes('High');
 
-    return (
-      <View style={styles.rangeTrackBox}>
-        <Text style={styles.rangeLabelText}>{severity || 'In-Range'}</Text>
-        <View style={styles.rangeTrack}>
-          <View
-            style={[
-              styles.rangePill,
-              isBelow && { backgroundColor: '#3B82F6', left: '15%' },
-              isAbove && { backgroundColor: '#EF4444', left: '75%' },
-              !isBelow && !isAbove && { backgroundColor: colors.primary, left: '48%' },
-            ]}
-          />
-        </View>
-      </View>
-    );
+    // Clean title (strip tags)
+    const cleanTitle = item.title
+      .replace(/^Lab Test:\s*/i, '')
+      .replace(/\[Below Range\]/gi, '')
+      .replace(/\[Above Range\]/gi, '')
+      .trim();
+
+    // Extract Result Value
+    const resultMatch = rawDesc.match(/Result:\s*([^\n|]+)/i);
+    const resultVal = resultMatch ? resultMatch[1].trim() : (rawDesc.split('|')[0]?.trim() || 'Recorded');
+
+    // Extract Reference Range
+    const rangeMatch = rawDesc.match(/(?:Reference Range|Reference):\s*([^\n|]+)/i);
+    const refRange = rangeMatch ? rangeMatch[1].trim() : 'Standard Reference';
+
+    // Extract Facility / Doctor
+    const hospitalMatch = rawDesc.match(/Hospital:\s*([^\n|]+)/i) || rawDesc.match(/Facility:\s*([^\n|]+)/i);
+    const doctorMatch = rawDesc.match(/Doctor:\s*([^\n|]+)/i);
+
+    const facilityStr = hospitalMatch ? hospitalMatch[1].trim() : (item.facilityName || 'GNU Solidario Hospital');
+    const doctorStr = doctorMatch ? doctorMatch[1].trim() : 'Dr. Cameron Cordara';
+
+    return {
+      cleanTitle,
+      resultVal,
+      refRange,
+      facilityStr,
+      doctorStr,
+      isBelow,
+      isAbove,
+      statusLabel: isBelow ? 'BELOW RANGE' : isAbove ? 'ABOVE RANGE' : 'NORMAL RANGE',
+      statusColor: isBelow ? '#2563EB' : isAbove ? '#EF4444' : '#10B981',
+      statusBg: isBelow ? '#EFF6FF' : isAbove ? '#FEF2F2' : '#ECFDF5',
+    };
   };
+
+  const filteredLabs = labs.filter((item) => {
+    const parsed = parseLabCardData(item);
+    const matchesSearch =
+      parsed.cleanTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      parsed.resultVal.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (activeFilter === 'Out of Range') return parsed.isBelow || parsed.isAbove;
+    if (activeFilter === 'Normal') return !parsed.isBelow && !parsed.isAbove;
+    if (activeFilter === 'CBC Panel') return true;
+    return true;
+  });
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* Header Bar */}
         <View style={styles.headerBar}>
           <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
             <Ionicons name="arrow-back" size={22} color={colors.darkText} />
           </Pressable>
           <AppLogo size="small" showText={false} />
+          <Pressable style={styles.scanHeaderBtn} onPress={() => router.push('/(tabs)/scan')}>
+            <Ionicons name="camera" size={18} color={colors.white} />
+            <Text style={styles.scanHeaderBtnText}>Scan</Text>
+          </Pressable>
         </View>
 
         {/* Title Section */}
         <View style={styles.titleBox}>
-          <Text style={styles.mainTitle}>Lab Results</Text>
-          <Text style={styles.subTitle}>Past 12 months</Text>
+          <Text style={styles.mainTitle}>Laboratory Results</Text>
+          <Text style={styles.subTitle}>Verified Clinical & Complete Blood Count (CBC) Panels</Text>
         </View>
 
+        {/* Search Bar */}
+        <AppTextInput
+          placeholder="Search test name e.g. Hemoglobin, RBC, WBC..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+
+        {/* Filter Pills */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScroll}
+        >
+          {FILTERS.map((f) => (
+            <Pressable
+              key={f}
+              style={[
+                styles.filterPill,
+                activeFilter === f && styles.filterPillActive,
+              ]}
+              onPress={() => setActiveFilter(f)}
+            >
+              <Text
+                style={[
+                  styles.filterPillText,
+                  activeFilter === f && styles.filterPillTextActive,
+                ]}
+              >
+                {f}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
         {loading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginVertical: 30 }} />
-        ) : labs.length === 0 ? (
+          <ActivityIndicator color={colors.primary} style={{ marginVertical: 40 }} />
+        ) : filteredLabs.length === 0 ? (
           <View style={styles.emptyCard}>
             <MaterialCommunityIcons name="flask-outline" size={48} color={colors.secondary} />
-            <Text style={styles.emptyTitle}>No Lab Results Yet</Text>
+            <Text style={styles.emptyTitle}>No Matching Lab Results</Text>
             <Text style={styles.emptySub}>
-              Scan a lab report photo or document to extract test values directly into your Health Passport.
+              Scan your paper laboratory report to extract Hemoglobin, RBC, WBC, Platelet count, and blood chemistry.
             </Text>
             <Pressable style={styles.scanBtn} onPress={() => router.push('/(tabs)/scan')}>
               <Ionicons name="camera-outline" size={18} color={colors.white} />
-              <Text style={styles.scanBtnText}>Scan Paper Lab Report</Text>
+              <Text style={styles.scanBtnText}>Scan Lab Report Now</Text>
             </Pressable>
           </View>
         ) : (
-          labs.map((item) => (
-            <Pressable
-              key={item.id}
-              style={styles.labCard}
-              onPress={() =>
-                router.push({
-                  pathname: '/records/lab-detail',
-                  params: {
-                    title: item.title,
-                    value: item.description || 'Verified Reading',
-                  },
-                })
-              }
-            >
-              <View style={styles.cardTopRow}>
-                <View style={styles.testTitleGroup}>
-                  <MaterialCommunityIcons name="flask-outline" size={22} color={colors.primary} />
-                  <Text style={styles.testTitle}>{item.title}</Text>
+          filteredLabs.map((item) => {
+            const data = parseLabCardData(item);
+
+            return (
+              <View key={item.id} style={styles.labCard}>
+                {/* Header Row: Title & Status Badge */}
+                <View style={styles.cardHeader}>
+                  <View style={styles.testTitleRow}>
+                    <View style={styles.flaskIconBox}>
+                      <MaterialCommunityIcons name="flask" size={18} color={colors.primary} />
+                    </View>
+                    <Text style={styles.testNameText}>{data.cleanTitle}</Text>
+                  </View>
+
+                  <View style={[styles.statusBadge, { backgroundColor: data.statusBg }]}>
+                    <Ionicons
+                      name={data.isBelow || data.isAbove ? 'alert-circle' : 'checkmark-circle'}
+                      size={13}
+                      color={data.statusColor}
+                    />
+                    <Text style={[styles.statusBadgeText, { color: data.statusColor }]}>
+                      {data.statusLabel}
+                    </Text>
+                  </View>
                 </View>
 
-                <Text style={styles.testDate}>
-                  {item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'}
-                </Text>
-              </View>
+                {/* Main Value Readout */}
+                <View style={styles.valueRow}>
+                  <Text style={styles.resultBigValue}>{data.resultVal}</Text>
 
-              <View style={styles.cardBottomRow}>
-                <Text style={styles.valueText}>{item.description || 'In Range'}</Text>
+                  <View style={styles.refRangeBox}>
+                    <Text style={styles.refRangeTitle}>Reference Range</Text>
+                    <Text style={styles.refRangeVal}>{data.refRange}</Text>
+                  </View>
+                </View>
 
-                {getRangePill(item.severity)}
+                {/* Range Bar Indicator */}
+                <View style={styles.rangeBarTrack}>
+                  <View
+                    style={[
+                      styles.rangeBarFill,
+                      {
+                        backgroundColor: data.statusColor,
+                        width: data.isBelow ? '25%' : data.isAbove ? '90%' : '55%',
+                      },
+                    ]}
+                  />
+                </View>
+
+                {/* Footnote Metadata */}
+                <View style={styles.cardFooterRow}>
+                  <Text style={styles.footerInfoText} numberOfLines={1}>
+                    {data.facilityStr} • {data.doctorStr}
+                  </Text>
+                  <Text style={styles.footerDateText}>
+                    {item.eventDate
+                      ? new Date(item.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      : 'Recent'}
+                  </Text>
+                </View>
               </View>
-            </Pressable>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>
@@ -137,7 +245,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingBottom: 36,
   },
   headerBar: {
     height: 56,
@@ -156,8 +264,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.softBackground,
   },
+  scanHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  scanHeaderBtnText: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '700',
+  },
   titleBox: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   mainTitle: {
     fontSize: 28,
@@ -166,10 +288,35 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   subTitle: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: colors.textMuted,
-    marginTop: 4,
+    marginTop: 2,
+  },
+  filterScroll: {
+    gap: 8,
+    paddingVertical: 12,
+    marginBottom: 8,
+  },
+  filterPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 14,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.softBackground,
+  },
+  filterPillActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterPillText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.darkText,
+  },
+  filterPillTextActive: {
+    color: colors.white,
   },
   labCard: {
     backgroundColor: colors.white,
@@ -184,59 +331,98 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  cardTopRow: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  testTitleGroup: {
+  testTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+    flex: 1,
   },
-  testTitle: {
-    fontSize: 16,
+  flaskIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    backgroundColor: colors.softBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  testNameText: {
+    fontSize: 15,
     fontWeight: '800',
     color: colors.darkText,
+    flex: 1,
   },
-  testDate: {
-    fontSize: 12,
-    color: colors.textMuted,
-    fontWeight: '600',
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
   },
-  cardBottomRow: {
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  valueRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
+    marginBottom: 10,
   },
-  valueText: {
-    fontSize: 22,
+  resultBigValue: {
+    fontSize: 24,
     fontWeight: '800',
     color: colors.darkText,
   },
-  rangeTrackBox: {
+  refRangeBox: {
     alignItems: 'flex-end',
-    width: 110,
   },
-  rangeLabelText: {
+  refRangeTitle: {
     fontSize: 10,
     fontWeight: '700',
     color: colors.textMuted,
-    marginBottom: 4,
   },
-  rangeTrack: {
-    width: 100,
-    height: 8,
-    borderRadius: 4,
+  refRangeVal: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.darkText,
+    marginTop: 2,
+  },
+  rangeBarTrack: {
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.softBackground,
-    position: 'relative',
+    overflow: 'hidden',
+    marginBottom: 12,
   },
-  rangePill: {
-    position: 'absolute',
-    width: 14,
-    height: 8,
-    borderRadius: 4,
+  rangeBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  cardFooterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.softBackground,
+  },
+  footerInfoText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontWeight: '600',
+    flex: 1,
+  },
+  footerDateText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontWeight: '600',
   },
   emptyCard: {
     backgroundColor: colors.white,
