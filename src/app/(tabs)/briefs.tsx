@@ -65,12 +65,12 @@ export default function SharingTabScreen() {
 
       const active = (grantList || []).find((g) => g.status === 'ACTIVE');
       if (active && !activeGrantResult) {
-        const baseUrl = 'http://localhost:8081';
         setActiveGrantResult({
           grantId: active.id,
           shareableToken: active.id,
-          shareableUrl: `${baseUrl}/share?token=${active.id}`,
-          qrCodePayload: `${baseUrl}/share?token=${active.id}`,
+          shareableUrl: active.shareableUrl || `http://localhost:8081/share?token=${active.id}`,
+          qrCodeImageUrl: active.qrCodeImageUrl,
+          qrCodePayload: active.shareableUrl || `http://localhost:8081/share?token=${active.id}`,
           expiresAt: active.expiresAt,
           maxAccessCount: active.maxAccessCount,
           requiresPasscode: !!active.requiresPasscode,
@@ -223,9 +223,11 @@ export default function SharingTabScreen() {
                 <View style={styles.qrBoxWrapper}>
                   <Image
                     source={{
-                      uri: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-                        activeGrantResult?.shareableUrl || 'http://localhost:8081/share'
-                      )}`,
+                      uri:
+                        activeGrantResult?.qrCodeImageUrl ||
+                        `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+                          activeGrantResult?.shareableUrl || 'http://localhost:8081/share'
+                        )}`,
                     }}
                     style={{ width: 170, height: 170, borderRadius: 12 }}
                     resizeMode="contain"

@@ -14,6 +14,8 @@ export interface AccessGrant {
   revokedAt?: string | null;
   createdAt: string;
   requiresPasscode?: boolean;
+  shareableUrl?: string;
+  qrCodeImageUrl?: string;
 }
 
 export interface CreateAccessGrantDto {
@@ -29,6 +31,7 @@ export interface CreateAccessGrantResult {
   grantId: string;
   shareableToken: string;
   shareableUrl: string;
+  qrCodeImageUrl?: string;
   qrCodePayload: string;
   expiresAt: string;
   maxAccessCount: number;
