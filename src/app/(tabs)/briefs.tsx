@@ -27,6 +27,7 @@ import {
   revokeAccessGrant,
 } from '../../services/sharing';
 import { RecordType } from '../../services/healthRecords';
+import { copyToClipboard } from '../../utils/clipboard';
 import { colors } from '../../theme';
 
 const ALL_TYPES: RecordType[] = [
@@ -55,6 +56,7 @@ export default function SharingTabScreen() {
 
   // Generated Active Result State
   const [activeGrantResult, setActiveGrantResult] = useState<CreateAccessGrantResult | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const isDesktopOrTablet = windowWidth >= 768;
 
@@ -263,17 +265,27 @@ export default function SharingTabScreen() {
                   ) : null}
 
                   <Pressable
-                    style={styles.copyLinkBtn}
-                    onPress={() => {
-                      if (activeGrantResult) {
-                        Alert.alert('Link Copied', `Share URL:\n${activeGrantResult.shareableUrl}`);
+                    style={[styles.copyLinkBtn, copied && { borderColor: colors.primary, backgroundColor: colors.softBackground }]}
+                    onPress={async () => {
+                      const urlToCopy = activeGrantResult?.shareableUrl || 'http://localhost:8081/share';
+                      const success = await copyToClipboard(urlToCopy);
+                      if (success) {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2500);
+                        Alert.alert('Link Copied to Clipboard', urlToCopy);
                       } else {
-                        Alert.alert('Notice', 'Fill in options below and tap "Generate QR Code" to activate a custom share link.');
+                        Alert.alert('Share Link Address', urlToCopy);
                       }
                     }}
                   >
-                    <Ionicons name="copy-outline" size={16} color={colors.darkText} />
-                    <Text style={styles.copyLinkBtnText}>Copy Link Address</Text>
+                    <Ionicons
+                      name={copied ? 'checkmark-circle' : 'copy-outline'}
+                      size={16}
+                      color={copied ? colors.primary : colors.darkText}
+                    />
+                    <Text style={[styles.copyLinkBtnText, copied && { color: colors.primary }]}>
+                      {copied ? 'Link Copied!' : 'Copy Link Address'}
+                    </Text>
                   </Pressable>
                 </View>
               </View>
