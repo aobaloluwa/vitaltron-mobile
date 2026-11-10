@@ -26,6 +26,7 @@ export default function LabResultsScreen() {
   const [activeFilter, setActiveFilter] = useState('All Tests');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLabItem, setSelectedLabItem] = useState<HealthRecord | null>(null);
+  const [showInfoGuide, setShowInfoGuide] = useState(false);
 
   // Responsiveness Breakpoints
   const isTabletOrDesktop = windowWidth >= 768;
@@ -97,7 +98,7 @@ export default function LabResultsScreen() {
       doctorStr,
       isBelow,
       isAbove,
-      statusLabel: isBelow ? 'BELOW RANGE' : isAbove ? 'ABOVE RANGE' : 'NORMAL RANGE',
+      statusLabel: isBelow ? 'LOW' : isAbove ? 'HIGH' : 'NORMAL',
       statusColor: isBelow ? '#2563EB' : isAbove ? '#EF4444' : '#10B981',
       statusBg: isBelow ? '#EFF6FF' : isAbove ? '#FEF2F2' : '#ECFDF5',
     };
@@ -137,10 +138,16 @@ export default function LabResultsScreen() {
 
             <AppLogo size="small" showText={false} />
 
-            <Pressable style={styles.scanHeaderBtn} onPress={() => router.push('/(tabs)/scan')}>
-              <Ionicons name="camera" size={18} color={colors.white} />
-              <Text style={styles.scanHeaderBtnText}>Scan Lab Report</Text>
-            </Pressable>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <Pressable style={styles.infoGuideBtn} onPress={() => setShowInfoGuide(!showInfoGuide)}>
+                <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
+              </Pressable>
+
+              <Pressable style={styles.scanHeaderBtn} onPress={() => router.push('/(tabs)/scan')}>
+                <Ionicons name="camera" size={18} color={colors.white} />
+                <Text style={styles.scanHeaderBtnText}>Scan</Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Title & Headline Section */}
@@ -148,6 +155,33 @@ export default function LabResultsScreen() {
             <Text style={styles.mainTitle}>Laboratory Results</Text>
             <Text style={styles.subTitle}>Verified Clinical & Complete Blood Count (CBC) Panels</Text>
           </View>
+
+          {/* Reference Range Indicator Guide Banner */}
+          {showInfoGuide && (
+            <View style={styles.guideBanner}>
+              <View style={styles.guideHeaderRow}>
+                <Ionicons name="stats-chart" size={18} color={colors.primary} />
+                <Text style={styles.guideTitle}>What is the Reference Indicator Bar?</Text>
+              </View>
+              <Text style={styles.guideText}>
+                The colored bar below each test value is a <Text style={{ fontWeight: '800' }}>Clinical Reference Range Indicator</Text>. It visually positions your test reading relative to healthy laboratory boundaries:
+              </Text>
+              <View style={styles.guideLegendRow}>
+                <View style={styles.legendPill}>
+                  <View style={[styles.legendDot, { backgroundColor: '#2563EB' }]} />
+                  <Text style={styles.legendText}>Low / Below Range</Text>
+                </View>
+                <View style={styles.legendPill}>
+                  <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
+                  <Text style={styles.legendText}>Normal / In Range</Text>
+                </View>
+                <View style={styles.legendPill}>
+                  <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+                  <Text style={styles.legendText}>High / Above Range</Text>
+                </View>
+              </View>
+            </View>
+          )}
 
           {/* Metric Summary Counters Bar */}
           <View style={styles.summaryBar}>
@@ -228,13 +262,13 @@ export default function LabResultsScreen() {
                   style={[styles.labCard, { width: cardWidth }]}
                   onPress={() => setSelectedLabItem(item)}
                 >
-                  {/* Card Header: Title & Status Badge */}
+                  {/* Card Header: Title & Compact Status Badge */}
                   <View style={styles.cardHeader}>
                     <View style={styles.testTitleRow}>
                       <View style={styles.flaskIconBox}>
                         <MaterialCommunityIcons name="flask" size={18} color={colors.primary} />
                       </View>
-                      <Text style={styles.testNameText} numberOfLines={2}>
+                      <Text style={styles.testNameText} numberOfLines={1}>
                         {parsed.cleanTitle}
                       </Text>
                     </View>
@@ -245,7 +279,10 @@ export default function LabResultsScreen() {
                         size={12}
                         color={parsed.statusColor}
                       />
-                      <Text style={[styles.statusBadgeText, { color: parsed.statusColor }]}>
+                      <Text
+                        style={[styles.statusBadgeText, { color: parsed.statusColor }]}
+                        numberOfLines={1}
+                      >
                         {parsed.statusLabel}
                       </Text>
                     </View>
@@ -265,7 +302,7 @@ export default function LabResultsScreen() {
                     </View>
                   </View>
 
-                  {/* Range Bar Indicator */}
+                  {/* Reference Range Indicator Bar */}
                   <View style={styles.rangeBarTrack}>
                     <View
                       style={[
@@ -308,7 +345,7 @@ export default function LabResultsScreen() {
                     <View style={styles.modalHeaderRow}>
                       <View style={styles.modalTitleBox}>
                         <MaterialCommunityIcons name="flask" size={24} color={colors.primary} />
-                        <Text style={styles.modalTitleText}>{data.cleanTitle}</Text>
+                        <Text style={styles.modalTitleText} numberOfLines={2}>{data.cleanTitle}</Text>
                       </View>
                       <Pressable onPress={() => setSelectedLabItem(null)} hitSlop={10}>
                         <Ionicons name="close" size={24} color={colors.darkText} />
@@ -318,13 +355,13 @@ export default function LabResultsScreen() {
                     <View style={styles.modalValueContainer}>
                       <Text style={styles.modalResultVal}>{data.resultVal}</Text>
 
-                      <View style={[styles.statusBadge, { backgroundColor: data.statusBg }]}>
+                      <View style={[styles.statusBadge, { backgroundColor: data.statusBg, alignSelf: 'center' }]}>
                         <Ionicons
                           name={data.isBelow || data.isAbove ? 'alert-circle' : 'checkmark-circle'}
                           size={14}
                           color={data.statusColor}
                         />
-                        <Text style={[styles.statusBadgeText, { color: data.statusColor, fontSize: 11 }]}>
+                        <Text style={[styles.statusBadgeText, { color: data.statusColor, fontSize: 11 }]} numberOfLines={1}>
                           {data.statusLabel}
                         </Text>
                       </View>
@@ -402,6 +439,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.softBackground,
   },
+  infoGuideBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.softBackground,
+  },
   scanHeaderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -430,6 +477,55 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textMuted,
     marginTop: 2,
+  },
+  guideBanner: {
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.softBackground,
+    gap: 8,
+  },
+  guideHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  guideTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.darkText,
+  },
+  guideText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 18,
+  },
+  guideLegendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 4,
+  },
+  legendPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.softBackground,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  legendText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.darkText,
   },
   summaryBar: {
     flexDirection: 'row',
@@ -520,7 +616,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 12,
     gap: 8,
   },
@@ -551,6 +647,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 10,
+    flexShrink: 0,
   },
   statusBadgeText: {
     fontSize: 10,
