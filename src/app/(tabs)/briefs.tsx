@@ -472,17 +472,20 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   headerBar: {
-    height: 56,
+    minHeight: 56,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
     marginBottom: 14,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: colors.darkText,
     letterSpacing: -0.5,
+    flexShrink: 1,
   },
   shieldBadge: {
     flexDirection: 'row',
@@ -492,6 +495,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
+    flexShrink: 0,
   },
   shieldBadgeText: {
     fontSize: 11,

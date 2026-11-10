@@ -373,10 +373,12 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
   },
   headerBar: {
-    height: 56,
+    minHeight: 56,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
     marginBottom: 16,
   },
   backBtn: {
@@ -388,11 +390,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.softBackground,
+    flexShrink: 0,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
     color: colors.darkText,
+    flexShrink: 1,
   },
   qrMainHeroCard: {
     backgroundColor: colors.white,
