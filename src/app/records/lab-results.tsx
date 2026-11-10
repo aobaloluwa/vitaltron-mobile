@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -8,68 +8,36 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
 import { getTimeline, HealthRecord } from '../../services/healthRecords';
 import { colors } from '../../theme';
 
-const SAMPLE_LABS: Partial<HealthRecord>[] = [
-  {
-    id: 'lab-1',
-    title: 'eGFR - Low Range',
-    eventDate: '2026-09-12',
-    description: '4.2 mL/min',
-    severity: 'In-Range',
-    facilityName: 'City Hospital Lab',
-  },
-  {
-    id: 'lab-2',
-    title: 'Creatinine',
-    eventDate: '2026-08-28',
-    description: '0.64 mg/dL',
-    severity: 'Below Range',
-    facilityName: 'Metro Diagnostic',
-  },
-  {
-    id: 'lab-3',
-    title: 'eGFR - High Range',
-    eventDate: '2026-07-15',
-    description: '>60 mL/min',
-    severity: 'Above Range',
-    facilityName: 'Central Health Lab',
-  },
-  {
-    id: 'lab-4',
-    title: 'Potassium',
-    eventDate: '2026-06-04',
-    description: '4.4 mEq/L',
-    severity: 'In-Range',
-    facilityName: 'City Hospital Lab',
-  },
-];
-
 export default function LabResultsScreen() {
-  const [labs, setLabs] = useState<Partial<HealthRecord>[]>([]);
+  const [labs, setLabs] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadLabs() {
-      try {
-        const res = await getTimeline({ type: 'LAB_TEST' }).catch(() => ({ records: [] }));
-        if (res.records && res.records.length > 0) {
-          setLabs(res.records);
-        } else {
-          setLabs(SAMPLE_LABS);
-        }
-      } catch {
-        setLabs(SAMPLE_LABS);
-      } finally {
-        setLoading(false);
-      }
+  const loadLabs = async () => {
+    try {
+      const res = await getTimeline({ type: 'LAB_TEST' }).catch(() => ({ records: [] }));
+      setLabs(res.records || []);
+    } catch {
+      setLabs([]);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     void loadLabs();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadLabs();
+    }, [])
+  );
 
   const getRangePill = (severity?: string) => {
     const isBelow = severity === 'Below Range';
@@ -111,6 +79,18 @@ export default function LabResultsScreen() {
 
         {loading ? (
           <ActivityIndicator color={colors.primary} style={{ marginVertical: 30 }} />
+        ) : labs.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <MaterialCommunityIcons name="flask-outline" size={48} color={colors.secondary} />
+            <Text style={styles.emptyTitle}>No Lab Results Yet</Text>
+            <Text style={styles.emptySub}>
+              Scan a lab report photo or document to extract test values directly into your Health Passport.
+            </Text>
+            <Pressable style={styles.scanBtn} onPress={() => router.push('/(tabs)/scan')}>
+              <Ionicons name="camera-outline" size={18} color={colors.white} />
+              <Text style={styles.scanBtnText}>Scan Paper Lab Report</Text>
+            </Pressable>
+          </View>
         ) : (
           labs.map((item) => (
             <Pressable
@@ -121,7 +101,7 @@ export default function LabResultsScreen() {
                   pathname: '/records/lab-detail',
                   params: {
                     title: item.title,
-                    value: item.description || '4.4 mEq/L',
+                    value: item.description || 'Verified Reading',
                   },
                 })
               }
@@ -133,12 +113,12 @@ export default function LabResultsScreen() {
                 </View>
 
                 <Text style={styles.testDate}>
-                  {item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'September 2026'}
+                  {item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'}
                 </Text>
               </View>
 
               <View style={styles.cardBottomRow}>
-                <Text style={styles.valueText}>{item.description || '4.2 mL/min'}</Text>
+                <Text style={styles.valueText}>{item.description || 'In Range'}</Text>
 
                 {getRangePill(item.severity)}
               </View>
@@ -257,5 +237,42 @@ const styles = StyleSheet.create({
     width: 14,
     height: 8,
     borderRadius: 4,
+  },
+  emptyCard: {
+    backgroundColor: colors.white,
+    borderRadius: 22,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.softBackground,
+    marginTop: 10,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.darkText,
+    marginTop: 12,
+  },
+  emptySub: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  scanBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 16,
+    marginTop: 16,
+  },
+  scanBtnText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

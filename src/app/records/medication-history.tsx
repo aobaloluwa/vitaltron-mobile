@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -7,33 +8,36 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
+import { getTimeline, HealthRecord } from '../../services/healthRecords';
 import { colors } from '../../theme';
 
-const CATEGORIES = ['All', 'Antibiotics', 'Antacids', 'Inhalers', 'Antidiabetics'];
-
-const MEDICATIONS = [
-  { name: 'Amoxicillin', color: colors.primary },
-  { name: 'Vitamin C', color: colors.secondary },
-  { name: 'Aspirin', color: '#F59E0B' },
-  { name: 'Metformin', color: '#EF4444' },
-];
-
-const MONTHLY_GRID = [
-  { month: 'Jan', taken: [false, true, true, false] },
-  { month: 'Feb', taken: [false, true, true, false] },
-  { month: 'Mar', taken: [true, false, true, true] },
-  { month: 'Apr', taken: [true, true, false, true] },
-  { month: 'May', taken: [true, false, true, false] },
-  { month: 'Jun', taken: [true, true, true, true] },
-  { month: 'July', taken: [true, true, true, true] },
-  { month: 'Aug', taken: [true, true, true, true] },
-];
-
 export default function MedicationHistoryScreen() {
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [medications, setMedications] = useState<HealthRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadMeds = async () => {
+    try {
+      const res = await getTimeline({ type: 'MEDICATION' }).catch(() => ({ records: [] }));
+      setMedications(res.records || []);
+    } catch {
+      setMedications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadMeds();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadMeds();
+    }, [])
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -49,78 +53,52 @@ export default function MedicationHistoryScreen() {
         {/* Title */}
         <View style={styles.titleBox}>
           <Text style={styles.mainTitle}>Medication History</Text>
+          <Text style={styles.subTitle}>Prescriptions & Ingested Medicines</Text>
         </View>
 
-        {/* Category Horizontal Filter Pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScroll}
-        >
-          {CATEGORIES.map((cat) => (
-            <Pressable
-              key={cat}
-              style={[
-                styles.catPill,
-                activeCategory === cat && styles.catPillActive,
-              ]}
-              onPress={() => setActiveCategory(cat)}
-            >
-              <Text
-                style={[
-                  styles.catText,
-                  activeCategory === cat && styles.catTextActive,
-                ]}
-              >
-                {cat}
-              </Text>
+        {loading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginVertical: 30 }} />
+        ) : medications.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <MaterialCommunityIcons name="pill" size={48} color={colors.secondary} />
+            <Text style={styles.emptyTitle}>No Prescriptions Recorded</Text>
+            <Text style={styles.emptySub}>
+              Scan a paper prescription or doctor's note to extract your medications into your Health Passport.
+            </Text>
+            <Pressable style={styles.scanBtn} onPress={() => router.push('/(tabs)/scan')}>
+              <Ionicons name="camera-outline" size={18} color={colors.white} />
+              <Text style={styles.scanBtnText}>Scan Paper Prescription</Text>
             </Pressable>
-          ))}
-        </ScrollView>
-
-        {/* Legend Bar */}
-        <View style={styles.legendCard}>
-          <View style={styles.filterIconBox}>
-            <Ionicons name="options-outline" size={18} color={colors.darkText} />
           </View>
+        ) : (
+          medications.map((item) => (
+            <View key={item.id} style={styles.medCard}>
+              <View style={styles.cardHeaderRow}>
+                <View style={styles.pillIconBox}>
+                  <MaterialCommunityIcons name="pill" size={22} color={colors.primary} />
+                </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.legendScroll}>
-            {MEDICATIONS.map((med, i) => (
-              <View key={i} style={styles.legendItem}>
-                <View style={[styles.colorSquare, { backgroundColor: med.color }]} />
-                <Text style={styles.legendName}>{med.name}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.medTitle}>{item.title}</Text>
+                  <Text style={styles.medSub}>
+                    {item.facilityName ? `${item.facilityName} • ` : ''}
+                    {item.eventDate ? new Date(item.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Logged'}
+                  </Text>
+                </View>
+
+                <View style={styles.activeTag}>
+                  <Text style={styles.activeTagText}>ACTIVE</Text>
+                </View>
               </View>
-            ))}
-          </ScrollView>
-        </View>
 
-        {/* Monthly Compliance Matrix Grid Table */}
-        <View style={styles.gridTableCard}>
-          {MONTHLY_GRID.map((row, idx) => (
-            <View key={idx} style={styles.gridRow}>
-              <Text style={styles.monthName}>{row.month}</Text>
-
-              <View style={styles.colsRow}>
-                {row.taken.map((isTaken, cIdx) => (
-                  <View
-                    key={cIdx}
-                    style={[
-                      styles.cellBox,
-                      { borderColor: MEDICATIONS[cIdx].color },
-                      isTaken && { backgroundColor: MEDICATIONS[cIdx].color },
-                    ]}
-                  >
-                    <Ionicons
-                      name={isTaken ? 'checkmark' : 'close'}
-                      size={16}
-                      color={isTaken ? colors.white : '#94A3B8'}
-                    />
-                  </View>
-                ))}
-              </View>
+              {item.description ? (
+                <View style={styles.descBox}>
+                  <Text style={styles.descText}>{item.description}</Text>
+                </View>
+              ) : null}
             </View>
-          ))}
-        </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -161,101 +139,106 @@ const styles = StyleSheet.create({
     color: colors.darkText,
     letterSpacing: -0.5,
   },
-  categoryScroll: {
-    gap: 8,
-    paddingBottom: 16,
-  },
-  catPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: 14,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.softBackground,
-  },
-  catPillActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  catText: {
-    fontSize: 13,
+  subTitle: {
+    fontSize: 14,
     fontWeight: '700',
-    color: colors.darkText,
+    color: colors.textMuted,
+    marginTop: 4,
   },
-  catTextActive: {
-    color: colors.white,
-  },
-  legendCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderRadius: 18,
-    padding: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.softBackground,
-    gap: 12,
-  },
-  filterIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 12,
-    backgroundColor: colors.softBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  legendScroll: {
-    gap: 14,
-    alignItems: 'center',
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  colorSquare: {
-    width: 10,
-    height: 10,
-    borderRadius: 3,
-  },
-  legendName: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.darkText,
-  },
-  gridTableCard: {
+  medCard: {
     backgroundColor: colors.white,
     borderRadius: 22,
     padding: 18,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: colors.softBackground,
-    gap: 12,
+    shadowColor: colors.darkText,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  gridRow: {
+  cardHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
+    gap: 12,
   },
-  monthName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.darkText,
+  pillIconBox: {
     width: 44,
-  },
-  colsRow: {
-    flexDirection: 'row',
-    gap: 16,
-    flex: 1,
-    justifyContent: 'space-around',
-  },
-  cellBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    borderWidth: 1.5,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.softBackground,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  medTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.darkText,
+  },
+  medSub: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  activeTag: {
+    backgroundColor: colors.softBackground,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  activeTagText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.primary,
+  },
+  descBox: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.softBackground,
+  },
+  descText: {
+    fontSize: 13,
+    color: colors.darkText,
+    lineHeight: 18,
+  },
+  emptyCard: {
+    backgroundColor: colors.white,
+    borderRadius: 22,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.softBackground,
+    marginTop: 10,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.darkText,
+    marginTop: 12,
+  },
+  emptySub: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  scanBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 16,
+    marginTop: 16,
+  },
+  scanBtnText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

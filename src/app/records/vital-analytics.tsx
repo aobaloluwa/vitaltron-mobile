@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   Pressable,
   ScrollView,
@@ -8,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Svg, {
   Circle,
   Defs,
@@ -20,6 +21,7 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
+import { getTimeline, HealthRecord } from '../../services/healthRecords';
 import { colors } from '../../theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -28,6 +30,34 @@ const CHART_HEIGHT = 180;
 
 export default function VitalAnalyticsScreen() {
   const [activeFrame, setActiveFrame] = useState('Hourly');
+  const [vitals, setVitals] = useState<HealthRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadVitals = async () => {
+    try {
+      const res = await getTimeline({ type: 'VITAL_SIGN' }).catch(() => ({ records: [] }));
+      setVitals(res.records || []);
+    } catch {
+      setVitals([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadVitals();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadVitals();
+    }, [])
+  );
+
+  const latestVital = vitals[0];
+  const heartRateVal = latestVital
+    ? latestVital.description?.match(/\d{2,3}/)?.[0] || latestVital.title.match(/\d{2,3}/)?.[0] || '72'
+    : '72';
 
   // Smooth SVG Bezier Path for Heart Rate Waveform
   // Data points corresponding to: 10:00am (60), 11:00am (70), 12:00pm (72), 13:00pm (90)
@@ -53,7 +83,7 @@ export default function VitalAnalyticsScreen() {
           <Text style={styles.mainTitle}>Heart rate</Text>
 
           <View style={styles.readoutRow}>
-            <Text style={styles.bigValue}>72 <Text style={styles.unitText}>BPM</Text></Text>
+            <Text style={styles.bigValue}>{heartRateVal} <Text style={styles.unitText}>BPM</Text></Text>
 
             <View style={styles.statusPill}>
               <Ionicons name="heart" size={14} color={colors.primary} />

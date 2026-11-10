@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Alert,
   Modal,
@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppTextInput } from '../../components/ui/AppTextInput';
@@ -41,7 +41,7 @@ export default function HomeScreen() {
         setUserName(fullUser.displayName || 'Patient Identity');
       }
 
-      const timelineData = await getTimeline({ limit: 10 }).catch(() => ({ records: [] }));
+      const timelineData = await getTimeline({ limit: 20 }).catch(() => ({ records: [] }));
       setTimeline(timelineData.records || []);
     } catch {
       // Fallback
@@ -54,6 +54,12 @@ export default function HomeScreen() {
   useEffect(() => {
     void fetchData();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void fetchData();
+    }, [])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -172,151 +178,204 @@ export default function HomeScreen() {
 
             {/* Todays Medication Carousel */}
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Todays medication</Text>
+              <Text style={styles.sectionTitle}>Active Medications</Text>
               <Pressable onPress={() => router.push('/records/medication-history')}>
                 <Text style={styles.viewAllText}>View all &gt;</Text>
               </Pressable>
             </View>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.medsScroll}>
-              <View style={styles.medCard}>
-                <View style={styles.medCardTop}>
-                  <View style={styles.pillBadge}>
-                    <MaterialCommunityIcons name="pill" size={16} color={colors.primary} />
-                    <Text style={styles.pillBadgeText}>30</Text>
-                  </View>
+              {(() => {
+                const meds = timeline.filter((item) => item.type === 'MEDICATION');
+                if (meds.length === 0) {
+                  return (
+                    <Pressable style={styles.medCard} onPress={() => router.push('/(tabs)/scan')}>
+                      <View style={styles.medCardTop}>
+                        <View style={styles.pillBadge}>
+                          <MaterialCommunityIcons name="pill" size={16} color={colors.primary} />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 10 }}>
+                          <Text style={styles.medName}>No Prescriptions Logged</Text>
+                          <Text style={styles.medInstruction}>Scan a paper prescription to import</Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  );
+                }
 
-                  <View style={{ flex: 1, marginLeft: 10 }}>
-                    <Text style={styles.medName}>Sertraline 100mg</Text>
-                    <Text style={styles.medInstruction}>Take one tablet once a day</Text>
-                  </View>
+                return meds.map((med) => (
+                  <View key={med.id} style={styles.medCard}>
+                    <View style={styles.medCardTop}>
+                      <View style={styles.pillBadge}>
+                        <MaterialCommunityIcons name="pill" size={16} color={colors.primary} />
+                        <Text style={styles.pillBadgeText}>Rx</Text>
+                      </View>
 
-                  <Feather name="more-vertical" size={18} color={colors.textMuted} />
-                </View>
+                      <View style={{ flex: 1, marginLeft: 10 }}>
+                        <Text style={styles.medName}>{med.title}</Text>
+                        <Text style={styles.medInstruction} numberOfLines={2}>
+                          {med.description || 'Prescription logged in timeline'}
+                        </Text>
+                      </View>
 
-                <View style={styles.medCardFooter}>
-                  <Text style={styles.dueText}>Due to be taken at</Text>
-                  <View style={styles.dueTimePill}>
-                    <Feather name="clock" size={12} color={colors.darkText} />
-                    <Text style={styles.dueTimeText}>9:00am</Text>
+                      <Feather name="more-vertical" size={18} color={colors.textMuted} />
+                    </View>
+
+                    <View style={styles.medCardFooter}>
+                      <Text style={styles.dueText}>Ingested Record</Text>
+                      <View style={styles.dueTimePill}>
+                        <Ionicons name="checkmark-circle" size={12} color={colors.primary} />
+                        <Text style={styles.dueTimeText}>Active</Text>
+                      </View>
+                    </View>
                   </View>
-                </View>
-              </View>
+                ));
+              })()}
             </ScrollView>
 
             {/* My Health 2x2 Grid */}
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>My health</Text>
+              <Text style={styles.sectionTitle}>My Health Metrics</Text>
               <Pressable onPress={() => router.push('/records/lab-results')}>
                 <Text style={styles.viewAllText}>View all &gt;</Text>
               </Pressable>
             </View>
 
-            <View style={styles.grid2x2}>
-              {/* Card 1: Blood pressure */}
-              <View style={styles.healthTile}>
-                <View style={styles.tileHeader}>
-                  <View style={styles.tileIconCircle}>
-                    <Ionicons name="water-outline" size={16} color={colors.primary} />
+            {(() => {
+              const bpRecord = timeline.find(
+                (item) =>
+                  item.title.toLowerCase().includes('blood pressure') ||
+                  item.title.toLowerCase().includes('bp') ||
+                  (item.description && item.description.toLowerCase().includes('mmhg'))
+              );
+              const hrRecord = timeline.find(
+                (item) =>
+                  item.title.toLowerCase().includes('heart rate') ||
+                  item.title.toLowerCase().includes('pulse') ||
+                  (item.description && item.description.toLowerCase().includes('bpm'))
+              );
+              const labRecord = timeline.find((item) => item.type === 'LAB_TEST');
+
+              const bpVal = bpRecord
+                ? bpRecord.description?.match(/\d{2,3}\/\d{2,3}/)?.[0] || bpRecord.title.match(/\d{2,3}\/\d{2,3}/)?.[0] || '120/80'
+                : '120/80';
+
+              const hrVal = hrRecord
+                ? hrRecord.description?.match(/\d{2,3}/)?.[0] || hrRecord.title.match(/\d{2,3}/)?.[0] || '72'
+                : '72';
+
+              const labTitle = labRecord ? labRecord.title.replace(/^Lab Test:\s*/i, '') : 'Glucose';
+              const labVal = labRecord
+                ? labRecord.description?.match(/[\d\.]+\s*(?:mg\/dL|g\/dL|mmol\/L|u\/L|mEq\/L)/i)?.[0] || '95 mg/dL'
+                : '95 mg/dL';
+
+              return (
+                <View style={styles.grid2x2}>
+                  {/* Card 1: Blood pressure */}
+                  <View style={styles.healthTile}>
+                    <View style={styles.tileHeader}>
+                      <View style={styles.tileIconCircle}>
+                        <Ionicons name="water-outline" size={16} color={colors.primary} />
+                      </View>
+                      <Text style={styles.tileTitle}>Blood pressure</Text>
+                    </View>
+
+                    {/* Smooth Sine Wave Line Sparkline */}
+                    <View style={styles.sparklineBox}>
+                      <Svg width="100%" height="28" viewBox="0 0 120 28">
+                        <Path
+                          d="M 0 14 C 20 4, 40 24, 60 14 C 80 4, 100 24, 120 14"
+                          fill="none"
+                          stroke={colors.primary}
+                          strokeWidth="2.5"
+                        />
+                      </Svg>
+                    </View>
+
+                    <Text style={styles.tileBigVal}>{bpVal} <Text style={styles.tileUnit}>mmHg</Text></Text>
                   </View>
-                  <Text style={styles.tileTitle}>Blood pressure</Text>
-                </View>
 
-                {/* Smooth Sine Wave Line Sparkline */}
-                <View style={styles.sparklineBox}>
-                  <Svg width="100%" height="28" viewBox="0 0 120 28">
-                    <Path
-                      d="M 0 14 C 20 4, 40 24, 60 14 C 80 4, 100 24, 120 14"
-                      fill="none"
-                      stroke={colors.primary}
-                      strokeWidth="2.5"
-                    />
-                  </Svg>
-                </View>
+                  {/* Card 2: Heart rate (Brand Highlighted) */}
+                  <Pressable
+                    style={[styles.healthTile, styles.healthTileActive]}
+                    onPress={() => router.push('/records/vital-analytics')}
+                  >
+                    <View style={styles.tileHeader}>
+                      <View style={[styles.tileIconCircle, { backgroundColor: colors.white }]}>
+                        <Ionicons name="heart" size={16} color={colors.primary} />
+                      </View>
+                      <Text style={[styles.tileTitle, { color: colors.white }]}>Heart rate</Text>
+                    </View>
 
-                <Text style={styles.tileBigVal}>102/80 <Text style={styles.tileUnit}>mmHg</Text></Text>
-              </View>
+                    {/* Smooth Pulse Wave Sparkline */}
+                    <View style={styles.sparklineBox}>
+                      <Svg width="100%" height="28" viewBox="0 0 120 28">
+                        <Path
+                          d="M 0 18 L 30 18 L 40 4 L 50 24 L 60 10 L 70 18 L 120 18"
+                          fill="none"
+                          stroke={colors.white}
+                          strokeWidth="2.5"
+                        />
+                      </Svg>
+                    </View>
 
-              {/* Card 2: Heart rate (Brand Highlighted) */}
-              <Pressable
-                style={[styles.healthTile, styles.healthTileActive]}
-                onPress={() => router.push('/records/vital-analytics')}
-              >
-                <View style={styles.tileHeader}>
-                  <View style={[styles.tileIconCircle, { backgroundColor: colors.white }]}>
-                    <Ionicons name="heart" size={16} color={colors.primary} />
+                    <Text style={[styles.tileBigVal, { color: colors.white }]}>{hrVal} <Text style={[styles.tileUnit, { color: colors.secondary }]}>BPM</Text></Text>
+                  </Pressable>
+
+                  {/* Card 3: Lab Reading */}
+                  <Pressable style={styles.healthTile} onPress={() => router.push('/records/lab-results')}>
+                    <View style={styles.tileHeader}>
+                      <View style={styles.tileIconCircle}>
+                        <MaterialCommunityIcons name="flask-outline" size={16} color={colors.primary} />
+                      </View>
+                      <Text style={styles.tileTitle} numberOfLines={1}>{labTitle}</Text>
+                    </View>
+
+                    <View style={styles.sparklineBox}>
+                      <Svg width="100%" height="28" viewBox="0 0 120 28">
+                        <Path
+                          d="M 0 20 L 30 15 L 60 22 L 90 8 L 120 14"
+                          fill="none"
+                          stroke={colors.primary}
+                          strokeWidth="2.5"
+                        />
+                      </Svg>
+                    </View>
+
+                    <Text style={styles.tileBigVal}>{labVal}</Text>
+                  </Pressable>
+
+                  {/* Card 4: Clinical Summary */}
+                  <View style={styles.healthTile}>
+                    <View style={styles.tileHeader}>
+                      <View style={styles.tileIconCircle}>
+                        <Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} />
+                      </View>
+                      <Text style={styles.tileTitle}>Health Status</Text>
+                    </View>
+
+                    <View style={styles.donutSparklineBox}>
+                      <Svg width="40" height="40" viewBox="0 0 40 40">
+                        <Circle cx="20" cy="20" r="15" stroke={colors.softBackground} strokeWidth="5" fill="none" />
+                        <Circle
+                          cx="20"
+                          cy="20"
+                          r="15"
+                          stroke={colors.primary}
+                          strokeWidth="5"
+                          strokeDasharray="94"
+                          strokeDashoffset="10"
+                          strokeLinecap="round"
+                          fill="none"
+                        />
+                      </Svg>
+                    </View>
+
+                    <Text style={styles.tileBigVal}>{timeline.length} <Text style={styles.tileUnit}>Records</Text></Text>
                   </View>
-                  <Text style={[styles.tileTitle, { color: colors.white }]}>Heart rate</Text>
                 </View>
-
-                {/* Smooth Pulse Wave Sparkline */}
-                <View style={styles.sparklineBox}>
-                  <Svg width="100%" height="28" viewBox="0 0 120 28">
-                    <Path
-                      d="M 0 18 L 30 18 L 40 4 L 50 24 L 60 10 L 70 18 L 120 18"
-                      fill="none"
-                      stroke={colors.white}
-                      strokeWidth="2.5"
-                    />
-                  </Svg>
-                </View>
-
-                <Text style={[styles.tileBigVal, { color: colors.white }]}>72 <Text style={[styles.tileUnit, { color: colors.secondary }]}>BPM</Text></Text>
-              </Pressable>
-
-              {/* Card 3: Sleep */}
-              <View style={styles.healthTile}>
-                <View style={styles.tileHeader}>
-                  <View style={styles.tileIconCircle}>
-                    <Ionicons name="moon-outline" size={16} color={colors.primary} />
-                  </View>
-                  <Text style={styles.tileTitle}>Sleep</Text>
-                </View>
-
-                {/* Vertical Bar Sparkline */}
-                <View style={styles.barSparklineBox}>
-                  <Svg width="100%" height="28" viewBox="0 0 100 28">
-                    <Rect x="5" y="10" width="8" height="18" rx="4" fill={colors.primary} />
-                    <Rect x="25" y="4" width="8" height="24" rx="4" fill={colors.primary} />
-                    <Rect x="45" y="14" width="8" height="14" rx="4" fill={colors.secondary} />
-                    <Rect x="65" y="2" width="8" height="26" rx="4" fill={colors.primary} />
-                    <Rect x="85" y="8" width="8" height="20" rx="4" fill={colors.secondary} />
-                  </Svg>
-                </View>
-
-                <Text style={styles.tileBigVal}>9 <Text style={styles.tileUnit}>Hours</Text></Text>
-              </View>
-
-              {/* Card 4: Calories / Intake */}
-              <View style={styles.healthTile}>
-                <View style={styles.tileHeader}>
-                  <View style={styles.tileIconCircle}>
-                    <Ionicons name="flame-outline" size={16} color={colors.primary} />
-                  </View>
-                  <Text style={styles.tileTitle}>Calories</Text>
-                </View>
-
-                {/* SVG Donut Ring Sparkline */}
-                <View style={styles.donutSparklineBox}>
-                  <Svg width="40" height="40" viewBox="0 0 40 40">
-                    <Circle cx="20" cy="20" r="15" stroke={colors.softBackground} strokeWidth="5" fill="none" />
-                    <Circle
-                      cx="20"
-                      cy="20"
-                      r="15"
-                      stroke={colors.primary}
-                      strokeWidth="5"
-                      strokeDasharray="94"
-                      strokeDashoffset="28"
-                      strokeLinecap="round"
-                      fill="none"
-                    />
-                  </Svg>
-                </View>
-
-                <Text style={styles.tileBigVal}>342 <Text style={styles.tileUnit}>Kcal</Text></Text>
-              </View>
-            </View>
+              );
+            })()}
 
             {/* Universal Health Timeline Entries */}
             <View style={styles.timelineCard}>
