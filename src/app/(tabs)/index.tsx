@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Alert,
+  BackHandler,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -18,6 +19,7 @@ import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppTextInput } from '../../components/ui/AppTextInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
+import { logoutUser } from '../../services/auth';
 import { createHealthRecord, getTimeline, HealthRecord, RecordType } from '../../services/healthRecords';
 import { getUserProfile } from '../../services/users';
 import { colors } from '../../theme';
@@ -61,6 +63,28 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       void fetchData();
+
+      const onBackPress = () => {
+        Alert.alert(
+          'Log Out Account?',
+          'Are you sure you want to log out of your Vitaltron health identity session?',
+          [
+            { text: 'Cancel', style: 'cancel', onPress: () => {} },
+            {
+              text: 'Log Out',
+              style: 'destructive',
+              onPress: async () => {
+                await logoutUser();
+                router.replace('/welcome');
+              },
+            },
+          ]
+        );
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
     }, [])
   );
 

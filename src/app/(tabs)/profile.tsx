@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   RefreshControl,
@@ -23,6 +24,8 @@ export default function ProfileScreen() {
   const [biometricsEnabled, setBiometricsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const fetchProfileData = async () => {
     try {
@@ -62,8 +65,15 @@ export default function ProfileScreen() {
         text: 'Log Out',
         style: 'destructive',
         onPress: async () => {
-          await logoutUser();
-          router.replace('/welcome');
+          setLoggingOut(true);
+          try {
+            await logoutUser();
+          } catch {
+            // Ignore error
+          } finally {
+            setLoggingOut(false);
+            router.replace('/welcome');
+          }
         },
       },
     ]);
@@ -267,10 +277,16 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Logout Action Button */}
-            <Pressable style={styles.logoutRow} onPress={handleLogout}>
-              <Ionicons name="log-out-outline" size={20} color={colors.error} />
-              <Text style={styles.logoutText}>Log Out Account</Text>
+            {/* Logout Action Button with Active Loading Spinner */}
+            <Pressable style={styles.logoutRow} onPress={handleLogout} disabled={loggingOut}>
+              {loggingOut ? (
+                <ActivityIndicator size="small" color={colors.error} />
+              ) : (
+                <Ionicons name="log-out-outline" size={20} color={colors.error} />
+              )}
+              <Text style={styles.logoutText}>
+                {loggingOut ? 'Logging Out...' : 'Log Out Account'}
+              </Text>
             </Pressable>
           </>
         )}

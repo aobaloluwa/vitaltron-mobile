@@ -74,10 +74,40 @@ export async function apiRequest<T = any>(
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
 
   try {
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       ...options,
       headers,
     });
+
+    // Automatic Token Refresh on 401 Unauthorized to prevent random session logouts
+    if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh')) {
+      try {
+        const refreshToken = await getStoredRefreshToken();
+        if (refreshToken) {
+          const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+          });
+
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            if (refreshData.accessToken) {
+              await setStoredTokens(refreshData.accessToken, refreshData.refreshToken);
+
+              // Retry original request with fresh access token
+              headers['Authorization'] = `Bearer ${refreshData.accessToken}`;
+              response = await fetch(url, {
+                ...options,
+                headers,
+              });
+            }
+          }
+        }
+      } catch {
+        // Ignore refresh error
+      }
+    }
 
     const text = await response.text();
     let data: any;
