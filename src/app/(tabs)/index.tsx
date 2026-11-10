@@ -485,7 +485,9 @@ export default function HomeScreen() {
               <View style={styles.modalDetailRow}>
                 <Text style={styles.modalDetailLabel}>Facility / Provider:</Text>
                 <Text style={styles.modalDetailVal}>
-                  {selectedRecordItem.facilityName || 'Clinical Facility'}
+                  {selectedRecordItem.facilityName ||
+                    selectedRecordItem.description?.match(/(?:Hospital|Facility):\s*([^\n|]+)/i)?.[1]?.trim() ||
+                    'Not Specified'}
                 </Text>
               </View>
 

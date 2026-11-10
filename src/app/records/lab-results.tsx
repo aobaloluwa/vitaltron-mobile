@@ -83,11 +83,11 @@ export default function LabResultsScreen() {
     const rangeMatch = rawDesc.match(/(?:Reference Range|Reference):\s*([^\n|]+)/i);
     const refRange = rangeMatch ? rangeMatch[1].trim() : 'Standard Reference';
 
-    // Extract Facility & Doctor dynamically from description or record (no hardcoded fallbacks)
+    // Extract Facility & Doctor dynamically from record or description (no fallback defaults)
     const hospitalMatch = rawDesc.match(/Hospital:\s*([^\n|]+)/i) || rawDesc.match(/Facility:\s*([^\n|]+)/i);
     const doctorMatch = rawDesc.match(/Doctor:\s*([^\n|]+)/i);
 
-    const facilityStr = hospitalMatch ? hospitalMatch[1].trim() : (item.facilityName || 'Clinical Diagnostic Lab');
+    const facilityStr = item.facilityName || (hospitalMatch ? hospitalMatch[1].trim() : 'Not Specified');
     const doctorStr = doctorMatch ? doctorMatch[1].trim() : 'Attending Physician';
 
     return {

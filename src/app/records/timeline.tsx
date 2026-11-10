@@ -294,7 +294,9 @@ export default function FullTimelineScreen() {
               <View style={styles.modalDetailRow}>
                 <Text style={styles.modalDetailLabel}>Facility / Provider:</Text>
                 <Text style={styles.modalDetailVal}>
-                  {selectedRecord.facilityName || 'Clinical Facility'}
+                  {selectedRecord.facilityName ||
+                    selectedRecord.description?.match(/(?:Hospital|Facility):\s*([^\n|]+)/i)?.[1]?.trim() ||
+                    'Not Specified'}
                 </Text>
               </View>
 
