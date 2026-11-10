@@ -25,6 +25,7 @@ export default function HomeScreen() {
   const [timeline, setTimeline] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedRecordItem, setSelectedRecordItem] = useState<HealthRecord | null>(null);
 
   // Add Record Modal
   const [modalVisible, setModalVisible] = useState(false);
@@ -381,9 +382,8 @@ export default function HomeScreen() {
             <View style={styles.timelineCard}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={styles.sectionTitle}>Universal Timeline</Text>
-                <Pressable style={styles.addPillBtn} onPress={() => setModalVisible(true)}>
-                  <Ionicons name="add" size={16} color={colors.white} />
-                  <Text style={styles.addPillText}>Add</Text>
+                <Pressable onPress={() => router.push('/records/timeline')}>
+                  <Text style={styles.viewAllText}>See all &gt;</Text>
                 </Pressable>
               </View>
 
@@ -391,12 +391,12 @@ export default function HomeScreen() {
                 <View style={styles.emptyBox}>
                   <Ionicons name="medical-outline" size={38} color={colors.secondary} />
                   <Text style={styles.emptyTitle}>No Timeline Entries</Text>
-                  <Text style={styles.emptySub}>Tap '+ Add' or use Scan to ingest reports.</Text>
+                  <Text style={styles.emptySub}>Use Scan to ingest medical reports.</Text>
                 </View>
               ) : (
-                timeline.map((item, idx) => (
+                timeline.slice(0, 5).map((item, idx) => (
                   <View key={item.id}>
-                    <View style={styles.timelineRow}>
+                    <Pressable style={styles.timelineRow} onPress={() => setSelectedRecordItem(item)}>
                       <View style={styles.itemIconBox}>
                         <MaterialCommunityIcons
                           name={
@@ -404,6 +404,8 @@ export default function HomeScreen() {
                               ? 'pill'
                               : item.type === 'LAB_TEST'
                               ? 'flask-outline'
+                              : item.type === 'VITAL_SIGN'
+                              ? 'heart-pulse'
                               : 'stethoscope'
                           }
                           size={20}
@@ -413,15 +415,19 @@ export default function HomeScreen() {
 
                       <View style={{ flex: 1 }}>
                         <Text style={styles.itemTitle}>{item.title}</Text>
-                        <Text style={styles.itemSub}>{item.facilityName ? `${item.facilityName} • ` : ''}{item.type}</Text>
+                        <Text style={styles.itemSub} numberOfLines={1}>
+                          {item.facilityName ? `${item.facilityName} • ` : ''}{item.type.replace('_', ' ')}
+                        </Text>
                       </View>
 
                       <View style={styles.badgePill}>
-                        <Text style={styles.badgeText}>{item.verificationStatus || 'VERIFIED'}</Text>
+                        <Text style={styles.badgeText}>
+                          {item.verificationStatus === 'PATIENT_CONFIRMED' ? 'CONFIRMED' : item.verificationStatus || 'VERIFIED'}
+                        </Text>
                       </View>
-                    </View>
+                    </Pressable>
 
-                    {idx < timeline.length - 1 && <View style={styles.divider} />}
+                    {idx < Math.min(timeline.length, 5) - 1 && <View style={styles.divider} />}
                   </View>
                 ))
               )}
@@ -429,6 +435,80 @@ export default function HomeScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Record Detail Inspection Modal */}
+      {selectedRecordItem && (
+        <Modal visible={!!selectedRecordItem} animationType="fade" transparent={true}>
+          <View style={styles.detailModalOverlay}>
+            <View style={styles.detailModalCard}>
+              <View style={styles.modalTitleRow}>
+                <View style={styles.modalTitleBox}>
+                  <MaterialCommunityIcons
+                    name={
+                      selectedRecordItem.type === 'MEDICATION'
+                        ? 'pill'
+                        : selectedRecordItem.type === 'LAB_TEST'
+                        ? 'flask-outline'
+                        : selectedRecordItem.type === 'VITAL_SIGN'
+                        ? 'heart-pulse'
+                        : 'stethoscope'
+                    }
+                    size={24}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.modalTitleText} numberOfLines={2}>
+                    {selectedRecordItem.title}
+                  </Text>
+                </View>
+                <Pressable onPress={() => setSelectedRecordItem(null)} hitSlop={10}>
+                  <Ionicons name="close" size={24} color={colors.darkText} />
+                </Pressable>
+              </View>
+
+              <View style={styles.modalTypePill}>
+                <Text style={styles.modalTypePillText}>{selectedRecordItem.type.replace('_', ' ')}</Text>
+                <View style={styles.verifiedTag}>
+                  <Ionicons name="checkmark-circle" size={13} color={colors.primary} />
+                  <Text style={styles.verifiedTagText}>
+                    {selectedRecordItem.verificationStatus || 'PATIENT_CONFIRMED'}
+                  </Text>
+                </View>
+              </View>
+
+              {selectedRecordItem.description ? (
+                <View style={styles.modalDescContainer}>
+                  <Text style={styles.modalDescLabel}>Clinical Details / Findings:</Text>
+                  <Text style={styles.modalDescVal}>{selectedRecordItem.description}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.modalDetailRow}>
+                <Text style={styles.modalDetailLabel}>Facility / Provider:</Text>
+                <Text style={styles.modalDetailVal}>
+                  {selectedRecordItem.facilityName || 'GNU Solidario Hospital'}
+                </Text>
+              </View>
+
+              <View style={styles.modalDetailRow}>
+                <Text style={styles.modalDetailLabel}>Event Date:</Text>
+                <Text style={styles.modalDetailVal}>
+                  {selectedRecordItem.eventDate
+                    ? new Date(selectedRecordItem.eventDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : 'Recent'}
+                </Text>
+              </View>
+
+              <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedRecordItem(null)}>
+                <Text style={styles.modalCloseBtnText}>Close Record Details</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+      )}
 
       {/* Add Health Record Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
@@ -845,5 +925,110 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     color: colors.darkText,
+  },
+  detailModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  detailModalCard: {
+    width: '100%',
+    maxWidth: 480,
+    backgroundColor: colors.white,
+    borderRadius: 24,
+    padding: 22,
+    gap: 12,
+  },
+  modalTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  modalTitleBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  modalTitleText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.darkText,
+    flex: 1,
+  },
+  modalTypePill: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: colors.softBackground,
+    borderRadius: 14,
+  },
+  modalTypePillText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.darkText,
+  },
+  verifiedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  verifiedTagText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.primary,
+  },
+  modalDescContainer: {
+    backgroundColor: '#FAF8FC',
+    borderRadius: 14,
+    padding: 12,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.softBackground,
+  },
+  modalDescLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+  },
+  modalDescVal: {
+    fontSize: 13,
+    color: colors.darkText,
+    lineHeight: 18,
+  },
+  modalDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.softBackground,
+  },
+  modalDetailLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textMuted,
+  },
+  modalDetailVal: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.darkText,
+  },
+  modalCloseBtn: {
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  modalCloseBtnText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
