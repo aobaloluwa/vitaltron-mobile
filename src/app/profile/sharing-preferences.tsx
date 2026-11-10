@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -39,14 +38,14 @@ export default function SharingPreferencesScreen() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Grant Generator Form State
+  // Form State
   const [recipientName, setRecipientName] = useState('');
   const [passcode, setPasscode] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<RecordType[]>([]);
   const [expiryHours, setExpiryHours] = useState(24);
 
-  // Generated Result Modal
-  const [createdResult, setCreatedResult] = useState<CreateAccessGrantResult | null>(null);
+  // Active Generated Result Display State
+  const [activeGrantResult, setActiveGrantResult] = useState<CreateAccessGrantResult | null>(null);
 
   const fetchGrants = async () => {
     try {
@@ -60,7 +59,10 @@ export default function SharingPreferencesScreen() {
   };
 
   useEffect(() => {
-    void fetchGrants();
+    async function init() {
+      await fetchGrants();
+    }
+    void init();
   }, []);
 
   const toggleRecordType = (type: RecordType) => {
@@ -79,13 +81,14 @@ export default function SharingPreferencesScreen() {
         expiresInHours: expiryHours,
       });
 
-      setCreatedResult(result);
+      setActiveGrantResult(result);
       setRecipientName('');
       setPasscode('');
       setSelectedTypes([]);
+      Alert.alert('QR Code Ready', 'Your new Point-of-Care QR Code & Share Link is ready below.');
       void fetchGrants();
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to create access grant.');
+      Alert.alert('Error', error.message || 'Failed to generate access QR code.');
     } finally {
       setSubmitting(false);
     }
@@ -103,6 +106,9 @@ export default function SharingPreferencesScreen() {
           onPress: async () => {
             try {
               await revokeAccessGrant(id);
+              if (activeGrantResult?.grantId === id) {
+                setActiveGrantResult(null);
+              }
               Alert.alert('Access Revoked', 'Doctor/hospital access grant has been revoked immediately.');
               void fetchGrants();
             } catch (err: any) {
@@ -126,19 +132,73 @@ export default function SharingPreferencesScreen() {
           <AppLogo size="small" showText={false} />
         </View>
 
-        {/* Generate Access Grant & QR Code Section */}
+        {/* 1. PROMINENT LIVE QR CODE & ACCESS LINK CARD (On Page directly, no popup!) */}
+        <View style={styles.qrMainHeroCard}>
+          <View style={styles.heroBadgeRow}>
+            <Ionicons name="shield-checkmark" size={16} color={colors.white} />
+            <Text style={styles.heroBadgeText}>POINT-OF-CARE QR CODE</Text>
+          </View>
+
+          <View style={styles.qrBoxWrapper}>
+            <MaterialCommunityIcons name="qrcode-scan" size={120} color={colors.primary} />
+          </View>
+
+          <Text style={styles.heroTitleText}>
+            {activeGrantResult?.recipientName || 'Point-of-Care Health Access'}
+          </Text>
+          <Text style={styles.heroSubText}>
+            Doctors or hospitals anywhere in the world can scan this QR code to view your verified health records.
+          </Text>
+
+          {activeGrantResult?.expiresAt && (
+            <View style={styles.expiryTag}>
+              <Ionicons name="time-outline" size={14} color={colors.primary} />
+              <Text style={styles.expiryTagText}>
+                Expires: {new Date(activeGrantResult.expiresAt).toLocaleString()}
+              </Text>
+            </View>
+          )}
+
+          {/* Action Buttons */}
+          <View style={styles.heroActionsRow}>
+            {activeGrantResult ? (
+              <Pressable
+                style={styles.openPortalBtn}
+                onPress={() => router.push(`/share?token=${activeGrantResult.shareableToken}`)}
+              >
+                <Ionicons name="open-outline" size={16} color={colors.white} />
+                <Text style={styles.openPortalBtnText}>Test & Open Share Link</Text>
+              </Pressable>
+            ) : null}
+
+            <Pressable
+              style={styles.copyLinkBtn}
+              onPress={() => {
+                if (activeGrantResult) {
+                  Alert.alert('Link Copied', `Share URL:\n${activeGrantResult.shareableUrl}`);
+                } else {
+                  Alert.alert('Notice', 'Fill in options below and tap "Generate QR Code" to activate your custom share link.');
+                }
+              }}
+            >
+              <Ionicons name="copy-outline" size={16} color={colors.darkText} />
+              <Text style={styles.copyLinkBtnText}>Copy Link Address</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* 2. CUSTOMIZE / GENERATE ACCESS GRANT FORM */}
         <View style={styles.cardSection}>
           <View style={styles.cardHeaderRow}>
-            <Ionicons name="qr-code-outline" size={24} color={colors.primary} />
+            <Ionicons name="options-outline" size={22} color={colors.primary} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>Generate Point-of-Care QR Code</Text>
+              <Text style={styles.cardTitle}>Customize Sharing Permissions</Text>
               <Text style={styles.cardSub}>
-                Allow doctors or hospitals anywhere in the world to access your records securely without re-doing lab tests.
+                Set recipient doctor name, select allowed information types, and set security PIN.
               </Text>
             </View>
           </View>
 
-          {/* Form Inputs */}
           <View style={styles.formGap}>
             <AppTextInput
               label="Doctor / Hospital Name or Email"
@@ -218,7 +278,7 @@ export default function SharingPreferencesScreen() {
             </View>
 
             <PrimaryButton
-              title="Generate Sharing QR Code & Link"
+              title="Generate New QR Code & Link"
               onPress={handleGenerateGrant}
               loading={submitting}
               variant="primary"
@@ -226,7 +286,7 @@ export default function SharingPreferencesScreen() {
           </View>
         </View>
 
-        {/* Active Access Grants & Revocation Section */}
+        {/* 3. ACTIVE DOCTOR ACCESS GRANTS & REVOCATION LIST */}
         <View style={styles.cardSection}>
           <Text style={styles.cardTitle}>Active Point-of-Care Grants</Text>
           <Text style={styles.cardSub}>Revoke access for any clinician or hospital at any time.</Text>
@@ -299,68 +359,6 @@ export default function SharingPreferencesScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* Generated QR Code & Link Modal */}
-      {createdResult && (
-        <Modal visible={!!createdResult} animationType="slide" transparent={true}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalCard}>
-              <View style={styles.modalHeaderRow}>
-                <View style={styles.modalTitleRow}>
-                  <Ionicons name="qr-code" size={24} color={colors.primary} />
-                  <Text style={styles.modalTitle}>Point-of-Care QR Code Ready</Text>
-                </View>
-                <Pressable onPress={() => setCreatedResult(null)}>
-                  <Ionicons name="close" size={24} color={colors.darkText} />
-                </Pressable>
-              </View>
-
-              {/* QR Payload Visual Box */}
-              <View style={styles.qrDisplayCard}>
-                <MaterialCommunityIcons name="qrcode-scan" size={110} color={colors.primary} />
-                <Text style={styles.qrRecipientText}>
-                  {createdResult.recipientName || 'Point-of-Care Access Link'}
-                </Text>
-                <Text style={styles.qrExpiresText}>
-                  Valid until {new Date(createdResult.expiresAt).toLocaleString()}
-                </Text>
-              </View>
-
-              {createdResult.requiresPasscode && (
-                <View style={styles.passcodeInfoBox}>
-                  <Ionicons name="key" size={16} color={colors.primary} />
-                  <Text style={styles.passcodeInfoText}>
-                    Security PIN Protected. The clinician will be prompted to enter your PIN.
-                  </Text>
-                </View>
-              )}
-
-              {/* Share Link Actions */}
-              <View style={{ gap: 10 }}>
-                <PrimaryButton
-                  title="Open Clinical Access Link"
-                  onPress={() => {
-                    const token = createdResult.shareableToken;
-                    setCreatedResult(null);
-                    router.push(`/share?token=${token}`);
-                  }}
-                  variant="primary"
-                />
-
-                <Pressable
-                  style={styles.copyBtn}
-                  onPress={() => {
-                    Alert.alert('Link Copied', `Share link copied:\n${createdResult.shareableUrl}`);
-                  }}
-                >
-                  <Ionicons name="copy-outline" size={16} color={colors.darkText} />
-                  <Text style={styles.copyBtnText}>Copy Link Address</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
     </SafeAreaView>
   );
 }
@@ -394,6 +392,107 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
+    color: colors.darkText,
+  },
+  qrMainHeroCard: {
+    backgroundColor: colors.white,
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.softBackground,
+    shadowColor: colors.darkText,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  heroBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  heroBadgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  qrBoxWrapper: {
+    backgroundColor: colors.softBackground,
+    borderRadius: 24,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  heroTitleText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.darkText,
+    textAlign: 'center',
+  },
+  heroSubText: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 18,
+    maxWidth: 320,
+  },
+  expiryTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.softBackground,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  expiryTagText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  heroActionsRow: {
+    width: '100%',
+    gap: 10,
+    marginTop: 18,
+  },
+  openPortalBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 13,
+    borderRadius: 16,
+  },
+  openPortalBtnText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  copyLinkBtn: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.softBackground,
+    paddingVertical: 12,
+    borderRadius: 16,
+  },
+  copyLinkBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
     color: colors.darkText,
   },
   cardSection: {
@@ -565,86 +664,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: colors.error,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 440,
-    backgroundColor: colors.white,
-    borderRadius: 24,
-    padding: 22,
-    gap: 14,
-  },
-  modalHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modalTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.darkText,
-    flex: 1,
-  },
-  qrDisplayCard: {
-    backgroundColor: colors.softBackground,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    gap: 8,
-  },
-  qrRecipientText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.darkText,
-    marginTop: 4,
-  },
-  qrExpiresText: {
-    fontSize: 12,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  passcodeInfoBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FAF8FC',
-    borderRadius: 12,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: colors.softBackground,
-  },
-  passcodeInfoText: {
-    fontSize: 12,
-    color: colors.darkText,
-    flex: 1,
-  },
-  copyBtn: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.softBackground,
-    paddingVertical: 12,
-    borderRadius: 16,
-  },
-  copyBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.darkText,
   },
 });
