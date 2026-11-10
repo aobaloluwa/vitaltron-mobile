@@ -294,7 +294,7 @@ export default function FullTimelineScreen() {
               <View style={styles.modalDetailRow}>
                 <Text style={styles.modalDetailLabel}>Facility / Provider:</Text>
                 <Text style={styles.modalDetailVal}>
-                  {selectedRecord.facilityName || 'GNU Solidario Hospital'}
+                  {selectedRecord.facilityName || 'Clinical Facility'}
                 </Text>
               </View>
 

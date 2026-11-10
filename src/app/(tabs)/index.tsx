@@ -485,7 +485,7 @@ export default function HomeScreen() {
               <View style={styles.modalDetailRow}>
                 <Text style={styles.modalDetailLabel}>Facility / Provider:</Text>
                 <Text style={styles.modalDetailVal}>
-                  {selectedRecordItem.facilityName || 'GNU Solidario Hospital'}
+                  {selectedRecordItem.facilityName || 'Clinical Facility'}
                 </Text>
               </View>
 
