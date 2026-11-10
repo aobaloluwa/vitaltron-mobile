@@ -11,6 +11,7 @@ export type RecordType =
 
 export type VerificationStatus =
   | 'UNVERIFIED'
+  | 'PATIENT_CONFIRMED'
   | 'PATIENT_ASSERTED'
   | 'CLINICIAN_VERIFIED'
   | 'DISPUTED';

@@ -203,14 +203,13 @@ export default function ScanScreen() {
         `"${item.title}" has been saved to your Universal Health Timeline.`
       );
       void fetchDocs();
-    } catch {
+    } catch (error: any) {
       setEditableEntities((prev) =>
         prev.map((e, idx) =>
-          idx === index ? { ...e, isConfirmed: true, confirming: false } : e
+          idx === index ? { ...e, confirming: false } : e
         )
       );
-      Alert.alert('Saved', `"${item.title}" confirmed.`);
-      void fetchDocs();
+      Alert.alert('Save Failed', error.message || `Unable to save "${item.title}" to health records.`);
     }
   };
 
