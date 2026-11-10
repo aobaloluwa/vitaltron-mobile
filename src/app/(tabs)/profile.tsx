@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { logoutUser, User } from '../../services/auth';
@@ -51,6 +52,20 @@ export default function ProfileScreen() {
   useEffect(() => {
     void fetchProfileData();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void fetchProfileData();
+
+      const onBackPress = () => {
+        router.replace('/(tabs)');
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);

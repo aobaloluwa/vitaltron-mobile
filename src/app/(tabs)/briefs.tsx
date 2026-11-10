@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   Image,
   Pressable,
   RefreshControl,
@@ -94,6 +95,14 @@ export default function SharingTabScreen() {
   useFocusEffect(
     useCallback(() => {
       void fetchSharingData();
+
+      const onBackPress = () => {
+        router.replace('/(tabs)');
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
     }, [])
   );
 

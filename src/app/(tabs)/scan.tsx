@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -14,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useFocusEffect } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -72,6 +74,18 @@ export default function ScanScreen() {
   useEffect(() => {
     void fetchDocs();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        router.replace('/(tabs)');
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
