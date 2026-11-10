@@ -215,39 +215,53 @@ export default function SharingTabScreen() {
             </View>
           ) : (
             <>
-              {/* 1. PROMINENT LIVE QR CODE & ACCESS LINK CARD (Directly on page) */}
+              {/* 1. HIGH-END BRAND-COLORED POINT-OF-CARE QR CODE CARD */}
               <View style={styles.qrMainHeroCard}>
                 <View style={styles.heroBadgeRow}>
-                  <Ionicons name="qr-code" size={16} color={colors.white} />
-                  <Text style={styles.heroBadgeText}>LIVE POINT-OF-CARE QR CODE</Text>
+                  <Ionicons name="sparkles" size={14} color={colors.white} />
+                  <Text style={styles.heroBadgeText}>⚡ VITALTRON POINT-OF-CARE QR PASSPORT</Text>
                 </View>
 
-                <View style={styles.qrBoxWrapper}>
-                  <Image
-                    source={{
-                      uri:
-                        activeGrantResult?.qrCodeImageUrl ||
-                        `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-                          activeGrantResult?.shareableUrl || 'http://localhost:8081/share'
-                        )}`,
-                    }}
-                    style={{ width: 170, height: 170, borderRadius: 12 }}
-                    resizeMode="contain"
-                  />
+                {/* Target Scanner Frame with Brackets */}
+                <View style={styles.qrTargetContainer}>
+                  <View style={[styles.cornerBracket, styles.bracketTopLeft]} />
+                  <View style={[styles.cornerBracket, styles.bracketTopRight]} />
+                  <View style={[styles.cornerBracket, styles.bracketBottomLeft]} />
+                  <View style={[styles.cornerBracket, styles.bracketBottomRight]} />
+
+                  <View style={styles.qrInnerFrame}>
+                    <Image
+                      source={{
+                        uri:
+                          activeGrantResult?.qrCodeImageUrl ||
+                          `https://api.qrserver.com/v1/create-qr-code/?size=350x350&color=5B-2A-86&bgcolor=ED-E7-F6&qzone=2&data=${encodeURIComponent(
+                            activeGrantResult?.shareableUrl || 'http://localhost:8081/share'
+                          )}`,
+                      }}
+                      style={styles.qrImage}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.laserScanLine} />
+                  </View>
+                </View>
+
+                <View style={styles.statusLivePill}>
+                  <View style={styles.liveDot} />
+                  <Text style={styles.statusLiveText}>SCANNER READY FOR CLINICIANS</Text>
                 </View>
 
                 <Text style={styles.heroTitleText}>
-                  {activeGrantResult?.recipientName || 'Universal Doctor / Hospital Access'}
+                  {activeGrantResult?.recipientName || 'Universal Doctor & Hospital Access'}
                 </Text>
                 <Text style={styles.heroSubText}>
-                  Hospitals or clinicians anywhere in the world can scan this QR code to view your verified health profile securely.
+                  Hospitals or clinicians anywhere in the world can scan this QR code to view your verified health records securely.
                 </Text>
 
                 {activeGrantResult?.expiresAt && (
                   <View style={styles.expiryTag}>
                     <Ionicons name="time-outline" size={14} color={colors.primary} />
                     <Text style={styles.expiryTagText}>
-                      Expires: {new Date(activeGrantResult.expiresAt).toLocaleString()}
+                      Valid until {new Date(activeGrantResult.expiresAt).toLocaleString()}
                     </Text>
                   </View>
                 )}
@@ -260,7 +274,7 @@ export default function SharingTabScreen() {
                       onPress={() => router.push(`/share?token=${activeGrantResult.shareableToken}`)}
                     >
                       <Ionicons name="open-outline" size={16} color={colors.white} />
-                      <Text style={styles.openPortalBtnText}>Test & Open Share Link</Text>
+                      <Text style={styles.openPortalBtnText}>Test & Open Share Portal</Text>
                     </Pressable>
                   ) : null}
 
@@ -539,18 +553,18 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   qrMainHeroCard: {
-    backgroundColor: colors.white,
+    backgroundColor: '#FBF8FE',
     borderRadius: 24,
     padding: 24,
     marginBottom: 20,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.softBackground,
-    shadowColor: colors.darkText,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 3,
+    borderWidth: 1.5,
+    borderColor: '#E9D8FA',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   heroBadgeRow: {
     flexDirection: 'row',
@@ -567,13 +581,94 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
   },
-  qrBoxWrapper: {
-    backgroundColor: colors.softBackground,
-    borderRadius: 24,
-    padding: 20,
+  qrTargetContainer: {
+    position: 'relative',
+    padding: 14,
+    marginBottom: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+  },
+  qrInnerFrame: {
+    backgroundColor: '#EDE7F6',
+    borderRadius: 20,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    borderWidth: 2,
+    borderColor: '#C8A2E8',
+  },
+  qrImage: {
+    width: 170,
+    height: 170,
+    borderRadius: 12,
+  },
+  laserScanLine: {
+    position: 'absolute',
+    top: '50%',
+    left: 10,
+    right: 10,
+    height: 2,
+    backgroundColor: colors.primary,
+    opacity: 0.6,
+  },
+  cornerBracket: {
+    position: 'absolute',
+    width: 22,
+    height: 22,
+    borderColor: colors.primary,
+  },
+  bracketTopLeft: {
+    top: 0,
+    left: 0,
+    borderTopWidth: 3.5,
+    borderLeftWidth: 3.5,
+    borderTopLeftRadius: 8,
+  },
+  bracketTopRight: {
+    top: 0,
+    right: 0,
+    borderTopWidth: 3.5,
+    borderRightWidth: 3.5,
+    borderTopRightRadius: 8,
+  },
+  bracketBottomLeft: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: 3.5,
+    borderLeftWidth: 3.5,
+    borderBottomLeftRadius: 8,
+  },
+  bracketBottomRight: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: 3.5,
+    borderRightWidth: 3.5,
+    borderBottomRightRadius: 8,
+  },
+  statusLivePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+  },
+  statusLiveText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#059669',
+    letterSpacing: 0.5,
   },
   heroTitleText: {
     fontSize: 20,
