@@ -37,11 +37,17 @@ export interface ConfirmEntityDto {
 
 export async function uploadDocument(fileUri: string, fileName: string, mimeType: string): Promise<DocumentItem> {
   const formData = new FormData();
+  const cleanFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const cleanType = mimeType || 'image/jpeg';
+
   formData.append('file', {
     uri: fileUri,
-    name: fileName,
-    type: mimeType,
+    name: cleanFileName,
+    type: cleanType,
   } as any);
+
+  formData.append('fileName', cleanFileName);
+  formData.append('fileType', cleanType);
 
   return apiRequest('/documents/upload', {
     method: 'POST',

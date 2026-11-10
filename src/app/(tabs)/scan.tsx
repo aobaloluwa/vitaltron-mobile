@@ -17,7 +17,7 @@ import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
 import { AppTextInput } from '../../components/ui/AppTextInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { confirmEntity, DocumentEntity, DocumentItem, getDocuments, uploadDocument } from '../../services/documents';
+import { confirmEntity, DocumentItem, getDocuments, uploadDocument } from '../../services/documents';
 import { RecordType } from '../../services/healthRecords';
 import { colors } from '../../theme';
 
@@ -71,12 +71,13 @@ export default function ScanScreen() {
     if (imageUri) setScannedImageUri(imageUri);
     setCurrentDoc(doc);
 
-    const entities = (doc.extractedEntities || doc.entities || []).map((e) => ({
+    const rawList = doc.extractedEntities || doc.entities || [];
+    const entities = rawList.map((e) => ({
       id: e.id,
-      title: e.extractedTitle || e.title || 'Medical Finding',
+      title: e.extractedTitle || e.title || doc.fileName || 'Medical Finding',
       recordType: e.recordType || 'LAB_TEST',
       description: e.description || '',
-      confidenceScore: e.confidenceScore || 0.92,
+      confidenceScore: e.confidenceScore || 0.94,
       isConfirmed: !!e.isConfirmed,
     }));
 
@@ -92,42 +93,15 @@ export default function ScanScreen() {
       const uploadedDoc = await uploadDocument(fileUri, fileName, mimeType);
       if (uploadedDoc) {
         openAnalysisModal(uploadedDoc, fileUri);
-      } else {
-        void fetchDocs();
       }
+      void fetchDocs();
     } catch (error: any) {
-      // Fallback local mock document for seamless UX if offline
-      const mockDoc: DocumentItem = {
-        id: `mock-${Date.now()}`,
-        userId: 'me',
-        fileName,
-        fileUrl: fileUri,
-        createdAt: new Date().toISOString(),
-        extractedEntities: [
-          {
-            id: `entity-1-${Date.now()}`,
-            documentId: 'doc-1',
-            recordType: 'LAB_TEST',
-            extractedTitle: 'Complete Metabolic & Blood Panel',
-            description: 'Hemoglobin: 14.2 g/dL (Normal), Potassium: 4.4 mEq/L, Total Cholesterol: 185 mg/dL',
-            confidenceScore: 0.96,
-            isConfirmed: false,
-          },
-          {
-            id: `entity-2-${Date.now()}`,
-            documentId: 'doc-1',
-            recordType: 'MEDICATION',
-            extractedTitle: 'Amoxicillin 500mg Oral Capsule',
-            description: 'Take 1 capsule orally twice daily with meals for 7 days.',
-            confidenceScore: 0.92,
-            isConfirmed: false,
-          },
-        ],
-      };
-      openAnalysisModal(mockDoc, fileUri);
+      Alert.alert(
+        'Upload Error',
+        error.message || 'Failed to upload document. Please check your network connection.'
+      );
     } finally {
       setScanning(false);
-      void fetchDocs();
     }
   };
 
@@ -197,7 +171,6 @@ export default function ScanScreen() {
     const item = editableEntities[index];
     if (!item || item.isConfirmed) return;
 
-    // Set entity confirming loader
     setEditableEntities((prev) =>
       prev.map((e, idx) => (idx === index ? { ...e, confirming: true } : e))
     );
