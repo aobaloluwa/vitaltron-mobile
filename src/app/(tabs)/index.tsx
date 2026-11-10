@@ -265,9 +265,16 @@ export default function HomeScreen() {
                 ? hrRecord.description?.match(/\d{2,3}/)?.[0] || hrRecord.title.match(/\d{2,3}/)?.[0] || '72'
                 : '72';
 
-              const labTitle = labRecord ? labRecord.title.replace(/^Lab Test:\s*/i, '') : 'Glucose';
+              const labTitle = labRecord
+                ? labRecord.title
+                    .replace(/^Lab Test:\s*/i, '')
+                    .replace(/\[Below Range\]/gi, '')
+                    .replace(/\[Above Range\]/gi, '')
+                    .trim()
+                : 'Glucose';
+
               const labVal = labRecord
-                ? labRecord.description?.match(/[\d\.]+\s*(?:mg\/dL|g\/dL|mmol\/L|u\/L|mEq\/L)/i)?.[0] || '95 mg/dL'
+                ? labRecord.description?.match(/[\d\.]+\s*(?:mg\/dL|g\/dL|mmol\/L|u\/L|mEq\/L|10\^6\/uL|10\^3\/uL|%|fl|pg|mm\/hr)/i)?.[0] || '95 mg/dL'
                 : '95 mg/dL';
 
               return (
@@ -790,6 +797,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 10,
+    width: '100%',
   },
   tileIconCircle: {
     width: 28,
@@ -803,6 +811,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: colors.darkText,
+    flex: 1,
   },
   sparklineBox: {
     height: 32,
