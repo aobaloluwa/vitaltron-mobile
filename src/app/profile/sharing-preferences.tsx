@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -140,7 +141,15 @@ export default function SharingPreferencesScreen() {
           </View>
 
           <View style={styles.qrBoxWrapper}>
-            <MaterialCommunityIcons name="qrcode-scan" size={120} color={colors.primary} />
+            <Image
+              source={{
+                uri: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+                  activeGrantResult?.shareableUrl || 'http://localhost:8081/share'
+                )}`,
+              }}
+              style={{ width: 170, height: 170, borderRadius: 12 }}
+              resizeMode="contain"
+            />
           </View>
 
           <Text style={styles.heroTitleText}>
