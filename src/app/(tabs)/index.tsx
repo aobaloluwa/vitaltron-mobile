@@ -132,12 +132,16 @@ export default function HomeScreen() {
         ) : (
           <>
             {/* Top Bar */}
+            {/* Top Header Bar: Profile Icon, Health Overview, Search & Notifications on the SAME line */}
             <View style={styles.topHeaderBar}>
-              <Pressable onPress={() => router.push('/profile/health-vitals')}>
-                <View style={styles.avatarCircle}>
-                  <Ionicons name="person" size={24} color={colors.white} />
-                </View>
-              </Pressable>
+              <View style={styles.headerProfileRow}>
+                <Pressable onPress={() => router.push('/profile/health-vitals')}>
+                  <View style={styles.avatarCircle}>
+                    <Ionicons name="person" size={22} color={colors.white} />
+                  </View>
+                </Pressable>
+                <Text style={styles.overviewTitleHeader}>Health Overview</Text>
+              </View>
 
               <View style={styles.topRightActions}>
                 <Pressable style={styles.iconBtn}>
@@ -148,33 +152,6 @@ export default function HomeScreen() {
                   <View style={styles.notifDot} />
                 </Pressable>
               </View>
-            </View>
-
-            {/* Health Overview & Appointment Card Header */}
-            <View style={styles.overviewHeaderRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.overviewTitle}>Health</Text>
-                <Text style={styles.overviewTitle}>overview</Text>
-              </View>
-
-              {/* Appointment / Clinical Grant Card */}
-              <Pressable
-                style={styles.appointmentCard}
-                onPress={() => router.push('/profile/sharing-preferences')}
-              >
-                <View style={styles.dateBox}>
-                  <Text style={styles.dateNum}>13</Text>
-                  <Text style={styles.dateLabel}>WED</Text>
-                </View>
-
-                <View>
-                  <Text style={styles.docName}>Dr. Minois</Text>
-                  <View style={styles.timeRow}>
-                    <Feather name="clock" size={11} color={colors.textMuted} />
-                    <Text style={styles.timeText}>9:00am</Text>
-                  </View>
-                </View>
-              </Pressable>
             </View>
 
             {/* Todays Medication Carousel */}
@@ -587,15 +564,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
+  },
+  headerProfileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
   },
   avatarCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  overviewTitleHeader: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.darkText,
+    letterSpacing: -0.5,
   },
   topRightActions: {
     flexDirection: 'row',
@@ -621,62 +610,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.primary,
   },
-  overviewHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  overviewTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.darkText,
-    letterSpacing: -0.5,
-    lineHeight: 32,
-  },
-  appointmentCard: {
-    backgroundColor: colors.white,
-    borderRadius: 18,
-    padding: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderColor: colors.softBackground,
-  },
-  dateBox: {
-    backgroundColor: colors.softBackground,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    alignItems: 'center',
-  },
-  dateNum: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.darkText,
-  },
-  dateLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  docName: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.darkText,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  timeText: {
-    fontSize: 11,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -696,6 +629,8 @@ const styles = StyleSheet.create({
   },
   medsScroll: {
     paddingBottom: 16,
+    gap: 16,
+    paddingRight: 16,
   },
   medCard: {
     width: 280,
