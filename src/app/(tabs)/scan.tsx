@@ -82,14 +82,25 @@ export default function ScanScreen() {
     setCurrentDoc(doc);
 
     const rawList = doc.extractedEntities || doc.entities || [];
-    const entities = rawList.map((e) => ({
-      id: e.id,
-      title: e.extractedTitle || e.title || doc.fileName || 'Medical Finding',
-      recordType: e.recordType || 'LAB_TEST',
-      description: e.description || '',
-      confidenceScore: e.confidenceScore || 0.94,
-      isConfirmed: !!e.isConfirmed,
-    }));
+    const entities = rawList.map((e) => {
+      const cleanTitle = (e.extractedTitle || e.title || doc.fileName || 'Medical Finding')
+        .replace(/[\r\n]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const cleanDesc = (e.description || '')
+        .replace(/[\r\n]+/g, ' | ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      return {
+        id: e.id,
+        title: cleanTitle,
+        recordType: e.recordType || 'LAB_TEST',
+        description: cleanDesc,
+        confidenceScore: e.confidenceScore || 0.94,
+        isConfirmed: !!e.isConfirmed,
+      };
+    });
 
     setEditableEntities(entities);
     setAnalysisModalVisible(true);
