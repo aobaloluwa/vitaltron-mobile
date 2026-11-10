@@ -2,7 +2,9 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -323,7 +325,10 @@ export default function FullTimelineScreen() {
 
       {/* Manual Add Health Record Modal */}
       <Modal visible={addModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlayBottom}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlayBottom}
+        >
           <View style={styles.modalContentBottom}>
             <View style={styles.modalHeaderRow}>
               <Text style={styles.modalTitleText}>New Health Record Entry</Text>
@@ -360,7 +365,7 @@ export default function FullTimelineScreen() {
               variant="primary"
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
