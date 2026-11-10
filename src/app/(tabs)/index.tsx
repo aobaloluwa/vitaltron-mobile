@@ -57,6 +57,7 @@ export default function HomeScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
+    setLoading(true);
     void fetchData();
   };
 

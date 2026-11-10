@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Switch,
@@ -11,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { logoutUser, User } from '../../services/auth';
 import { Dependent, getDependents, getUserProfile } from '../../services/users';
 import { colors } from '../../theme';
@@ -19,27 +21,39 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [dependents, setDependents] = useState<Dependent[]>([]);
   const [biometricsEnabled, setBiometricsEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchProfileData = async () => {
+    try {
+      const fullUser = await getUserProfile().catch(() => null);
+      if (fullUser) {
+        setUser({
+          id: fullUser.id,
+          email: fullUser.email,
+          displayName: fullUser.displayName,
+        });
+      }
+
+      const depList = await getDependents().catch(() => []);
+      setDependents(depList || []);
+    } catch {
+      // Fallback
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        const fullUser = await getUserProfile().catch(() => null);
-        if (fullUser) {
-          setUser({
-            id: fullUser.id,
-            email: fullUser.email,
-            displayName: fullUser.displayName,
-          });
-        }
-
-        const depList = await getDependents().catch(() => []);
-        setDependents(depList || []);
-      } catch {
-        // Fallback
-      }
-    }
-    void loadData();
+    void fetchProfileData();
   }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setLoading(true);
+    void fetchProfileData();
+  };
 
   const handleLogout = async () => {
     Alert.alert('Log Out Account', 'Are you sure you want to log out of your health identity session?', [
@@ -57,7 +71,18 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Top Header Bar */}
         <View style={styles.headerBar}>
           <Pressable onPress={() => router.back()} style={styles.iconCircleBtn}>
@@ -69,174 +94,186 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {/* User Identity Profile Summary Card */}
-        <Pressable
-          style={styles.userProfileCard}
-          onPress={() => router.push('/profile/health-vitals')}
-        >
-          <View style={styles.avatarBox}>
-            <Ionicons name="person" size={26} color={colors.white} />
+        {loading ? (
+          /* Skeleton Loader */
+          <View style={{ gap: 14 }}>
+            <SkeletonLoader width="100%" height={90} borderRadius={20} />
+            <SkeletonLoader width="100%" height={100} borderRadius={22} />
+            <SkeletonLoader width="100%" height={180} borderRadius={22} />
+            <SkeletonLoader width="100%" height={140} borderRadius={22} />
           </View>
+        ) : (
+          <>
+            {/* User Identity Profile Summary Card */}
+            <Pressable
+              style={styles.userProfileCard}
+              onPress={() => router.push('/profile/health-vitals')}
+            >
+              <View style={styles.avatarBox}>
+                <Ionicons name="person" size={26} color={colors.white} />
+              </View>
 
-          <View style={styles.userTextGroup}>
-            <Text style={styles.userName}>{user?.displayName || 'Logged-In Patient'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'Loading account email...'}</Text>
-          </View>
+              <View style={styles.userTextGroup}>
+                <Text style={styles.userName}>{user?.displayName || 'Logged-In Patient'}</Text>
+                <Text style={styles.userEmail}>{user?.email || 'Loading account email...'}</Text>
+              </View>
 
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </Pressable>
+              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            </Pressable>
 
-        {/* Hero Upgrade / Health Passport Pro Banner */}
-        <View style={styles.proHeroCard}>
-          <View style={styles.proHeroLeft}>
-            <View style={styles.proTitleRow}>
-              <Ionicons name="sparkles" size={20} color={colors.secondary} />
-              <Text style={styles.proTitle}>Vitaltron Health Pro</Text>
-            </View>
-            <Text style={styles.proSubtitle}>
-              Unlock instant AI clinical briefs, universal FHIR sync, and unlimited doctor access grants.
-            </Text>
-          </View>
+            {/* Hero Upgrade / Health Passport Pro Banner */}
+            <View style={styles.proHeroCard}>
+              <View style={styles.proHeroLeft}>
+                <View style={styles.proTitleRow}>
+                  <Ionicons name="sparkles" size={20} color={colors.secondary} />
+                  <Text style={styles.proTitle}>Vitaltron Health Pro</Text>
+                </View>
+                <Text style={styles.proSubtitle}>
+                  Unlock instant AI clinical briefs, universal FHIR sync, and unlimited doctor access grants.
+                </Text>
+              </View>
 
-          <Pressable
-            style={styles.proButton}
-            onPress={() => router.push('/profile/health-passport')}
-          >
-            <Text style={styles.proBtnText}>View Pro &gt;</Text>
-          </Pressable>
-        </View>
-
-        {/* Grouped Section 1: Health Portfolio & Identity */}
-        <View style={styles.menuGroupCard}>
-          <Pressable
-            style={styles.menuItemRow}
-            onPress={() => router.push('/profile/health-vitals')}
-          >
-            <View style={styles.menuIconBox}>
-              <Ionicons name="settings-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={styles.menuItemText}>Health Profile & Vitals</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-
-          <View style={styles.divider} />
-
-          <Pressable
-            style={styles.menuItemRow}
-            onPress={() => router.push('/profile/health-passport')}
-          >
-            <View style={styles.menuIconBox}>
-              <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={styles.menuItemText}>Verified Health Passport & Badges</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-
-          <View style={styles.divider} />
-
-          <Pressable
-            style={styles.menuItemRow}
-            onPress={() => router.push('/profile/dependents')}
-          >
-            <View style={styles.menuIconBox}>
-              <Ionicons name="people-outline" size={20} color={colors.primary} />
+              <Pressable
+                style={styles.proButton}
+                onPress={() => router.push('/profile/health-passport')}
+              >
+                <Text style={styles.proBtnText}>View Pro &gt;</Text>
+              </Pressable>
             </View>
 
-            <View style={{ flex: 1 }}>
-              <Text style={styles.menuItemText}>Dependents & Family Portfolio</Text>
-              {dependents.length > 0 && (
-                <Text style={styles.menuSubText}>{dependents.length} Linked Members</Text>
-              )}
+            {/* Grouped Section 1: Health Portfolio & Identity */}
+            <View style={styles.menuGroupCard}>
+              <Pressable
+                style={styles.menuItemRow}
+                onPress={() => router.push('/profile/health-vitals')}
+              >
+                <View style={styles.menuIconBox}>
+                  <Ionicons name="settings-outline" size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.menuItemText}>Health Profile & Vitals</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
+
+              <View style={styles.divider} />
+
+              <Pressable
+                style={styles.menuItemRow}
+                onPress={() => router.push('/profile/health-passport')}
+              >
+                <View style={styles.menuIconBox}>
+                  <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.menuItemText}>Verified Health Passport & Badges</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
+
+              <View style={styles.divider} />
+
+              <Pressable
+                style={styles.menuItemRow}
+                onPress={() => router.push('/profile/dependents')}
+              >
+                <View style={styles.menuIconBox}>
+                  <Ionicons name="people-outline" size={20} color={colors.primary} />
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.menuItemText}>Dependents & Family Portfolio</Text>
+                  {dependents.length > 0 && (
+                    <Text style={styles.menuSubText}>{dependents.length} Linked Members</Text>
+                  )}
+                </View>
+
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
+
+              <View style={styles.divider} />
+
+              <View style={styles.menuItemRow}>
+                <View style={styles.menuIconBox}>
+                  <Ionicons name="finger-print-outline" size={20} color={colors.primary} />
+                </View>
+                <Text style={[styles.menuItemText, { flex: 1 }]}>Enable Fingerprint / Face ID</Text>
+                <Switch
+                  value={biometricsEnabled}
+                  onValueChange={setBiometricsEnabled}
+                  trackColor={{ false: colors.softBackground, true: colors.secondary }}
+                  thumbColor={biometricsEnabled ? colors.primary : '#F3F4F6'}
+                />
+              </View>
             </View>
 
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
+            {/* Grouped Section 2: Preferences & Privacy Controls */}
+            <View style={styles.menuGroupCard}>
+              <Pressable
+                style={styles.menuItemRow}
+                onPress={() => router.push('/profile/sharing-preferences')}
+              >
+                <View style={styles.menuIconBox}>
+                  <Ionicons name="options-outline" size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.menuItemText}>Sharing Preferences</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
 
-          <View style={styles.divider} />
+              <View style={styles.divider} />
 
-          <View style={styles.menuItemRow}>
-            <View style={styles.menuIconBox}>
-              <Ionicons name="finger-print-outline" size={20} color={colors.primary} />
+              <Pressable
+                style={styles.menuItemRow}
+                onPress={() => router.push('/profile/privacy-security')}
+              >
+                <View style={styles.menuIconBox}>
+                  <Ionicons name="lock-closed-outline" size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.menuItemText}>Privacy & Data Security Policy</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
+
+              <View style={styles.divider} />
+
+              <Pressable
+                style={styles.menuItemRow}
+                onPress={() => router.push('/profile/support')}
+              >
+                <View style={styles.menuIconBox}>
+                  <Ionicons name="help-circle-outline" size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.menuItemText}>Help & Support</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
             </View>
-            <Text style={[styles.menuItemText, { flex: 1 }]}>Enable Fingerprint / Face ID</Text>
-            <Switch
-              value={biometricsEnabled}
-              onValueChange={setBiometricsEnabled}
-              trackColor={{ false: colors.softBackground, true: colors.secondary }}
-              thumbColor={biometricsEnabled ? colors.primary : '#F3F4F6'}
-            />
-          </View>
-        </View>
 
-        {/* Grouped Section 2: Preferences & Privacy Controls */}
-        <View style={styles.menuGroupCard}>
-          <Pressable
-            style={styles.menuItemRow}
-            onPress={() => router.push('/profile/sharing-preferences')}
-          >
-            <View style={styles.menuIconBox}>
-              <Ionicons name="options-outline" size={20} color={colors.primary} />
+            {/* Grouped Section 3: App Feedback & Language */}
+            <View style={styles.menuGroupCard}>
+              <Pressable
+                style={styles.menuItemRow}
+                onPress={() => router.push('/profile/feedback')}
+              >
+                <View style={styles.menuIconBox}>
+                  <Ionicons name="chatbox-ellipses-outline" size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.menuItemText}>Feedback</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
+
+              <View style={styles.divider} />
+
+              <View style={styles.menuItemRow}>
+                <View style={styles.menuIconBox}>
+                  <Ionicons name="language-outline" size={20} color={colors.primary} />
+                </View>
+                <Text style={[styles.menuItemText, { flex: 1 }]}>Language</Text>
+                <Text style={styles.langValue}>English &gt;</Text>
+              </View>
             </View>
-            <Text style={styles.menuItemText}>Sharing Preferences</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
 
-          <View style={styles.divider} />
-
-          <Pressable
-            style={styles.menuItemRow}
-            onPress={() => router.push('/profile/privacy-security')}
-          >
-            <View style={styles.menuIconBox}>
-              <Ionicons name="lock-closed-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={styles.menuItemText}>Privacy & Data Security Policy</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-
-          <View style={styles.divider} />
-
-          <Pressable
-            style={styles.menuItemRow}
-            onPress={() => router.push('/profile/support')}
-          >
-            <View style={styles.menuIconBox}>
-              <Ionicons name="help-circle-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={styles.menuItemText}>Help & Support</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-        </View>
-
-        {/* Grouped Section 3: App Feedback & Language */}
-        <View style={styles.menuGroupCard}>
-          <Pressable
-            style={styles.menuItemRow}
-            onPress={() => router.push('/profile/feedback')}
-          >
-            <View style={styles.menuIconBox}>
-              <Ionicons name="chatbox-ellipses-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={styles.menuItemText}>Feedback</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-
-          <View style={styles.divider} />
-
-          <View style={styles.menuItemRow}>
-            <View style={styles.menuIconBox}>
-              <Ionicons name="language-outline" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.menuItemText, { flex: 1 }]}>Language</Text>
-            <Text style={styles.langValue}>English &gt;</Text>
-          </View>
-        </View>
-
-        {/* Logout Action Button */}
-        <Pressable style={styles.logoutRow} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color={colors.error} />
-          <Text style={styles.logoutText}>Log Out Account</Text>
-        </Pressable>
+            {/* Logout Action Button */}
+            <Pressable style={styles.logoutRow} onPress={handleLogout}>
+              <Ionicons name="log-out-outline" size={20} color={colors.error} />
+              <Text style={styles.logoutText}>Log Out Account</Text>
+            </Pressable>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

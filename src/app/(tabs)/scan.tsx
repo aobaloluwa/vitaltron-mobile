@@ -5,6 +5,7 @@ import {
   Image,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +18,7 @@ import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
 import { AppTextInput } from '../../components/ui/AppTextInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { confirmEntity, DocumentItem, getDocuments, uploadDocument } from '../../services/documents';
 import { RecordType } from '../../services/healthRecords';
 import { colors } from '../../theme';
@@ -34,6 +36,7 @@ const RECORD_TYPES: RecordType[] = [
 export default function ScanScreen() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scannedImageUri, setScannedImageUri] = useState<string | null>(null);
 
@@ -60,12 +63,19 @@ export default function ScanScreen() {
       // Fallback
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
     void fetchDocs();
   }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setLoading(true);
+    void fetchDocs();
+  };
 
   const openAnalysisModal = (doc: DocumentItem, imageUri?: string) => {
     if (imageUri) setScannedImageUri(imageUri);
@@ -216,7 +226,18 @@ export default function ScanScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Header Bar */}
         <View style={styles.headerBar}>
           <Text style={styles.headerTitle}>Document Ingestion</Text>
@@ -226,103 +247,112 @@ export default function ScanScreen() {
           </View>
         </View>
 
-        {/* Camera Scan Hero Card */}
-        <View style={styles.scanCard}>
-          {scannedImageUri && (
-            <View style={styles.previewBox}>
-              <Image source={{ uri: scannedImageUri }} style={styles.previewImage} resizeMode="cover" />
-            </View>
-          )}
-
-          <View style={styles.scanIconCircle}>
-            <Feather name="camera" size={32} color={colors.primary} />
+        {loading ? (
+          /* Skeleton Loader */
+          <View style={{ gap: 14 }}>
+            <SkeletonLoader width="100%" height={200} borderRadius={24} />
+            <SkeletonLoader width="100%" height={80} borderRadius={20} />
+            <SkeletonLoader width="100%" height={80} borderRadius={20} />
           </View>
+        ) : (
+          <>
+            {/* Camera Scan Hero Card */}
+            <View style={styles.scanCard}>
+              {scannedImageUri && (
+                <View style={styles.previewBox}>
+                  <Image source={{ uri: scannedImageUri }} style={styles.previewImage} resizeMode="cover" />
+                </View>
+              )}
 
-          <Text style={styles.scanCardTitle}>Scan Medical Document</Text>
-          <Text style={styles.scanCardSub}>
-            Snap a photo of paper lab reports, prescriptions, or discharge summaries. Vitaltron AI automatically extracts structured health data.
-          </Text>
+              <View style={styles.scanIconCircle}>
+                <Feather name="camera" size={32} color={colors.primary} />
+              </View>
 
-          {scanning && (
-            <View style={styles.progressBox}>
-              <ActivityIndicator color={colors.primary} size="small" />
-              <Text style={styles.progressText}>Analyzing document text with Vitaltron AI...</Text>
-            </View>
-          )}
-
-          {/* Capture Actions Grid */}
-          <View style={styles.scanActionsGrid}>
-            <Pressable style={styles.actionBtnPrimary} onPress={handleCameraCapture} disabled={scanning}>
-              <Ionicons name="camera" size={18} color={colors.white} />
-              <Text style={styles.actionBtnPrimaryText}>Camera Scan</Text>
-            </Pressable>
-
-            <Pressable style={styles.actionBtnSecondary} onPress={handleGallerySelect} disabled={scanning}>
-              <Ionicons name="images-outline" size={18} color={colors.primary} />
-              <Text style={styles.actionBtnSecondaryText}>Photo Library</Text>
-            </Pressable>
-
-            <Pressable style={styles.actionBtnSecondary} onPress={handlePdfSelect} disabled={scanning}>
-              <Ionicons name="document-text-outline" size={18} color={colors.primary} />
-              <Text style={styles.actionBtnSecondaryText}>Select PDF</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Ingested Documents List */}
-        <View style={styles.listSection}>
-          <Text style={styles.sectionTitle}>Ingested Health Documents</Text>
-
-          {loading ? (
-            <ActivityIndicator color={colors.primary} style={{ marginVertical: 30 }} />
-          ) : documents.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Ionicons name="document-text-outline" size={42} color={colors.secondary} />
-              <Text style={styles.emptyTitle}>No Ingested Documents Yet</Text>
-              <Text style={styles.emptySub}>
-                Use Camera Scan or Photo Library above to scan paper medical reports into your account.
+              <Text style={styles.scanCardTitle}>Scan Medical Document</Text>
+              <Text style={styles.scanCardSub}>
+                Snap a photo of paper lab reports, prescriptions, or discharge summaries. Vitaltron AI automatically extracts structured health data.
               </Text>
-            </View>
-          ) : (
-            documents.map((doc) => {
-              const entitiesList = doc.extractedEntities || doc.entities || [];
-              const statusDisplay = doc.ingestionStatus || doc.status || 'PROCESSED';
 
-              return (
-                <Pressable
-                  key={doc.id}
-                  style={styles.docCard}
-                  onPress={() => openAnalysisModal(doc, doc.fileUrl)}
-                >
-                  <View style={styles.docHeaderRow}>
-                    <View style={styles.docFileIconBox}>
-                      <Ionicons name="document-text" size={22} color={colors.primary} />
-                    </View>
+              {scanning && (
+                <View style={styles.progressBox}>
+                  <ActivityIndicator color={colors.primary} size="small" />
+                  <Text style={styles.progressText}>Analyzing document text with Vitaltron AI...</Text>
+                </View>
+              )}
 
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.docFileName}>{doc.fileName}</Text>
-                      <Text style={styles.docDate}>
-                        {new Date(doc.createdAt).toLocaleDateString()}
-                      </Text>
-                    </View>
-
-                    <View style={styles.statusPill}>
-                      <Text style={styles.statusText}>{statusDisplay}</Text>
-                    </View>
-                  </View>
-
-                  {/* Entities Count & Tap To Review */}
-                  <View style={styles.reviewBanner}>
-                    <Text style={styles.reviewBannerText}>
-                      {entitiesList.length} AI Medical Entities Extracted
-                    </Text>
-                    <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-                  </View>
+              {/* Capture Actions Grid */}
+              <View style={styles.scanActionsGrid}>
+                <Pressable style={styles.actionBtnPrimary} onPress={handleCameraCapture} disabled={scanning}>
+                  <Ionicons name="camera" size={18} color={colors.white} />
+                  <Text style={styles.actionBtnPrimaryText}>Camera Scan</Text>
                 </Pressable>
-              );
-            })
-          )}
-        </View>
+
+                <Pressable style={styles.actionBtnSecondary} onPress={handleGallerySelect} disabled={scanning}>
+                  <Ionicons name="images-outline" size={18} color={colors.primary} />
+                  <Text style={styles.actionBtnSecondaryText}>Photo Library</Text>
+                </Pressable>
+
+                <Pressable style={styles.actionBtnSecondary} onPress={handlePdfSelect} disabled={scanning}>
+                  <Ionicons name="document-text-outline" size={18} color={colors.primary} />
+                  <Text style={styles.actionBtnSecondaryText}>Select PDF</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Ingested Documents List */}
+            <View style={styles.listSection}>
+              <Text style={styles.sectionTitle}>Ingested Health Documents</Text>
+
+              {documents.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Ionicons name="document-text-outline" size={42} color={colors.secondary} />
+                  <Text style={styles.emptyTitle}>No Ingested Documents Yet</Text>
+                  <Text style={styles.emptySub}>
+                    Use Camera Scan or Photo Library above to scan paper medical reports into your account.
+                  </Text>
+                </View>
+              ) : (
+                documents.map((doc) => {
+                  const entitiesList = doc.extractedEntities || doc.entities || [];
+                  const statusDisplay = doc.ingestionStatus || doc.status || 'PROCESSED';
+
+                  return (
+                    <Pressable
+                      key={doc.id}
+                      style={styles.docCard}
+                      onPress={() => openAnalysisModal(doc, doc.fileUrl)}
+                    >
+                      <View style={styles.docHeaderRow}>
+                        <View style={styles.docFileIconBox}>
+                          <Ionicons name="document-text" size={22} color={colors.primary} />
+                        </View>
+
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.docFileName}>{doc.fileName}</Text>
+                          <Text style={styles.docDate}>
+                            {new Date(doc.createdAt).toLocaleDateString()}
+                          </Text>
+                        </View>
+
+                        <View style={styles.statusPill}>
+                          <Text style={styles.statusText}>{statusDisplay}</Text>
+                        </View>
+                      </View>
+
+                      {/* Entities Count & Tap To Review */}
+                      <View style={styles.reviewBanner}>
+                        <Text style={styles.reviewBannerText}>
+                          {entitiesList.length} AI Medical Entities Extracted
+                        </Text>
+                        <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+                      </View>
+                    </Pressable>
+                  );
+                })
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {/* AI Extraction Analysis & Confirmation Modal */}

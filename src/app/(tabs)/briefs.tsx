@@ -4,6 +4,7 @@ import {
   Alert,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppTextInput } from '../../components/ui/AppTextInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { ClinicalBrief, generateClinicalBrief } from '../../services/clinicalBriefs';
 import { AccessGrant, createAccessGrant, getAccessGrants, revokeAccessGrant } from '../../services/sharing';
 import { colors } from '../../theme';
@@ -21,7 +23,8 @@ export default function BriefsScreen() {
   const [brief, setBrief] = useState<ClinicalBrief | null>(null);
   const [grants, setGrants] = useState<AccessGrant[]>([]);
   const [generating, setGenerating] = useState(false);
-  const [loadingGrants, setLoadingGrants] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Grant Modal
   const [modalVisible, setModalVisible] = useState(false);
@@ -35,13 +38,20 @@ export default function BriefsScreen() {
     } catch {
       // Fallback
     } finally {
-      setLoadingGrants(false);
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
     void fetchSharingData();
   }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setLoading(true);
+    void fetchSharingData();
+  };
 
   const handleGenerateBrief = async () => {
     setGenerating(true);
@@ -98,7 +108,18 @@ export default function BriefsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Header */}
         <View style={styles.headerBar}>
           <Text style={styles.headerTitle}>Clinical Briefs & Sharing</Text>
@@ -108,77 +129,86 @@ export default function BriefsScreen() {
           </View>
         </View>
 
-        {/* Clinical Brief Hero Generator */}
-        <View style={styles.briefCard}>
-          <View style={styles.briefIconBox}>
-            <MaterialCommunityIcons name="clipboard-pulse-outline" size={32} color={colors.primary} />
+        {loading ? (
+          /* Skeleton Loader */
+          <View style={{ gap: 14 }}>
+            <SkeletonLoader width="100%" height={220} borderRadius={24} />
+            <SkeletonLoader width="100%" height={80} borderRadius={20} />
+            <SkeletonLoader width="100%" height={80} borderRadius={20} />
           </View>
-
-          <Text style={styles.briefTitle}>Instant Clinical Brief</Text>
-          <Text style={styles.briefSub}>
-            Produce a concise AI summary of your medical history, allergies, active prescriptions, and recent lab results for a doctor.
-          </Text>
-
-          <PrimaryButton
-            title="Generate Clinical Brief"
-            onPress={handleGenerateBrief}
-            loading={generating}
-            variant="primary"
-          />
-
-          {brief && (
-            <View style={styles.briefResultBox}>
-              <View style={styles.briefResultHeader}>
-                <Ionicons name="sparkles" size={16} color={colors.primary} />
-                <Text style={styles.briefResultTitle}>Generated AI Summary</Text>
+        ) : (
+          <>
+            {/* Clinical Brief Hero Generator */}
+            <View style={styles.briefCard}>
+              <View style={styles.briefIconBox}>
+                <MaterialCommunityIcons name="clipboard-pulse-outline" size={32} color={colors.primary} />
               </View>
 
-              <Text style={styles.briefSummaryText}>{brief.summaryText}</Text>
-            </View>
-          )}
-        </View>
+              <Text style={styles.briefTitle}>Instant Clinical Brief</Text>
+              <Text style={styles.briefSub}>
+                Produce a concise AI summary of your medical history, allergies, active prescriptions, and recent lab results for a doctor.
+              </Text>
 
-        {/* Controlled Sharing Grants Section */}
-        <View style={styles.sharingSection}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Active Access Grants</Text>
-            <Pressable onPress={() => setModalVisible(true)} style={styles.grantBtn}>
-              <Ionicons name="key-outline" size={16} color={colors.white} />
-              <Text style={styles.grantBtnText}>Grant Access</Text>
-            </Pressable>
-          </View>
+              <PrimaryButton
+                title="Generate Clinical Brief"
+                onPress={handleGenerateBrief}
+                loading={generating}
+                variant="primary"
+              />
 
-          {loadingGrants ? (
-            <ActivityIndicator color={colors.primary} style={{ marginVertical: 20 }} />
-          ) : grants.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Ionicons name="lock-closed-outline" size={40} color={colors.secondary} />
-              <Text style={styles.emptyTitle}>No Active Access Grants</Text>
-              <Text style={styles.emptySub}>Grant temporary doctor access via secure link or QR code with expiry controls.</Text>
-            </View>
-          ) : (
-            grants.map((grant) => (
-              <View key={grant.id} style={styles.grantItemCard}>
-                <View style={styles.grantHeaderRow}>
-                  <View style={styles.grantIconBox}>
-                    <Feather name="user-check" size={20} color={colors.primary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.grantEE}>{grant.granteeEmail || 'Doctor / Clinician'}</Text>
-                    <Text style={styles.grantExpiry}>Expires: {new Date(grant.expiresAt).toLocaleDateString()}</Text>
+              {brief && (
+                <View style={styles.briefResultBox}>
+                  <View style={styles.briefResultHeader}>
+                    <Ionicons name="sparkles" size={16} color={colors.primary} />
+                    <Text style={styles.briefResultTitle}>Generated AI Summary</Text>
                   </View>
 
-                  <Pressable
-                    style={styles.revokeBtn}
-                    onPress={() => handleRevoke(grant.id)}
-                  >
-                    <Text style={styles.revokeText}>Revoke</Text>
-                  </Pressable>
+                  <Text style={styles.briefSummaryText}>{brief.summaryText}</Text>
                 </View>
+              )}
+            </View>
+
+            {/* Controlled Sharing Grants Section */}
+            <View style={styles.sharingSection}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionTitle}>Active Access Grants</Text>
+                <Pressable onPress={() => setModalVisible(true)} style={styles.grantBtn}>
+                  <Ionicons name="key-outline" size={16} color={colors.white} />
+                  <Text style={styles.grantBtnText}>Grant Access</Text>
+                </Pressable>
               </View>
-            ))
-          )}
-        </View>
+
+              {grants.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Ionicons name="lock-closed-outline" size={40} color={colors.secondary} />
+                  <Text style={styles.emptyTitle}>No Active Access Grants</Text>
+                  <Text style={styles.emptySub}>Grant temporary doctor access via secure link or QR code with expiry controls.</Text>
+                </View>
+              ) : (
+                grants.map((grant) => (
+                  <View key={grant.id} style={styles.grantItemCard}>
+                    <View style={styles.grantHeaderRow}>
+                      <View style={styles.grantIconBox}>
+                        <Feather name="user-check" size={20} color={colors.primary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.grantEE}>{grant.granteeEmail || 'Doctor / Clinician'}</Text>
+                        <Text style={styles.grantExpiry}>Expires: {new Date(grant.expiresAt).toLocaleDateString()}</Text>
+                      </View>
+
+                      <Pressable
+                        style={styles.revokeBtn}
+                        onPress={() => handleRevoke(grant.id)}
+                      >
+                        <Text style={styles.revokeText}>Revoke</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {/* Grant Access Modal */}
