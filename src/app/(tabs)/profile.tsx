@@ -19,10 +19,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { logoutUser, User } from '../../services/auth';
 import { Dependent, getDependents, getUserProfile, updateUserInfo } from '../../services/users';
-import { getStoredLanguage, LanguageCode, setStoredLanguage } from '../../i18n/translations';
+import { LanguageCode } from '../../i18n/translations';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme';
 
 export default function ProfileScreen() {
+  const { currentLang, changeLanguage, t } = useTranslation();
   const [user, setUser] = useState<(User & { avatarUrl?: string }) | null>(null);
   const [dependents, setDependents] = useState<Dependent[]>([]);
   const [biometricsEnabled, setBiometricsEnabled] = useState(true);
@@ -31,13 +33,8 @@ export default function ProfileScreen() {
 
   const [loggingOut, setLoggingOut] = useState(false);
 
-  // Language State
+  // Language Modal State
   const [langModalVisible, setLangModalVisible] = useState(false);
-  const [currentLang, setCurrentLang] = useState<LanguageCode>('en');
-
-  useEffect(() => {
-    void getStoredLanguage().then((l) => setCurrentLang(l));
-  }, []);
 
   const handleSelectLanguage = (newLang: LanguageCode, langLabel: string) => {
     if (newLang === currentLang) {
@@ -46,17 +43,15 @@ export default function ProfileScreen() {
     }
 
     Alert.alert(
-      'Change App Language?',
+      t('confirmLanguageChange'),
       `Are you sure you want to switch the app language to ${langLabel}?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Switch Language',
+          text: t('switchLanguage'),
           onPress: async () => {
             try {
-              setCurrentLang(newLang);
-              await setStoredLanguage(newLang);
-              await updateUserInfo({ preferredLanguage: newLang });
+              await changeLanguage(newLang);
               setLangModalVisible(false);
               Alert.alert('Language Updated', `App language changed to ${langLabel}.`);
             } catch {
@@ -333,7 +328,7 @@ export default function ProfileScreen() {
                 <View style={styles.menuIconBox}>
                   <Ionicons name="language-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={[styles.menuItemText, { flex: 1 }]}>Language</Text>
+                <Text style={[styles.menuItemText, { flex: 1 }]}>{t('language')}</Text>
                 <Text style={styles.langValue}>
                   {currentLang === 'fr' ? 'Français' : currentLang === 'es' ? 'Español' : 'English'} &gt;
                 </Text>
@@ -348,7 +343,7 @@ export default function ProfileScreen() {
                 <Ionicons name="log-out-outline" size={20} color={colors.error} />
               )}
               <Text style={styles.logoutText}>
-                {loggingOut ? 'Logging Out...' : 'Log Out Account'}
+                {loggingOut ? 'Logging Out...' : t('logOutAccount')}
               </Text>
             </Pressable>
           </>

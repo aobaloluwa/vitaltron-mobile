@@ -21,6 +21,7 @@ export function AppTextInput({
   iconName,
   error,
   secureTextEntry,
+  multiline,
   style,
   onFocus,
   onBlur,
@@ -38,6 +39,7 @@ export function AppTextInput({
         onPress={() => inputRef.current?.focus()}
         style={[
           styles.inputWrapper,
+          multiline && styles.inputWrapperMultiline,
           isFocused && styles.inputWrapperFocused,
           !!error && styles.inputWrapperError,
         ]}
@@ -47,13 +49,18 @@ export function AppTextInput({
             name={iconName}
             size={20}
             color={isFocused ? colors.primary : colors.textMuted}
-            style={styles.leftIcon}
+            style={[styles.leftIcon, multiline && { marginTop: 4 }]}
           />
         )}
 
         <TextInput
           ref={inputRef}
-          style={[styles.input, style]}
+          multiline={multiline}
+          style={[
+            styles.input,
+            multiline && styles.inputMultiline,
+            style,
+          ]}
           placeholderTextColor="#9CA3AF"
           secureTextEntry={secureTextEntry && !showPassword}
           onFocus={(e) => {
@@ -100,7 +107,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   inputWrapper: {
-    height: 56,
+    minHeight: 56,
     backgroundColor: colors.inputBackground,
     borderRadius: 16,
     borderWidth: 1.5,
@@ -108,6 +115,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
+  },
+  inputWrapperMultiline: {
+    minHeight: 140,
+    alignItems: 'flex-start',
+    paddingVertical: 14,
   },
   inputWrapperFocused: {
     borderColor: colors.primary,
@@ -128,6 +140,10 @@ const styles = StyleSheet.create({
     color: colors.darkText,
     fontWeight: '500',
     paddingVertical: 0,
+  },
+  inputMultiline: {
+    minHeight: 110,
+    textAlignVertical: 'top',
   },
   errorText: {
     fontSize: 12,

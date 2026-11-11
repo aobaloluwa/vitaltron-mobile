@@ -25,9 +25,11 @@ import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { logoutUser } from '../../services/auth';
 import { createHealthRecord, getTimeline, globalSearch, GlobalSearchResult, HealthRecord, RecordType } from '../../services/healthRecords';
 import { getUserProfile } from '../../services/users';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme';
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const [userName, setUserName] = useState('');
   const [timeline, setTimeline] = useState<HealthRecord[]>([]);
@@ -200,7 +202,7 @@ export default function HomeScreen() {
                     <Ionicons name="person" size={22} color={colors.white} />
                   </View>
                 </Pressable>
-                <Text style={styles.overviewTitleHeader}>Health Overview</Text>
+                <Text style={styles.overviewTitleHeader}>{t('healthOverview')}</Text>
               </View>
 
               <View style={styles.topRightActions}>
@@ -216,9 +218,9 @@ export default function HomeScreen() {
 
             {/* Todays Medication Carousel */}
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Active Medications</Text>
+              <Text style={styles.sectionTitle}>{t('activeMedications')}</Text>
               <Pressable onPress={() => router.push('/records/medication-history')}>
-                <Text style={styles.viewAllText}>View all &gt;</Text>
+                <Text style={styles.viewAllText}>{t('viewAll')}</Text>
               </Pressable>
             </View>
 

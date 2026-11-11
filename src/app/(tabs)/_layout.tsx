@@ -3,10 +3,12 @@ import { StyleSheet, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const bottomInset = Math.max(insets.bottom, 8);
 
   return (
@@ -29,7 +31,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('home'),
           tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'home' : 'home-outline'}
@@ -43,7 +45,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="analytics"
         options={{
-          title: 'Analytics',
+          title: t('analytics'),
           tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'bar-chart' : 'bar-chart-outline'}
@@ -57,7 +59,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="scan"
         options={{
-          title: 'Scan',
+          title: t('scan'),
           tabBarIcon: () => (
             <View style={styles.centerScanBtn}>
               <Ionicons name="scan-outline" size={26} color={colors.white} />
@@ -70,7 +72,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="briefs"
         options={{
-          title: 'Sharing',
+          title: t('sharing'),
           tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'share-social' : 'share-social-outline'}
@@ -84,7 +86,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('profile'),
           tabBarIcon: ({ focused }) => (
             <Ionicons
               name={focused ? 'person' : 'person-outline'}
