@@ -189,10 +189,10 @@ export default function ProfileScreen() {
               <View style={styles.proHeroLeft}>
                 <View style={styles.proTitleRow}>
                   <Ionicons name="sparkles" size={20} color={colors.secondary} />
-                  <Text style={styles.proTitle}>Vitaltron Health Pro</Text>
+                  <Text style={styles.proTitle}>{t('vitaltronHealthPro')}</Text>
                 </View>
                 <Text style={styles.proSubtitle}>
-                  Unlock instant AI clinical briefs, universal FHIR sync, and unlimited doctor access grants.
+                  {t('proHeroSubtitle')}
                 </Text>
               </View>
 
@@ -200,7 +200,7 @@ export default function ProfileScreen() {
                 style={styles.proButton}
                 onPress={() => router.push('/profile/health-passport')}
               >
-                <Text style={styles.proBtnText}>View Pro &gt;</Text>
+                <Text style={styles.proBtnText}>{t('viewPro')}</Text>
               </Pressable>
             </View>
 
@@ -213,7 +213,7 @@ export default function ProfileScreen() {
                 <View style={styles.menuIconBox}>
                   <Ionicons name="settings-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.menuItemText}>Health Profile & Vitals</Text>
+                <Text style={styles.menuItemText}>{t('healthProfileAndVitals')}</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </Pressable>
 
@@ -226,7 +226,7 @@ export default function ProfileScreen() {
                 <View style={styles.menuIconBox}>
                   <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.menuItemText}>Verified Health Passport & Badges</Text>
+                <Text style={styles.menuItemText}>{t('verifiedHealthPassport')}</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </Pressable>
 
@@ -241,7 +241,7 @@ export default function ProfileScreen() {
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.menuItemText}>Dependents & Family Portfolio</Text>
+                  <Text style={styles.menuItemText}>{t('dependentsAndFamily')}</Text>
                   {dependents.length > 0 && (
                     <Text style={styles.menuSubText}>{dependents.length} Linked Members</Text>
                   )}
@@ -256,7 +256,7 @@ export default function ProfileScreen() {
                 <View style={styles.menuIconBox}>
                   <Ionicons name="finger-print-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={[styles.menuItemText, { flex: 1 }]}>Enable Fingerprint / Face ID</Text>
+                <Text style={[styles.menuItemText, { flex: 1 }]}>{t('enableBiometrics')}</Text>
                 <Switch
                   value={biometricsEnabled}
                   onValueChange={setBiometricsEnabled}
@@ -275,7 +275,7 @@ export default function ProfileScreen() {
                 <View style={styles.menuIconBox}>
                   <Ionicons name="options-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.menuItemText}>Sharing Preferences</Text>
+                <Text style={styles.menuItemText}>{t('sharingPreferences')}</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </Pressable>
 
@@ -288,7 +288,7 @@ export default function ProfileScreen() {
                 <View style={styles.menuIconBox}>
                   <Ionicons name="lock-closed-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.menuItemText}>Privacy & Data Security Policy</Text>
+                <Text style={styles.menuItemText}>{t('privacyPolicy')}</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </Pressable>
 
@@ -301,7 +301,7 @@ export default function ProfileScreen() {
                 <View style={styles.menuIconBox}>
                   <Ionicons name="help-circle-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.menuItemText}>Help & Support</Text>
+                <Text style={styles.menuItemText}>{t('helpAndSupport')}</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </Pressable>
             </View>
@@ -315,7 +315,7 @@ export default function ProfileScreen() {
                 <View style={styles.menuIconBox}>
                   <Ionicons name="chatbox-ellipses-outline" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.menuItemText}>Feedback</Text>
+                <Text style={styles.menuItemText}>{t('feedback')}</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </Pressable>
 

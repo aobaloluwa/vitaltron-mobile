@@ -21,17 +21,30 @@ export interface Translations {
   seeAllTimeline: string;
   noTimelineRecords: string;
 
+  // Medical Categories & Tests
+  bloodPressure: string;
+  heartRate: string;
+  glucose: string;
+  cholesterol: string;
+  universalTimeline: string;
+  cbcReport: string;
+
   // Analytics
   healthAnalytics: string;
+  statistics: string;
   vitalsAndBiomarkers: string;
   bloodPressureTrend: string;
   weeklySummary: string;
   labPanelHistory: string;
   normalRange: string;
   optimalHealthScore: string;
+  dailyVitalsAndIntake: string;
+  target: string;
 
   // Scan & Ingestion
   aiDocumentIngestion: string;
+  scanMedicalDocument: string;
+  scanSubtitle: string;
   scanDocumentOrPhoto: string;
   takePhoto: string;
   chooseFile: string;
@@ -44,6 +57,8 @@ export interface Translations {
   liveQrPassport: string;
   scanReadyForClinicians: string;
   universalDoctorAccess: string;
+  sharingSubtitle: string;
+  validUntil: string;
   customizeSharedInfo: string;
   doctorOrHospitalName: string;
   securityPin: string;
@@ -75,6 +90,9 @@ export interface Translations {
   logOutAccount: string;
   logOutConfirmTitle: string;
   logOutConfirmSub: string;
+  vitaltronHealthPro: string;
+  proHeroSubtitle: string;
+  viewPro: string;
 
   // Personal Info & Vitals
   personalProfile: string;
@@ -126,15 +144,27 @@ export const translations: Record<LanguageCode, Translations> = {
     seeAllTimeline: 'See all >',
     noTimelineRecords: 'No timeline records logged yet.',
 
+    bloodPressure: 'Blood Pressure',
+    heartRate: 'Heart Rate',
+    glucose: 'Blood Glucose',
+    cholesterol: 'Cholesterol Panel',
+    universalTimeline: 'Universal Health Timeline',
+    cbcReport: 'Complete Blood Count (CBC) Report',
+
     healthAnalytics: 'Health Analytics',
+    statistics: 'Statistics',
     vitalsAndBiomarkers: 'Vitals & Biomarkers',
     bloodPressureTrend: 'Blood Pressure Trend',
     weeklySummary: 'Weekly Clinical Summary',
     labPanelHistory: 'Lab Panel History',
     normalRange: 'Normal Range',
     optimalHealthScore: 'Optimal Health Score',
+    dailyVitalsAndIntake: 'Daily Vitals & Intake',
+    target: 'Target:',
 
     aiDocumentIngestion: 'AI Document Ingestion',
+    scanMedicalDocument: 'Scan Medical Document',
+    scanSubtitle: 'Hospitals, labs, or prescription paper scans are automatically parsed by AI',
     scanDocumentOrPhoto: 'Scan Prescription or Lab Report',
     takePhoto: 'Take Camera Photo',
     chooseFile: 'Choose PDF / Image File',
@@ -146,6 +176,8 @@ export const translations: Record<LanguageCode, Translations> = {
     liveQrPassport: '⚡ VITALTRON POINT-OF-CARE QR PASSPORT',
     scanReadyForClinicians: 'SCANNER READY FOR CLINICIANS',
     universalDoctorAccess: 'Universal Doctor & Hospital Access',
+    sharingSubtitle: 'Hospitals or clinicians anywhere in the world can scan this QR code to view your verified health records.',
+    validUntil: 'Valid until',
     customizeSharedInfo: 'Customize Shared Information',
     doctorOrHospitalName: 'Doctor / Hospital Name or Email',
     securityPin: 'Security Passcode / PIN (Optional)',
@@ -176,6 +208,9 @@ export const translations: Record<LanguageCode, Translations> = {
     logOutAccount: 'Log Out Account',
     logOutConfirmTitle: 'Log Out Account?',
     logOutConfirmSub: 'Are you sure you want to log out of your Vitaltron health identity session?',
+    vitaltronHealthPro: 'Vitaltron Health Pro',
+    proHeroSubtitle: 'Unlock instant AI clinical briefs, universal FHIR sync, and unlimited doctor access grants.',
+    viewPro: 'View Pro >',
 
     personalProfile: 'Personal Profile',
     changeProfilePicture: 'Change Profile Picture',
@@ -223,17 +258,29 @@ export const translations: Record<LanguageCode, Translations> = {
     seeAllTimeline: 'Voir tout >',
     noTimelineRecords: 'Aucun dossier dans l\'historique.',
 
+    bloodPressure: 'Pression Artérielle',
+    heartRate: 'Fréquence Cardiaque',
+    glucose: 'Glycémie Sanguine',
+    cholesterol: 'Bilan Cholestérol',
+    universalTimeline: 'Chronologie Médicale Universelle',
+    cbcReport: 'Numération Formule Sanguine (NFS)',
+
     healthAnalytics: 'Analytique de Santé',
+    statistics: 'Statistiques',
     vitalsAndBiomarkers: 'Constantes et Biomarqueurs',
     bloodPressureTrend: 'Tendance de la Pression Artérielle',
     weeklySummary: 'Résumé Clinique Hebdomadaire',
     labPanelHistory: 'Historique des Analyses de Laboratoire',
     normalRange: 'Plage Normale',
     optimalHealthScore: 'Score de Santé Optimal',
+    dailyVitalsAndIntake: 'Signes Vitaux et Apports Quotidiens',
+    target: 'Cible:',
 
     aiDocumentIngestion: 'Ingestion de Documents IA',
+    scanMedicalDocument: 'Numériser un Document Médical',
+    scanSubtitle: 'Les ordonnances et rapports de laboratoire sont analysés automatiquement par l\'IA',
     scanDocumentOrPhoto: 'Numériser une Ordonnance ou Rapport',
-    takePhoto: 'Prendre une Photo',
+    takePhoto: 'Prendre une Photo avec Appareil',
     chooseFile: 'Choisir un Fichier PDF / Image',
     extractedMedicalEntities: 'Entités Médicales Extraites',
     confirmAndSaveToPassport: 'Confirmer et Enregistrer au Passeport',
@@ -243,6 +290,8 @@ export const translations: Record<LanguageCode, Translations> = {
     liveQrPassport: '⚡ PASSEPORT QR VITALTRON POINT DE SOINS',
     scanReadyForClinicians: 'SCANNER PRÊT POUR LES CLINICIENS',
     universalDoctorAccess: 'Accès Médical Universel',
+    sharingSubtitle: 'Les hôpitaux et médecins du monde entier peuvent scanner ce code QR pour consulter vos dossiers.',
+    validUntil: 'Valable jusqu\'au',
     customizeSharedInfo: 'Personnaliser les Informations Partagées',
     doctorOrHospitalName: 'Nom du Médecin ou de l\'Hôpital',
     securityPin: 'Code PIN de Sécurité (Optionnel)',
@@ -273,6 +322,9 @@ export const translations: Record<LanguageCode, Translations> = {
     logOutAccount: 'Se Déconnecter',
     logOutConfirmTitle: 'Se Déconnecter du Compte?',
     logOutConfirmSub: 'Êtes-vous sûr de vouloir vous déconnecter de votre session Vitaltron?',
+    vitaltronHealthPro: 'Vitaltron Santé Pro',
+    proHeroSubtitle: 'Débloquez les résumés cliniques IA, la synchronisation FHIR et le partage illimité.',
+    viewPro: 'Voir Pro >',
 
     personalProfile: 'Profil Personnel',
     changeProfilePicture: 'Changer la Photo de Profil',
@@ -320,15 +372,27 @@ export const translations: Record<LanguageCode, Translations> = {
     seeAllTimeline: 'Ver todo >',
     noTimelineRecords: 'Aún no hay registros en el historial.',
 
+    bloodPressure: 'Presión Arterial',
+    heartRate: 'Ritmo Cardíaco',
+    glucose: 'Glucosa en Sangre',
+    cholesterol: 'Panel de Colesterol',
+    universalTimeline: 'Línea de Tiempo Médica Universal',
+    cbcReport: 'Conteo Sanguíneo Completo (CSC)',
+
     healthAnalytics: 'Analítica de Salud',
+    statistics: 'Estadísticas',
     vitalsAndBiomarkers: 'Signos Vitales y Biomarcadores',
     bloodPressureTrend: 'Tendencia de Presión Arterial',
     weeklySummary: 'Resumen Clínico Semanal',
     labPanelHistory: 'Historial de Laboratorio',
     normalRange: 'Rango Normal',
     optimalHealthScore: 'Puntuación de Salud Óptima',
+    dailyVitalsAndIntake: 'Signos Vitales e Ingesta Diaria',
+    target: 'Objetivo:',
 
     aiDocumentIngestion: 'Ingesta de Documentos con IA',
+    scanMedicalDocument: 'Escanear Documento Médico',
+    scanSubtitle: 'Las recetas e informes de laboratorio son analizados automáticamente por la IA',
     scanDocumentOrPhoto: 'Escanear Receta o Informe de Lab',
     takePhoto: 'Tomar Foto con Cámara',
     chooseFile: 'Elegir Archivo PDF / Imagen',
@@ -340,6 +404,8 @@ export const translations: Record<LanguageCode, Translations> = {
     liveQrPassport: '⚡ PASAPORTE QR VITALTRON EN PUNTO DE ATENCIÓN',
     scanReadyForClinicians: 'ESCÁNER LISTO PARA MÉDICOS',
     universalDoctorAccess: 'Acceso Médico Universal',
+    sharingSubtitle: 'Hospitales o médicos de todo el mundo pueden escanear este código QR para ver sus registros médicos.',
+    validUntil: 'Válido hasta',
     customizeSharedInfo: 'Personalizar Información Compartida',
     doctorOrHospitalName: 'Nombre del Médico u Hospital',
     securityPin: 'Código PIN de Seguridad (Opcional)',
@@ -370,6 +436,9 @@ export const translations: Record<LanguageCode, Translations> = {
     logOutAccount: 'Cerrar Sesión',
     logOutConfirmTitle: '¿Cerrar Sesión de la Cuenta?',
     logOutConfirmSub: '¿Está seguro de que desea cerrar sesión en Vitaltron?',
+    vitaltronHealthPro: 'Vitaltron Salud Pro',
+    proHeroSubtitle: 'Desbloquee resúmenes clínicos con IA, sincronización FHIR y accesos ilimitados para médicos.',
+    viewPro: 'Ver Pro >',
 
     personalProfile: 'Perfil Personal',
     changeProfilePicture: 'Cambiar Foto de Perfil',

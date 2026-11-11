@@ -242,8 +242,8 @@ export default function HomeScreen() {
                           <MaterialCommunityIcons name="pill" size={16} color={colors.primary} />
                         </View>
                         <View style={{ flex: 1, marginLeft: 10 }}>
-                          <Text style={styles.medName}>No Prescriptions Logged</Text>
-                          <Text style={styles.medInstruction}>Scan a paper prescription to import</Text>
+                          <Text style={styles.medName}>{t('noPrescriptionsLogged')}</Text>
+                          <Text style={styles.medInstruction}>{t('scanPaperPrescription')}</Text>
                         </View>
                       </View>
                     </Pressable>
@@ -269,10 +269,10 @@ export default function HomeScreen() {
                     </View>
 
                     <View style={styles.medCardFooter}>
-                      <Text style={styles.dueText}>Ingested Record</Text>
+                      <Text style={styles.dueText}>{t('ingestedRecord')}</Text>
                       <View style={styles.dueTimePill}>
                         <Ionicons name="checkmark-circle" size={12} color={colors.primary} />
-                        <Text style={styles.dueTimeText}>Active</Text>
+                        <Text style={styles.dueTimeText}>{t('activeStatus')}</Text>
                       </View>
                     </View>
                   </View>
@@ -282,9 +282,9 @@ export default function HomeScreen() {
 
             {/* My Health 2x2 Grid */}
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>My Health Metrics</Text>
+              <Text style={styles.sectionTitle}>{t('myHealthMetrics')}</Text>
               <Pressable onPress={() => router.push('/records/lab-results')}>
-                <Text style={styles.viewAllText}>View all &gt;</Text>
+                <Text style={styles.viewAllText}>{t('viewAll')}</Text>
               </Pressable>
             </View>
 
@@ -317,7 +317,7 @@ export default function HomeScreen() {
                     .replace(/\[Below Range\]/gi, '')
                     .replace(/\[Above Range\]/gi, '')
                     .trim()
-                : 'Glucose';
+                : t('glucose');
 
               const labVal = labRecord
                 ? labRecord.description?.match(/[\d\.]+\s*(?:mg\/dL|g\/dL|mmol\/L|u\/L|mEq\/L|10\^6\/uL|10\^3\/uL|%|fl|pg|mm\/hr)/i)?.[0] || '95 mg/dL'
@@ -331,7 +331,7 @@ export default function HomeScreen() {
                       <View style={styles.tileIconCircle}>
                         <Ionicons name="water-outline" size={16} color={colors.primary} />
                       </View>
-                      <Text style={styles.tileTitle}>Blood pressure</Text>
+                      <Text style={styles.tileTitle}>{t('bloodPressure')}</Text>
                     </View>
 
                     {/* Smooth Sine Wave Line Sparkline */}
@@ -358,7 +358,7 @@ export default function HomeScreen() {
                       <View style={[styles.tileIconCircle, { backgroundColor: colors.white }]}>
                         <Ionicons name="heart" size={16} color={colors.primary} />
                       </View>
-                      <Text style={[styles.tileTitle, { color: colors.white }]}>Heart rate</Text>
+                      <Text style={[styles.tileTitle, { color: colors.white }]}>{t('heartRate')}</Text>
                     </View>
 
                     {/* Smooth Pulse Wave Sparkline */}
@@ -405,7 +405,7 @@ export default function HomeScreen() {
                       <View style={styles.tileIconCircle}>
                         <Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} />
                       </View>
-                      <Text style={styles.tileTitle}>Health Status</Text>
+                      <Text style={styles.tileTitle}>{t('verifiedIdentity')}</Text>
                     </View>
 
                     <View style={styles.donutSparklineBox}>
@@ -434,9 +434,9 @@ export default function HomeScreen() {
             {/* Universal Health Timeline Entries */}
             <View style={styles.timelineCard}>
               <View style={styles.sectionHeaderRow}>
-                <Text style={styles.sectionTitle}>Universal Timeline</Text>
+                <Text style={styles.sectionTitle}>{t('universalTimeline')}</Text>
                 <Pressable onPress={() => router.push('/records/timeline')}>
-                  <Text style={styles.viewAllText}>See all &gt;</Text>
+                  <Text style={styles.viewAllText}>{t('seeAllTimeline')}</Text>
                 </Pressable>
               </View>
 

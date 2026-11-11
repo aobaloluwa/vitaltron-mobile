@@ -107,14 +107,14 @@ export default function AnalyticsScreen() {
             <View style={styles.heroStatCard}>
               <View style={styles.heroTextRow}>
                 <View>
-                  <Text style={styles.statCategoryLabel}>Daily Vitals & Intake</Text>
+                  <Text style={styles.statCategoryLabel}>{t('dailyVitalsAndIntake')}</Text>
                   <View style={styles.valueRow}>
                     <Text style={styles.heroValue}>1250</Text>
                     <Text style={styles.heroUnit}>Kcal</Text>
                   </View>
                 </View>
                 <View style={styles.targetBadge}>
-                  <Text style={styles.targetText}>Target: <Text style={styles.targetBold}>1920 Kcal</Text></Text>
+                  <Text style={styles.targetText}>{t('target')} <Text style={styles.targetBold}>1920 Kcal</Text></Text>
                 </View>
               </View>
 

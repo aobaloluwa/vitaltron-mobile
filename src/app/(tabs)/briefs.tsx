@@ -258,21 +258,21 @@ export default function SharingTabScreen() {
 
                 <View style={styles.statusLivePill}>
                   <View style={styles.liveDot} />
-                  <Text style={styles.statusLiveText}>SCANNER READY FOR CLINICIANS</Text>
+                  <Text style={styles.statusLiveText}>{t('scanReadyForClinicians')}</Text>
                 </View>
 
                 <Text style={styles.heroTitleText}>
-                  {activeGrantResult?.recipientName || 'Universal Doctor & Hospital Access'}
+                  {activeGrantResult?.recipientName || t('universalDoctorAccess')}
                 </Text>
                 <Text style={styles.heroSubText}>
-                  Hospitals or clinicians anywhere in the world can scan this QR code to view your verified health records securely.
+                  {t('sharingSubtitle')}
                 </Text>
 
                 {activeGrantResult?.expiresAt && (
                   <View style={styles.expiryTag}>
                     <Ionicons name="time-outline" size={14} color={colors.primary} />
                     <Text style={styles.expiryTagText}>
-                      Valid until {new Date(activeGrantResult.expiresAt).toLocaleString()}
+                      {t('validUntil')} {new Date(activeGrantResult.expiresAt).toLocaleString()}
                     </Text>
                   </View>
                 )}
@@ -285,7 +285,7 @@ export default function SharingTabScreen() {
                       onPress={() => router.push(`/share?token=${activeGrantResult.shareableToken}`)}
                     >
                       <Ionicons name="open-outline" size={16} color={colors.white} />
-                      <Text style={styles.openPortalBtnText}>Test & Open Share Portal</Text>
+                      <Text style={styles.openPortalBtnText}>{t('testAndOpenShareLink')}</Text>
                     </Pressable>
                   ) : null}
 
@@ -309,7 +309,7 @@ export default function SharingTabScreen() {
                       color={copied ? colors.primary : colors.darkText}
                     />
                     <Text style={[styles.copyLinkBtnText, copied && { color: colors.primary }]}>
-                      {copied ? 'Link Copied!' : 'Copy Link Address'}
+                      {copied ? t('linkCopied') : t('copyLinkAddress')}
                     </Text>
                   </Pressable>
                 </View>
@@ -320,7 +320,7 @@ export default function SharingTabScreen() {
                 <View style={styles.cardHeaderRow}>
                   <Ionicons name="options-outline" size={22} color={colors.primary} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.cardTitle}>Customize Shared Information</Text>
+                    <Text style={styles.cardTitle}>{t('customizeSharedInfo')}</Text>
                     <Text style={styles.cardSub}>
                       Determine exactly which record types, clinician recipient, and access duration to grant.
                     </Text>
@@ -329,14 +329,14 @@ export default function SharingTabScreen() {
 
                 <View style={styles.formGap}>
                   <AppTextInput
-                    label="Doctor / Hospital Name or Email"
+                    label={t('doctorOrHospitalName')}
                     placeholder="e.g. GNU Solidario Hospital or doctor@hospital.org"
                     value={recipientName}
                     onChangeText={setRecipientName}
                   />
 
                   <AppTextInput
-                    label="Security Passcode / PIN (Optional)"
+                    label={t('securityPin')}
                     placeholder="e.g. 1234"
                     value={passcode}
                     onChangeText={setPasscode}
@@ -344,7 +344,7 @@ export default function SharingTabScreen() {
                   />
 
                   {/* Allowed Record Types Multi-Select */}
-                  <Text style={styles.inputLabel}>Shared Information Types:</Text>
+                  <Text style={styles.inputLabel}>{t('sharedInfoTypes')}</Text>
                   <View style={styles.typePillsContainer}>
                     <Pressable
                       style={[
