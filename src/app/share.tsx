@@ -79,7 +79,7 @@ export default function PublicShareAccessScreen() {
             <AppLogo size="small" showText={true} />
             <View style={styles.secBadge}>
               <Ionicons name="shield-checkmark" size={14} color={colors.white} />
-              <Text style={styles.secBadgeText}>CONTROLLED POINT-OF-CARE ACCESS</Text>
+              <Text style={styles.secBadgeText}>CONTROLLED ACCESS</Text>
             </View>
           </View>
 

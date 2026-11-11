@@ -139,7 +139,7 @@ export default function SharingPreferencesScreen() {
         <View style={styles.qrMainHeroCard}>
           <View style={styles.heroBadgeRow}>
             <Ionicons name="sparkles" size={14} color={colors.white} />
-            <Text style={styles.heroBadgeText}>⚡ VITALTRON POINT-OF-CARE QR PASSPORT</Text>
+            <Text style={styles.heroBadgeText}>VITALTRON POINT-OF-CARE QR PASSPORT</Text>
           </View>
 
           {/* Target Scanner Frame with Brackets */}
