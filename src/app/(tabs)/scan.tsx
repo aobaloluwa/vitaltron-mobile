@@ -421,7 +421,7 @@ export default function ScanScreen() {
         )}
       </ScrollView>
 
-      {/* AI Extraction Analysis & Confirmation Modal */}
+      {/* AI Document Reader Modal (Word Document Style) */}
       <Modal visible={analysisModalVisible} animationType="slide" transparent={true}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -431,15 +431,15 @@ export default function ScanScreen() {
             <View style={styles.modalHeader}>
               <View style={styles.modalTitleRow}>
                 <MaterialIcons name="auto-awesome" size={20} color={colors.primary} />
-                <Text style={styles.modalTitle}>AI Scan Analysis & Confirmation</Text>
+                <Text style={styles.modalTitle}>Medical Document Reader</Text>
               </View>
               <Pressable onPress={() => setAnalysisModalVisible(false)}>
                 <Ionicons name="close" size={24} color={colors.darkText} />
               </Pressable>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
-              {/* Image Preview */}
+            <ScrollView showsVerticalScrollIndicator={true} style={{ maxHeight: 580 }}>
+              {/* Document Image Header */}
               {scannedImageUri && (
                 <View style={styles.modalImagePreviewBox}>
                   <Image source={{ uri: scannedImageUri }} style={styles.modalImage} resizeMode="cover" />
@@ -447,16 +447,16 @@ export default function ScanScreen() {
               )}
 
               <Text style={styles.modalInstructionText}>
-                Review, edit, and confirm the extracted medical findings below to save them directly to your Health Passport.
+                Review your scanned document like a Word document below. Hospital, physician, and test findings are fully extracted.
               </Text>
 
-              {/* Extracted Editable Entities */}
+              {/* Single Consolidated Document Card */}
               {editableEntities.map((item, index) => (
-                <View key={item.id || index} style={styles.entityEditCard}>
+                <View key={item.id || index} style={styles.documentReaderCard}>
                   <View style={styles.entityCardHeader}>
                     <View style={styles.confBadge}>
                       <Text style={styles.confText}>
-                        {Math.round(item.confidenceScore * 100)}% AI Confident
+                        {Math.round(item.confidenceScore * 100)}% AI Verified
                       </Text>
                     </View>
 
@@ -468,14 +468,14 @@ export default function ScanScreen() {
                     )}
                   </View>
 
-                  {/* Editable Title */}
+                  {/* Document Title */}
                   <AppTextInput
-                    label="Entity Title"
+                    label="Document Title"
                     value={item.title}
                     onChangeText={(val) => handleUpdateEntityField(index, 'title', val)}
                   />
 
-                  {/* Record Type Selector Pills */}
+                  {/* Record Category */}
                   <Text style={styles.typeSelectorLabel}>Record Category:</Text>
                   <ScrollView
                     horizontal
@@ -503,22 +503,25 @@ export default function ScanScreen() {
                     ))}
                   </ScrollView>
 
-                  {/* Editable Description */}
-                  <AppTextInput
-                    label="Clinical Findings / Dosage Readings"
-                    value={item.description}
-                    onChangeText={(val) => handleUpdateEntityField(index, 'description', val)}
-                    multiline={true}
-                  />
+                  {/* Scrollable Document Content Viewer (Word Document style) */}
+                  <Text style={styles.typeSelectorLabel}>Document Content, Hospital, Doctor & Findings:</Text>
+                  <View style={styles.documentTextViewer}>
+                    <AppTextInput
+                      value={item.description}
+                      onChangeText={(val) => handleUpdateEntityField(index, 'description', val)}
+                      multiline={true}
+                      style={styles.documentTextArea}
+                    />
+                  </View>
 
-                  {/* Confirm Action Button */}
+                  {/* ONLY ONE SINGLE Confirm & Save Button at the bottom */}
                   <PrimaryButton
                     title={item.isConfirmed ? 'Saved to Timeline' : 'Confirm & Save to Health Passport'}
                     onPress={() => handleConfirmEntity(index)}
                     loading={item.confirming}
                     disabled={item.isConfirmed}
                     variant={item.isConfirmed ? 'outline' : 'primary'}
-                    style={{ marginTop: 8 }}
+                    style={{ marginTop: 16 }}
                   />
                 </View>
               ))}
@@ -797,13 +800,32 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 18,
   },
-  entityEditCard: {
-    backgroundColor: colors.softBackground,
+  documentReaderCard: {
+    backgroundColor: colors.white,
     borderRadius: 20,
     padding: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.secondary,
+    borderColor: colors.border,
+    shadowColor: colors.darkText,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  documentTextViewer: {
+    backgroundColor: '#FCFBFD',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.softBackground,
+    padding: 4,
+  },
+  documentTextArea: {
+    minHeight: 220,
+    textAlignVertical: 'top',
+    fontSize: 14,
+    lineHeight: 22,
+    color: colors.darkText,
   },
   entityCardHeader: {
     flexDirection: 'row',
