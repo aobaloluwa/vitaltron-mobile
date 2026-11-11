@@ -11,6 +11,8 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,6 +28,7 @@ import { getUserProfile } from '../../services/users';
 import { colors } from '../../theme';
 
 export default function HomeScreen() {
+  const { width: windowWidth } = useWindowDimensions();
   const [userName, setUserName] = useState('');
   const [timeline, setTimeline] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +38,11 @@ export default function HomeScreen() {
   // Global Search State
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchFilter, setSearchFilter] = useState<'ALL' | 'RECORDS' | 'DOCS' | 'FAMILY'>('ALL');
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<GlobalSearchResult | null>(null);
+
+  const isDesktopOrTablet = windowWidth >= 768;
 
   // Add Record Modal
   const [modalVisible, setModalVisible] = useState(false);
@@ -556,18 +562,26 @@ export default function HomeScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.searchModalOverlay}
         >
-          <View style={styles.searchModalCard}>
+          <View style={[styles.searchModalCard, { maxWidth: isDesktopOrTablet ? 640 : '100%' }]}>
+            {/* Integrated Header Search Input */}
             <View style={styles.searchHeaderRow}>
               <View style={styles.searchBarBox}>
                 <Ionicons name="search" size={20} color={colors.primary} />
-                <AppTextInput
-                  placeholder="Search health records, scanned docs, dependents..."
+                <TextInput
+                  placeholder="Search records, docs, family members..."
+                  placeholderTextColor={colors.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  style={{ flex: 1, marginBottom: 0 }}
+                  style={styles.searchInputField}
                   autoFocus={true}
                 />
+                {searchQuery.length > 0 && (
+                  <Pressable onPress={() => setSearchQuery('')}>
+                    <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                  </Pressable>
+                )}
               </View>
+
               <Pressable
                 onPress={() => {
                   setSearchModalVisible(false);
@@ -576,25 +590,67 @@ export default function HomeScreen() {
                 }}
                 style={styles.closeSearchBtn}
               >
-                <Ionicons name="close" size={24} color={colors.darkText} />
+                <Ionicons name="close" size={22} color={colors.darkText} />
               </Pressable>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 460 }}>
+            {/* Category Filter Pills */}
+            {searchResults && (
+              <View style={styles.searchFilterRow}>
+                <Pressable
+                  style={[styles.searchFilterPill, searchFilter === 'ALL' && styles.searchFilterPillActive]}
+                  onPress={() => setSearchFilter('ALL')}
+                >
+                  <Text style={[styles.searchFilterText, searchFilter === 'ALL' && styles.searchFilterTextActive]}>
+                    All Results
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.searchFilterPill, searchFilter === 'RECORDS' && styles.searchFilterPillActive]}
+                  onPress={() => setSearchFilter('RECORDS')}
+                >
+                  <Text style={[styles.searchFilterText, searchFilter === 'RECORDS' && styles.searchFilterTextActive]}>
+                    Records ({searchResults.records.length})
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.searchFilterPill, searchFilter === 'DOCS' && styles.searchFilterPillActive]}
+                  onPress={() => setSearchFilter('DOCS')}
+                >
+                  <Text style={[styles.searchFilterText, searchFilter === 'DOCS' && styles.searchFilterTextActive]}>
+                    Docs ({searchResults.documents.length})
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.searchFilterPill, searchFilter === 'FAMILY' && styles.searchFilterPillActive]}
+                  onPress={() => setSearchFilter('FAMILY')}
+                >
+                  <Text style={[styles.searchFilterText, searchFilter === 'FAMILY' && styles.searchFilterTextActive]}>
+                    Family ({searchResults.dependents.length})
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+
+            {/* Results Content */}
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: isDesktopOrTablet ? 500 : 420 }}>
               {searching ? (
-                <ActivityIndicator color={colors.primary} style={{ marginVertical: 30 }} />
+                <ActivityIndicator color={colors.primary} style={{ marginVertical: 36 }} />
               ) : !searchResults ? (
                 <View style={styles.searchNoticeBox}>
-                  <Ionicons name="search-outline" size={36} color={colors.secondary} />
+                  <Ionicons name="search-outline" size={38} color={colors.primary} />
                   <Text style={styles.searchNoticeTitle}>Global App Search</Text>
                   <Text style={styles.searchNoticeSub}>
-                    Type any keyword e.g. "Blood", "Glucose", "Amoxicillin", or "Hospital" to search across your health database.
+                    Type any keyword e.g. "Blood", "Glucose", "Amoxicillin", or "Hospital" to query across your database.
                   </Text>
                 </View>
               ) : (
-                <View style={{ gap: 14 }}>
+                <View style={{ gap: 12 }}>
                   {/* Health Records Category */}
-                  {searchResults.records.length > 0 && (
+                  {(searchFilter === 'ALL' || searchFilter === 'RECORDS') && searchResults.records.length > 0 && (
                     <View style={styles.searchCatSection}>
                       <Text style={styles.searchCatTitle}>
                         Health Records ({searchResults.records.length})
@@ -624,7 +680,7 @@ export default function HomeScreen() {
                   )}
 
                   {/* Scanned Documents Category */}
-                  {searchResults.documents.length > 0 && (
+                  {(searchFilter === 'ALL' || searchFilter === 'DOCS') && searchResults.documents.length > 0 && (
                     <View style={styles.searchCatSection}>
                       <Text style={styles.searchCatTitle}>
                         Scanned Documents ({searchResults.documents.length})
@@ -654,7 +710,7 @@ export default function HomeScreen() {
                   )}
 
                   {/* Family Dependents Category */}
-                  {searchResults.dependents.length > 0 && (
+                  {(searchFilter === 'ALL' || searchFilter === 'FAMILY') && searchResults.dependents.length > 0 && (
                     <View style={styles.searchCatSection}>
                       <Text style={styles.searchCatTitle}>
                         Family Members ({searchResults.dependents.length})
@@ -1187,7 +1243,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-start',
-    paddingTop: 60,
+    alignItems: 'center',
+    paddingTop: 50,
     paddingHorizontal: 16,
   },
   searchModalCard: {
@@ -1196,11 +1253,13 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 18,
     gap: 12,
+    borderWidth: 1,
+    borderColor: colors.softBackground,
     shadowColor: colors.darkText,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowRadius: 18,
+    elevation: 10,
   },
   searchHeaderRow: {
     flexDirection: 'row',
@@ -1211,19 +1270,48 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     backgroundColor: colors.softBackground,
     borderRadius: 16,
     paddingHorizontal: 14,
-    paddingVertical: 4,
+    height: 48,
+  },
+  searchInputField: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.darkText,
   },
   closeSearchBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.softBackground,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  searchFilterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 4,
+  },
+  searchFilterPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: colors.softBackground,
+  },
+  searchFilterPillActive: {
+    backgroundColor: colors.primary,
+  },
+  searchFilterText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.darkText,
+  },
+  searchFilterTextActive: {
+    color: colors.white,
   },
   searchNoticeBox: {
     alignItems: 'center',
@@ -1246,7 +1334,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchCatTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
     color: colors.primary,
     letterSpacing: 0.5,
@@ -1274,7 +1362,7 @@ const styles = StyleSheet.create({
     color: colors.darkText,
   },
   resultRowSub: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textMuted,
     marginTop: 2,
   },
