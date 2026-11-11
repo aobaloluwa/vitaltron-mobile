@@ -64,7 +64,13 @@ export default function ScanScreen() {
   const fetchDocs = async () => {
     try {
       const docs = await getDocuments().catch(() => []);
-      setDocuments(docs || []);
+      const filteredDocs = (docs || []).filter(
+        (doc) =>
+          doc.uploadSource !== 'PROFILE_AVATAR' &&
+          !doc.fileName.toLowerCase().startsWith('avatar_') &&
+          !doc.fileName.toLowerCase().includes('avatar')
+      );
+      setDocuments(filteredDocs);
     } catch {
       // Fallback
     } finally {

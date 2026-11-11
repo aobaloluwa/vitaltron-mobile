@@ -25,6 +25,7 @@ export interface DocumentItem {
   mimeType?: string;
   fileType?: string;
   fileSize?: number;
+  uploadSource?: string;
   status?: string;
   ingestionStatus?: string;
   entities?: DocumentEntity[];
@@ -38,7 +39,12 @@ export interface ConfirmEntityDto {
   description?: string;
 }
 
-export async function uploadDocument(fileUri: string, fileName: string, mimeType: string): Promise<DocumentItem> {
+export async function uploadDocument(
+  fileUri: string,
+  fileName: string,
+  mimeType: string,
+  uploadSource?: string
+): Promise<DocumentItem> {
   const cleanFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
   const cleanType = mimeType || 'image/jpeg';
   const token = await getStoredAccessToken();
@@ -50,6 +56,7 @@ export async function uploadDocument(fileUri: string, fileName: string, mimeType
       const blob = await response.blob();
       const formData = new FormData();
       formData.append('file', blob, cleanFileName);
+      if (uploadSource) formData.append('uploadSource', uploadSource);
 
       return await apiRequest('/documents/upload', {
         method: 'POST',
@@ -61,7 +68,6 @@ export async function uploadDocument(fileUri: string, fileName: string, mimeType
   }
 
   // 2. Mobile (iOS / Android): Expo SDK 58 Native File.upload method
-  // Bypasses JS fetch & JS FormData to avoid "Unsupported FormDataPart implementation" errors
   try {
     const file = new File(fileUri);
     const url = `${API_BASE_URL}/documents/upload`;
@@ -77,6 +83,7 @@ export async function uploadDocument(fileUri: string, fileName: string, mimeType
       parameters: {
         fileName: cleanFileName,
         fileType: cleanType,
+        ...(uploadSource ? { uploadSource } : {}),
       },
     });
 
@@ -104,6 +111,7 @@ export async function uploadDocument(fileUri: string, fileName: string, mimeType
           dataUri,
           fileName: cleanFileName,
           fileType: cleanType,
+          uploadSource,
         }),
       });
     }

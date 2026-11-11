@@ -73,10 +73,10 @@ export default function PersonalInfoScreen() {
       const asset = result.assets[0];
       setUploadingPhoto(true);
 
-      const fileName = asset.fileName || `avatar_${Date.now()}.jpg`;
+      const fileName = `avatar_${Date.now()}.jpg`;
       const mimeType = asset.mimeType || 'image/jpeg';
 
-      const uploadRes = await uploadDocument(asset.uri, fileName, mimeType);
+      const uploadRes = await uploadDocument(asset.uri, fileName, mimeType, 'PROFILE_AVATAR');
       const newPhotoUrl = uploadRes.fileUrl;
 
       setAvatarUrl(newPhotoUrl);
