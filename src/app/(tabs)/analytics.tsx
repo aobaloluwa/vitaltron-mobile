@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme';
 
 const CHART_DATA = [
@@ -25,6 +26,7 @@ const CHART_DATA = [
 ];
 
 export default function AnalyticsScreen() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -80,7 +82,7 @@ export default function AnalyticsScreen() {
           <Pressable style={styles.iconBtn}>
             <Ionicons name="chevron-back" size={22} color={colors.darkText} />
           </Pressable>
-          <Text style={styles.headerTitle}>Statistics</Text>
+          <Text style={styles.headerTitle}>{t('healthAnalytics')}</Text>
           <Pressable style={styles.iconBtn}>
             <Feather name="more-horizontal" size={22} color={colors.darkText} />
           </Pressable>

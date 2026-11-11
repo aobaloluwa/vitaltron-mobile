@@ -29,6 +29,7 @@ import {
 } from '../../services/sharing';
 import { RecordType } from '../../services/healthRecords';
 import { copyToClipboard } from '../../utils/clipboard';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme';
 
 const ALL_TYPES: RecordType[] = [
@@ -41,6 +42,7 @@ const ALL_TYPES: RecordType[] = [
 ];
 
 export default function SharingTabScreen() {
+  const { t } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const [grants, setGrants] = useState<AccessGrant[]>([]);
   const [brief, setBrief] = useState<ClinicalBrief | null>(null);
@@ -210,10 +212,10 @@ export default function SharingTabScreen() {
         <View style={[styles.mainWrapper, { maxWidth: isDesktopOrTablet ? 760 : '100%' }]}>
           {/* Header Bar */}
           <View style={styles.headerBar}>
-            <Text style={styles.headerTitle}>Controlled Sharing</Text>
+            <Text style={styles.headerTitle}>{t('controlledSharing')}</Text>
             <View style={styles.shieldBadge}>
               <Ionicons name="shield-checkmark" size={14} color={colors.white} />
-              <Text style={styles.shieldBadgeText}>Point-of-Care Security</Text>
+              <Text style={styles.shieldBadgeText}>{t('pointOfCareSecurity')}</Text>
             </View>
           </View>
 
@@ -228,7 +230,7 @@ export default function SharingTabScreen() {
               <View style={styles.qrMainHeroCard}>
                 <View style={styles.heroBadgeRow}>
                   <Ionicons name="sparkles" size={14} color={colors.white} />
-                  <Text style={styles.heroBadgeText}>⚡ VITALTRON POINT-OF-CARE QR PASSPORT</Text>
+                  <Text style={styles.heroBadgeText}>{t('liveQrPassport')}</Text>
                 </View>
 
                 {/* Target Scanner Frame with Brackets */}

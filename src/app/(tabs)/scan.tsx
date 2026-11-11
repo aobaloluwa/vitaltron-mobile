@@ -25,6 +25,7 @@ import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { confirmEntity, DocumentItem, getDocuments, uploadDocument } from '../../services/documents';
 import { RecordType } from '../../services/healthRecords';
+import { useTranslation } from '../../i18n/LanguageContext';
 import { colors } from '../../theme';
 
 const RECORD_TYPES: RecordType[] = [
@@ -38,6 +39,7 @@ const RECORD_TYPES: RecordType[] = [
 ];
 
 export default function ScanScreen() {
+  const { t } = useTranslation();
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -298,7 +300,7 @@ export default function ScanScreen() {
       >
         {/* Header Bar */}
         <View style={styles.headerBar}>
-          <Text style={styles.headerTitle}>Document Ingestion</Text>
+          <Text style={styles.headerTitle}>{t('aiDocumentIngestion')}</Text>
           <View style={styles.aiBadge}>
             <MaterialIcons name="auto-awesome" size={14} color={colors.white} />
             <Text style={styles.aiBadgeText}>AI Engine</Text>

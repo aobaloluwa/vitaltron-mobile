@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   BackHandler,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -32,6 +33,7 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const [userName, setUserName] = useState('');
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -59,6 +61,7 @@ export default function HomeScreen() {
       const fullUser = await getUserProfile().catch(() => null);
       if (fullUser) {
         setUserName(fullUser.displayName || 'Patient Identity');
+        setUserAvatarUrl(fullUser.avatarUrl || null);
       }
 
       const timelineData = await getTimeline({ limit: 20 }).catch(() => ({ records: [] }));
@@ -197,9 +200,13 @@ export default function HomeScreen() {
             {/* Top Header Bar: Profile Icon, Health Overview, Search & Notifications on the SAME line */}
             <View style={styles.topHeaderBar}>
               <View style={styles.headerProfileRow}>
-                <Pressable onPress={() => router.push('/profile/health-vitals')}>
+                <Pressable onPress={() => router.push('/profile/personal-info')}>
                   <View style={styles.avatarCircle}>
-                    <Ionicons name="person" size={22} color={colors.white} />
+                    {userAvatarUrl ? (
+                      <Image source={{ uri: userAvatarUrl }} style={{ width: 46, height: 46, borderRadius: 23 }} />
+                    ) : (
+                      <Ionicons name="person" size={22} color={colors.white} />
+                    )}
                   </View>
                 </Pressable>
                 <Text style={styles.overviewTitleHeader}>{t('healthOverview')}</Text>
