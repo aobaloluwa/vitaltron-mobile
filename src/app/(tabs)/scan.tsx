@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -71,9 +71,20 @@ export default function ScanScreen() {
     }
   };
 
+  const { docId } = useLocalSearchParams<{ docId?: string }>();
+
   useEffect(() => {
     void fetchDocs();
   }, []);
+
+  useEffect(() => {
+    if (docId && documents.length > 0) {
+      const match = documents.find((d) => d.id === docId);
+      if (match) {
+        openAnalysisModal(match, match.fileUrl);
+      }
+    }
+  }, [docId, documents]);
 
   useFocusEffect(
     useCallback(() => {

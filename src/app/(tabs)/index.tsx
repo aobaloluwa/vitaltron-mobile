@@ -691,7 +691,7 @@ export default function HomeScreen() {
                           style={styles.searchResultRow}
                           onPress={() => {
                             setSearchModalVisible(false);
-                            router.push('/(tabs)/scan');
+                            router.push({ pathname: '/(tabs)/scan', params: { docId: d.id } } as any);
                           }}
                         >
                           <View style={styles.searchIconCircle}>
