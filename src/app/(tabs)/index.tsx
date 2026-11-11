@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   BackHandler,
   KeyboardAvoidingView,
@@ -20,7 +21,7 @@ import { AppTextInput } from '../../components/ui/AppTextInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { logoutUser } from '../../services/auth';
-import { createHealthRecord, getTimeline, HealthRecord, RecordType } from '../../services/healthRecords';
+import { createHealthRecord, getTimeline, globalSearch, GlobalSearchResult, HealthRecord, RecordType } from '../../services/healthRecords';
 import { getUserProfile } from '../../services/users';
 import { colors } from '../../theme';
 
@@ -30,6 +31,12 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedRecordItem, setSelectedRecordItem] = useState<HealthRecord | null>(null);
+
+  // Global Search State
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<GlobalSearchResult | null>(null);
 
   // Add Record Modal
   const [modalVisible, setModalVisible] = useState(false);
@@ -87,6 +94,27 @@ export default function HomeScreen() {
       return () => subscription.remove();
     }, [])
   );
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await globalSearch(searchQuery);
+        setSearchResults(res);
+      } catch {
+        setSearchResults(null);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -170,7 +198,7 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.topRightActions}>
-                <Pressable style={styles.iconBtn}>
+                <Pressable style={styles.iconBtn} onPress={() => setSearchModalVisible(true)}>
                   <Ionicons name="search-outline" size={20} color={colors.darkText} />
                 </Pressable>
                 <Pressable style={styles.iconBtn}>
@@ -521,6 +549,155 @@ export default function HomeScreen() {
           </View>
         </Modal>
       )}
+
+      {/* Global App Search Modal */}
+      <Modal visible={searchModalVisible} animationType="fade" transparent={true}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.searchModalOverlay}
+        >
+          <View style={styles.searchModalCard}>
+            <View style={styles.searchHeaderRow}>
+              <View style={styles.searchBarBox}>
+                <Ionicons name="search" size={20} color={colors.primary} />
+                <AppTextInput
+                  placeholder="Search health records, scanned docs, dependents..."
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  style={{ flex: 1, marginBottom: 0 }}
+                  autoFocus={true}
+                />
+              </View>
+              <Pressable
+                onPress={() => {
+                  setSearchModalVisible(false);
+                  setSearchQuery('');
+                  setSearchResults(null);
+                }}
+                style={styles.closeSearchBtn}
+              >
+                <Ionicons name="close" size={24} color={colors.darkText} />
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 460 }}>
+              {searching ? (
+                <ActivityIndicator color={colors.primary} style={{ marginVertical: 30 }} />
+              ) : !searchResults ? (
+                <View style={styles.searchNoticeBox}>
+                  <Ionicons name="search-outline" size={36} color={colors.secondary} />
+                  <Text style={styles.searchNoticeTitle}>Global App Search</Text>
+                  <Text style={styles.searchNoticeSub}>
+                    Type any keyword e.g. "Blood", "Glucose", "Amoxicillin", or "Hospital" to search across your health database.
+                  </Text>
+                </View>
+              ) : (
+                <View style={{ gap: 14 }}>
+                  {/* Health Records Category */}
+                  {searchResults.records.length > 0 && (
+                    <View style={styles.searchCatSection}>
+                      <Text style={styles.searchCatTitle}>
+                        Health Records ({searchResults.records.length})
+                      </Text>
+                      {searchResults.records.map((r) => (
+                        <Pressable
+                          key={r.id}
+                          style={styles.searchResultRow}
+                          onPress={() => {
+                            setSearchModalVisible(false);
+                            setSelectedRecordItem(r);
+                          }}
+                        >
+                          <View style={styles.searchIconCircle}>
+                            <MaterialCommunityIcons name="stethoscope" size={18} color={colors.primary} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.resultRowTitle}>{r.title}</Text>
+                            <Text style={styles.resultRowSub} numberOfLines={1}>
+                              {r.facilityName ? `${r.facilityName} • ` : ''}{r.type.replace('_', ' ')}
+                            </Text>
+                          </View>
+                          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Scanned Documents Category */}
+                  {searchResults.documents.length > 0 && (
+                    <View style={styles.searchCatSection}>
+                      <Text style={styles.searchCatTitle}>
+                        Scanned Documents ({searchResults.documents.length})
+                      </Text>
+                      {searchResults.documents.map((d) => (
+                        <Pressable
+                          key={d.id}
+                          style={styles.searchResultRow}
+                          onPress={() => {
+                            setSearchModalVisible(false);
+                            router.push('/(tabs)/scan');
+                          }}
+                        >
+                          <View style={styles.searchIconCircle}>
+                            <Ionicons name="document-text" size={18} color={colors.primary} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.resultRowTitle}>{d.fileName}</Text>
+                            <Text style={styles.resultRowSub} numberOfLines={1}>
+                              {d.ingestionStatus} • {new Date(d.createdAt).toLocaleDateString()}
+                            </Text>
+                          </View>
+                          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Family Dependents Category */}
+                  {searchResults.dependents.length > 0 && (
+                    <View style={styles.searchCatSection}>
+                      <Text style={styles.searchCatTitle}>
+                        Family Members ({searchResults.dependents.length})
+                      </Text>
+                      {searchResults.dependents.map((dep) => (
+                        <Pressable
+                          key={dep.id}
+                          style={styles.searchResultRow}
+                          onPress={() => {
+                            setSearchModalVisible(false);
+                            router.push('/profile/dependents');
+                          }}
+                        >
+                          <View style={styles.searchIconCircle}>
+                            <Ionicons name="people" size={18} color={colors.primary} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.resultRowTitle}>{dep.displayName || 'Family Member'}</Text>
+                            <Text style={styles.resultRowSub}>Linked Family Portfolio</Text>
+                          </View>
+                          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+
+                  {searchResults.records.length === 0 &&
+                    searchResults.documents.length === 0 &&
+                    searchResults.dependents.length === 0 && (
+                      <View style={styles.searchNoticeBox}>
+                        <Ionicons name="alert-circle-outline" size={36} color={colors.textMuted} />
+                        <Text style={styles.searchNoticeTitle}>No Search Results Found</Text>
+                        <Text style={styles.searchNoticeSub}>
+                          No health records, scanned documents, or family members matched "{searchQuery}".
+                        </Text>
+                      </View>
+                    )}
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* Add Health Record Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent={true}>
@@ -1005,5 +1182,100 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 14,
     fontWeight: '700',
+  },
+  searchModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-start',
+    paddingTop: 60,
+    paddingHorizontal: 16,
+  },
+  searchModalCard: {
+    width: '100%',
+    backgroundColor: colors.white,
+    borderRadius: 24,
+    padding: 18,
+    gap: 12,
+    shadowColor: colors.darkText,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  searchHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  searchBarBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.softBackground,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+  },
+  closeSearchBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.softBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchNoticeBox: {
+    alignItems: 'center',
+    paddingVertical: 28,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  searchNoticeTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.darkText,
+  },
+  searchNoticeSub: {
+    fontSize: 12,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  searchCatSection: {
+    gap: 8,
+  },
+  searchCatTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  searchResultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.softBackground,
+    borderRadius: 16,
+    padding: 12,
+  },
+  searchIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  resultRowTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.darkText,
+  },
+  resultRowSub: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
   },
 });

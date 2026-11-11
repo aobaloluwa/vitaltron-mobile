@@ -54,6 +54,13 @@ export interface QueryTimelineParams {
   limit?: number;
 }
 
+export interface GlobalSearchResult {
+  records: HealthRecord[];
+  documents: any[];
+  extractedEntities: any[];
+  dependents: any[];
+}
+
 export async function getTimeline(params?: QueryTimelineParams): Promise<{
   records: HealthRecord[];
   total: number;
@@ -70,6 +77,11 @@ export async function getTimeline(params?: QueryTimelineParams): Promise<{
   const queryString = query.toString();
   const endpoint = `/health-records/timeline${queryString ? `?${queryString}` : ''}`;
   return apiRequest(endpoint, { method: 'GET' });
+}
+
+export async function globalSearch(query: string): Promise<GlobalSearchResult> {
+  const encoded = encodeURIComponent(query.trim());
+  return apiRequest(`/health-records/search?q=${encoded}`, { method: 'GET' });
 }
 
 export async function getHealthRecordById(id: string): Promise<HealthRecord> {
