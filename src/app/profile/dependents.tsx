@@ -109,7 +109,27 @@ export default function DependentsScreen() {
           </View>
         ) : (
           dependents.map((dep) => (
-            <View key={dep.id} style={styles.dependentCard}>
+            <Pressable
+              key={dep.id}
+              style={styles.dependentCard}
+              onPress={() => {
+                Alert.alert(
+                  `Manage ${dep.fullName}`,
+                  `Select an action for ${dep.fullName} (${dep.relationship}):`,
+                  [
+                    {
+                      text: 'View Health Timeline',
+                      onPress: () => router.push('/records/timeline'),
+                    },
+                    {
+                      text: 'Generate Doctor Access QR Code',
+                      onPress: () => router.push('/profile/sharing-preferences'),
+                    },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]
+                );
+              }}
+            >
               <View style={styles.avatarCircle}>
                 <Ionicons name="person" size={20} color={colors.primary} />
               </View>
@@ -120,9 +140,10 @@ export default function DependentsScreen() {
               </View>
 
               <View style={styles.badgePill}>
-                <Text style={styles.badgeText}>Linked</Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+                <Text style={styles.badgeText}>Manage</Text>
               </View>
-            </View>
+            </Pressable>
           ))
         )}
       </ScrollView>

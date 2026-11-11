@@ -50,6 +50,17 @@ export async function getUserProfile(): Promise<any> {
   return apiRequest('/users/me', { method: 'GET' });
 }
 
+export async function updateUserInfo(data: {
+  displayName?: string;
+  avatarUrl?: string;
+  preferredLanguage?: string;
+}): Promise<any> {
+  return apiRequest('/users/me', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function updatePatientProfile(dto: UpdatePatientProfileDto): Promise<PatientProfile> {
   return apiRequest('/users/me/patient-profile', {
     method: 'PATCH',

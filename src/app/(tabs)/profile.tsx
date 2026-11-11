@@ -3,6 +3,8 @@ import {
   ActivityIndicator,
   Alert,
   BackHandler,
+  Image,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -16,17 +18,55 @@ import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { logoutUser, User } from '../../services/auth';
-import { Dependent, getDependents, getUserProfile } from '../../services/users';
+import { Dependent, getDependents, getUserProfile, updateUserInfo } from '../../services/users';
+import { getStoredLanguage, LanguageCode, setStoredLanguage } from '../../i18n/translations';
 import { colors } from '../../theme';
 
 export default function ProfileScreen() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<(User & { avatarUrl?: string }) | null>(null);
   const [dependents, setDependents] = useState<Dependent[]>([]);
   const [biometricsEnabled, setBiometricsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const [loggingOut, setLoggingOut] = useState(false);
+
+  // Language State
+  const [langModalVisible, setLangModalVisible] = useState(false);
+  const [currentLang, setCurrentLang] = useState<LanguageCode>('en');
+
+  useEffect(() => {
+    void getStoredLanguage().then((l) => setCurrentLang(l));
+  }, []);
+
+  const handleSelectLanguage = (newLang: LanguageCode, langLabel: string) => {
+    if (newLang === currentLang) {
+      setLangModalVisible(false);
+      return;
+    }
+
+    Alert.alert(
+      'Change App Language?',
+      `Are you sure you want to switch the app language to ${langLabel}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Switch Language',
+          onPress: async () => {
+            try {
+              setCurrentLang(newLang);
+              await setStoredLanguage(newLang);
+              await updateUserInfo({ preferredLanguage: newLang });
+              setLangModalVisible(false);
+              Alert.alert('Language Updated', `App language changed to ${langLabel}.`);
+            } catch {
+              setLangModalVisible(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const fetchProfileData = async () => {
     try {
@@ -36,6 +76,7 @@ export default function ProfileScreen() {
           id: fullUser.id,
           email: fullUser.email,
           displayName: fullUser.displayName,
+          avatarUrl: fullUser.avatarUrl,
         });
       }
 
@@ -114,9 +155,7 @@ export default function ProfileScreen() {
             <Ionicons name="arrow-back" size={20} color={colors.darkText} />
           </Pressable>
           <Text style={styles.headerTitle}>Profile</Text>
-          <Pressable style={styles.iconCircleBtn}>
-            <Ionicons name="search-outline" size={20} color={colors.darkText} />
-          </Pressable>
+          <View style={{ width: 40 }} />
         </View>
 
         {loading ? (
@@ -132,10 +171,14 @@ export default function ProfileScreen() {
             {/* User Identity Profile Summary Card */}
             <Pressable
               style={styles.userProfileCard}
-              onPress={() => router.push('/profile/health-vitals')}
+              onPress={() => router.push('/profile/personal-info')}
             >
               <View style={styles.avatarBox}>
-                <Ionicons name="person" size={26} color={colors.white} />
+                {user?.avatarUrl ? (
+                  <Image source={{ uri: user.avatarUrl }} style={{ width: 52, height: 52, borderRadius: 26 }} />
+                ) : (
+                  <Ionicons name="person" size={26} color={colors.white} />
+                )}
               </View>
 
               <View style={styles.userTextGroup}>
@@ -283,13 +326,18 @@ export default function ProfileScreen() {
 
               <View style={styles.divider} />
 
-              <View style={styles.menuItemRow}>
+              <Pressable
+                style={styles.menuItemRow}
+                onPress={() => setLangModalVisible(true)}
+              >
                 <View style={styles.menuIconBox}>
                   <Ionicons name="language-outline" size={20} color={colors.primary} />
                 </View>
                 <Text style={[styles.menuItemText, { flex: 1 }]}>Language</Text>
-                <Text style={styles.langValue}>English &gt;</Text>
-              </View>
+                <Text style={styles.langValue}>
+                  {currentLang === 'fr' ? 'Français' : currentLang === 'es' ? 'Español' : 'English'} &gt;
+                </Text>
+              </Pressable>
             </View>
 
             {/* Logout Action Button with Active Loading Spinner */}
@@ -306,6 +354,40 @@ export default function ProfileScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Language Selection Modal */}
+      <Modal visible={langModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select App Language</Text>
+              <Pressable onPress={() => setLangModalVisible(false)}>
+                <Ionicons name="close" size={24} color={colors.darkText} />
+              </Pressable>
+            </View>
+
+            {[
+              { code: 'en', label: 'English 🇺🇸', native: 'English' },
+              { code: 'fr', label: 'French 🇫🇷', native: 'Français' },
+              { code: 'es', label: 'Spanish 🇪🇸', native: 'Español' },
+            ].map((lang) => {
+              const isSelected = currentLang === lang.code;
+              return (
+                <Pressable
+                  key={lang.code}
+                  style={[styles.langOptionRow, isSelected && styles.langOptionRowActive]}
+                  onPress={() => handleSelectLanguage(lang.code as LanguageCode, lang.native)}
+                >
+                  <Text style={[styles.langOptionText, isSelected && styles.langOptionTextActive]}>
+                    {lang.label} ({lang.native})
+                  </Text>
+                  {isSelected && <Ionicons name="checkmark-circle" size={20} color={colors.primary} />}
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -488,5 +570,51 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     color: colors.error,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    gap: 12,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.darkText,
+  },
+  langOptionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: colors.softBackground,
+  },
+  langOptionRowActive: {
+    backgroundColor: '#EDE7F6',
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  langOptionText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.darkText,
+  },
+  langOptionTextActive: {
+    color: colors.primary,
+    fontWeight: '800',
   },
 });

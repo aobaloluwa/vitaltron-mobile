@@ -36,19 +36,18 @@ export default function HealthVitalsScreen() {
       try {
         const data = await getUserProfile();
         if (data) {
-          setBloodType(data.bloodType || 'O+');
-          setAllergiesSummary(data.allergiesSummary || '');
-          setChronicConditions(data.chronicConditionsSummary || '');
-          setEmergencyName(data.emergencyContactName || '');
-          setEmergencyPhone(data.emergencyContactPhone || '');
-          setDateOfBirth(data.dateOfBirth ? data.dateOfBirth.split('T')[0] : '');
-          setGender(data.gender || '');
-          setPrimaryLanguage(data.primaryLanguage || 'English');
+          const p = data.patientProfile || data;
+          setBloodType(p.bloodType || 'O+');
+          setAllergiesSummary((p.allergiesSummary || '').replace(/AVATAR_URL:[^\s;]+;?\s*/gi, ''));
+          setChronicConditions(p.chronicConditionsSummary || '');
+          setEmergencyName(p.emergencyContactName || '');
+          setEmergencyPhone(p.emergencyContactPhone || '');
+          setDateOfBirth(p.dateOfBirth ? p.dateOfBirth.split('T')[0] : '');
+          setGender(p.gender || '');
+          setPrimaryLanguage(p.primaryLanguage || 'English');
         }
       } catch {
-        // Fallback defaults
         setBloodType('O+');
-        setAllergiesSummary('Penicillin');
       } finally {
         setLoading(false);
       }

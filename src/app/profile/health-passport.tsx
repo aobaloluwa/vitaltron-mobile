@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -89,7 +90,15 @@ export default function HealthPassportScreen() {
               {/* QR Code Center */}
               <View style={styles.qrSection}>
                 <View style={styles.qrBox}>
-                  <MaterialCommunityIcons name="qrcode-scan" size={90} color={colors.primary} />
+                  <Image
+                    source={{
+                      uri: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=5B-2A-86&bgcolor=FF-FF-FF&qzone=2&data=${encodeURIComponent(
+                        `http://localhost:8081/share?patientId=${user?.id || 'me'}`
+                      )}`,
+                    }}
+                    style={{ width: 110, height: 110, borderRadius: 12 }}
+                    resizeMode="contain"
+                  />
                 </View>
                 <Text style={styles.passportIdText}>
                   ID: {user?.id ? user.id.slice(0, 12).toUpperCase() : 'VT-88219-4921'}
