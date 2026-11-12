@@ -62,6 +62,8 @@ export default function OpenSplashScreen() {
             const result = await LocalAuthentication.authenticateAsync({
               promptMessage: 'Unlock Vitaltron',
               fallbackLabel: 'Use Passcode',
+              cancelLabel: 'Cancel',
+              disableDeviceFallback: false,
             });
             if (result.success) {
               router.replace('/(tabs)' as any);

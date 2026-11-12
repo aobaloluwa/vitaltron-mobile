@@ -42,6 +42,8 @@ export default function PrivacySecurityScreen() {
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Authenticate to enable biometric login',
         fallbackLabel: 'Use Passcode',
+        cancelLabel: 'Cancel',
+        disableDeviceFallback: false,
       });
 
       if (result.success) {
