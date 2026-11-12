@@ -30,28 +30,37 @@ export default function PrivacySecurityScreen() {
   }, []);
 
   const toggleBiometrics = async (value: boolean) => {
-    if (value) {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+    try {
+      if (value) {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
-      if (!hasHardware || !isEnrolled) {
-        Alert.alert('Unavailable', 'Biometrics are not set up or not available on this device.');
-        return;
+        if (!hasHardware || !isEnrolled) {
+          Alert.alert(
+            'Unavailable',
+            'Face ID is not set up or permission is denied for Expo Go in your iOS Settings.'
+          );
+          return;
+        }
+
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Authenticate to enable biometric login',
+          fallbackLabel: '',
+          disableDeviceFallback: true,
+        });
+
+        if (result.success) {
+          await AsyncStorage.setItem(BIOMETRIC_KEY, 'true');
+          setBiometricsEnabled(true);
+        } else {
+          Alert.alert('Authentication Failed', result.warning || result.error || 'Face ID attempt failed or was cancelled.');
+        }
+      } else {
+        await AsyncStorage.removeItem(BIOMETRIC_KEY);
+        setBiometricsEnabled(false);
       }
-
-      const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Authenticate to enable biometric login',
-        cancelLabel: 'Cancel',
-        disableDeviceFallback: true,
-      });
-
-      if (result.success) {
-        await AsyncStorage.setItem(BIOMETRIC_KEY, 'true');
-        setBiometricsEnabled(true);
-      }
-    } else {
-      await AsyncStorage.removeItem(BIOMETRIC_KEY);
-      setBiometricsEnabled(false);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'An unexpected error occurred accessing Face ID.');
     }
   };
 

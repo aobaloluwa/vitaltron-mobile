@@ -59,15 +59,20 @@ export default function OpenSplashScreen() {
         if (token) {
           const biometricEnabled = await AsyncStorage.getItem(BIOMETRIC_KEY);
           if (biometricEnabled === 'true') {
-            const result = await LocalAuthentication.authenticateAsync({
-              promptMessage: 'Unlock Vitaltron',
-              cancelLabel: 'Cancel',
-              disableDeviceFallback: true,
-            });
-            if (result.success) {
-              router.replace('/(tabs)' as any);
-            } else {
-              // If they fail or cancel, route to login or give an option to retry
+            try {
+              const result = await LocalAuthentication.authenticateAsync({
+                promptMessage: 'Unlock Vitaltron',
+                fallbackLabel: '',
+                disableDeviceFallback: true,
+              });
+              if (result.success) {
+                router.replace('/(tabs)' as any);
+              } else {
+                // If they fail or cancel, route to login or give an option to retry
+                router.replace('/welcome');
+              }
+            } catch (error) {
+              // If hardware fails, just push to login
               router.replace('/welcome');
             }
           } else {
