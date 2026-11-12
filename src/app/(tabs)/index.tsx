@@ -494,68 +494,72 @@ export default function HomeScreen() {
         <Modal visible={!!selectedRecordItem} animationType="fade" transparent={true}>
           <View style={styles.detailModalOverlay}>
             <View style={styles.detailModalCard}>
-              <View style={styles.modalTitleRow}>
-                <View style={styles.modalTitleBox}>
-                  <MaterialCommunityIcons
-                    name={
-                      selectedRecordItem.type === 'MEDICATION'
-                        ? 'pill'
-                        : selectedRecordItem.type === 'LAB_TEST'
-                        ? 'flask-outline'
-                        : selectedRecordItem.type === 'VITAL_SIGN'
-                        ? 'heart-pulse'
-                        : 'stethoscope'
-                    }
-                    size={24}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.modalTitleText} numberOfLines={2}>
-                    {selectedRecordItem.title}
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
+                <View style={styles.modalTitleRow}>
+                  <View style={styles.modalTitleBox}>
+                    <MaterialCommunityIcons
+                      name={
+                        selectedRecordItem.type === 'MEDICATION'
+                          ? 'pill'
+                          : selectedRecordItem.type === 'LAB_TEST'
+                          ? 'flask-outline'
+                          : selectedRecordItem.type === 'VITAL_SIGN'
+                          ? 'heart-pulse'
+                          : 'stethoscope'
+                      }
+                      size={24}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.modalTitleText} numberOfLines={2}>
+                      {selectedRecordItem.title}
+                    </Text>
+                  </View>
+                  <Pressable onPress={() => setSelectedRecordItem(null)} hitSlop={10}>
+                    <Ionicons name="close" size={24} color={colors.darkText} />
+                  </Pressable>
+                </View>
+
+                <View style={styles.modalTypePill}>
+                  <Text style={styles.modalTypePillText}>{selectedRecordItem.type.replace('_', ' ')}</Text>
+                  <View style={styles.verifiedTag}>
+                    <Ionicons name="checkmark-circle" size={13} color={colors.primary} />
+                    <Text style={styles.verifiedTagText}>
+                      {selectedRecordItem.verificationStatus || 'PATIENT_CONFIRMED'}
+                    </Text>
+                  </View>
+                </View>
+
+                {selectedRecordItem.description ? (
+                  <View style={styles.modalDescContainer}>
+                    <Text style={styles.modalDescLabel}>Clinical Details / Findings:</Text>
+                    <ScrollView horizontal={true} showsHorizontalScrollIndicator={true} style={{ width: '100%' }}>
+                      <Text style={styles.modalDescVal}>{selectedRecordItem.description}</Text>
+                    </ScrollView>
+                  </View>
+                ) : null}
+
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalDetailLabel}>Facility / Provider:</Text>
+                  <Text style={styles.modalDetailVal}>
+                    {selectedRecordItem.facilityName ||
+                      selectedRecordItem.description?.match(/(?:Hospital|Facility):\s*([^\n|]+)/i)?.[1]?.trim() ||
+                      'Not Specified'}
                   </Text>
                 </View>
-                <Pressable onPress={() => setSelectedRecordItem(null)} hitSlop={10}>
-                  <Ionicons name="close" size={24} color={colors.darkText} />
-                </Pressable>
-              </View>
 
-              <View style={styles.modalTypePill}>
-                <Text style={styles.modalTypePillText}>{selectedRecordItem.type.replace('_', ' ')}</Text>
-                <View style={styles.verifiedTag}>
-                  <Ionicons name="checkmark-circle" size={13} color={colors.primary} />
-                  <Text style={styles.verifiedTagText}>
-                    {selectedRecordItem.verificationStatus || 'PATIENT_CONFIRMED'}
+                <View style={styles.modalDetailRow}>
+                  <Text style={styles.modalDetailLabel}>Event Date:</Text>
+                  <Text style={styles.modalDetailVal}>
+                    {selectedRecordItem.eventDate
+                      ? new Date(selectedRecordItem.eventDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : 'Recent'}
                   </Text>
                 </View>
-              </View>
-
-              {selectedRecordItem.description ? (
-                <View style={styles.modalDescContainer}>
-                  <Text style={styles.modalDescLabel}>Clinical Details / Findings:</Text>
-                  <Text style={styles.modalDescVal}>{selectedRecordItem.description}</Text>
-                </View>
-              ) : null}
-
-              <View style={styles.modalDetailRow}>
-                <Text style={styles.modalDetailLabel}>Facility / Provider:</Text>
-                <Text style={styles.modalDetailVal}>
-                  {selectedRecordItem.facilityName ||
-                    selectedRecordItem.description?.match(/(?:Hospital|Facility):\s*([^\n|]+)/i)?.[1]?.trim() ||
-                    'Not Specified'}
-                </Text>
-              </View>
-
-              <View style={styles.modalDetailRow}>
-                <Text style={styles.modalDetailLabel}>Event Date:</Text>
-                <Text style={styles.modalDetailVal}>
-                  {selectedRecordItem.eventDate
-                    ? new Date(selectedRecordItem.eventDate).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : 'Recent'}
-                </Text>
-              </View>
+              </ScrollView>
 
               <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedRecordItem(null)}>
                 <Text style={styles.modalCloseBtnText}>Close Record Details</Text>
@@ -1152,7 +1156,8 @@ const styles = StyleSheet.create({
   },
   detailModalCard: {
     width: '100%',
-    maxWidth: 480,
+    maxWidth: 600,
+    maxHeight: '85%',
     backgroundColor: colors.white,
     borderRadius: 24,
     padding: 22,
