@@ -8,7 +8,10 @@
     "scheme": "vitaltronmobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Allow Vitaltron to use Face ID to securely lock and unlock your health records."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -35,7 +38,13 @@
         }
       ],
       "@react-native-google-signin/google-signin",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Vitaltron to use Face ID to securely lock and unlock your health records."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
