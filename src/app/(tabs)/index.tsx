@@ -519,7 +519,7 @@ export default function HomeScreen() {
                   </Pressable>
                 </View>
 
-                <View style={styles.modalTypePill}>
+                <View style={[styles.modalTypePill, { marginBottom: 12 }]}>
                   <Text style={styles.modalTypePillText}>{selectedRecordItem.type.replace('_', ' ')}</Text>
                   <View style={styles.verifiedTag}>
                     <Ionicons name="checkmark-circle" size={13} color={colors.primary} />
