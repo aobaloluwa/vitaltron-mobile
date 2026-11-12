@@ -495,7 +495,7 @@ export default function HomeScreen() {
           <View style={styles.detailModalOverlay}>
             <View style={styles.detailModalCard}>
               <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
-                <View style={styles.modalTitleRow}>
+                <View style={[styles.modalTitleRow, { marginBottom: 12 }]}>
                   <View style={styles.modalTitleBox}>
                     <MaterialCommunityIcons
                       name={
