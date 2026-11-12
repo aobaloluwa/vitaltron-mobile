@@ -127,7 +127,7 @@ export default function ScanScreen() {
         id: e.id,
         title: title.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim(),
         recordType: e.recordType || 'LAB_TEST',
-        description: desc.trim(),
+        description: desc, // Preserve exact spacing and newlines from the backend
         confidenceScore: e.confidenceScore || 0.94,
         isConfirmed: !!e.isConfirmed,
       });
