@@ -79,7 +79,7 @@ export async function apiRequest<T = any>(
       headers,
     });
 
-    // Automatic Token Refresh on 401 Unauthorized to prevent random session logouts
+    // Automatic Token Refresh on 401 Unauthorized
     if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/refresh')) {
       try {
         const refreshToken = await getStoredRefreshToken();
@@ -101,11 +101,39 @@ export async function apiRequest<T = any>(
                 ...options,
                 headers,
               });
+            } else {
+              // Refresh token failed, force redirect to login/welcome
+              await clearStoredTokens();
+              try {
+                const { router } = require('expo-router');
+                router.replace('/welcome');
+              } catch (e) {
+                // Ignore router error
+              }
             }
+          } else {
+             // Refresh failed (invalid/expired), force redirect to login
+             await clearStoredTokens();
+             try {
+               const { router } = require('expo-router');
+               router.replace('/welcome');
+             } catch (e) {
+               // Ignore router error
+             }
+          }
+        } else {
+          // No refresh token available, force redirect to login
+          await clearStoredTokens();
+          try {
+            const { router } = require('expo-router');
+            router.replace('/welcome');
+          } catch (e) {
+            // Ignore router error
           }
         }
       } catch {
-        // Ignore refresh error
+        // Network error during refresh or router failed
+        await clearStoredTokens();
       }
     }
 
