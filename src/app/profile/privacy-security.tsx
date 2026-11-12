@@ -1,18 +1,59 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { AppLogo } from '../../components/ui/AppLogo';
 import { colors } from '../../theme';
 
+export const BIOMETRIC_KEY = '@vitaltron/biometric-login';
+
 export default function PrivacySecurityScreen() {
+  const [biometricsEnabled, setBiometricsEnabled] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem(BIOMETRIC_KEY).then(val => {
+      if (val === 'true') {
+        setBiometricsEnabled(true);
+      }
+    });
+  }, []);
+
+  const toggleBiometrics = async (value: boolean) => {
+    if (value) {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert('Unavailable', 'Biometrics are not set up or not available on this device.');
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to enable biometric login',
+        fallbackLabel: 'Use Passcode',
+      });
+
+      if (result.success) {
+        await AsyncStorage.setItem(BIOMETRIC_KEY, 'true');
+        setBiometricsEnabled(true);
+      }
+    } else {
+      await AsyncStorage.removeItem(BIOMETRIC_KEY);
+      setBiometricsEnabled(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -50,8 +91,13 @@ export default function PrivacySecurityScreen() {
             <Ionicons name="finger-print-outline" size={20} color={colors.primary} />
             <View style={{ flex: 1 }}>
               <Text style={styles.infoTitle}>Biometric Authentication</Text>
-              <Text style={styles.infoBody}>Local Face ID and Fingerprint protection prevents unauthorized access if your phone is unlocked.</Text>
+              <Text style={styles.infoBody}>Require Face ID or Fingerprint when opening the app.</Text>
             </View>
+            <Switch
+              value={biometricsEnabled}
+              onValueChange={toggleBiometrics}
+              trackColor={{ false: colors.softBackground, true: colors.primary }}
+            />
           </View>
 
           <View style={styles.divider} />

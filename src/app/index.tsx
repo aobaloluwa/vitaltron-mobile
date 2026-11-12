@@ -3,11 +3,13 @@ import { Animated, Easing, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { AppLogo } from '../components/ui/AppLogo';
 import { getStoredAccessToken } from '../services/api';
 import { colors } from '../theme';
 
 const ONBOARDING_KEY = '@vitaltron/onboarding-completed';
+const BIOMETRIC_KEY = '@vitaltron/biometric-login';
 
 export default function OpenSplashScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -55,7 +57,21 @@ export default function OpenSplashScreen() {
       try {
         const token = await getStoredAccessToken();
         if (token) {
-          router.replace('/(tabs)' as any);
+          const biometricEnabled = await AsyncStorage.getItem(BIOMETRIC_KEY);
+          if (biometricEnabled === 'true') {
+            const result = await LocalAuthentication.authenticateAsync({
+              promptMessage: 'Unlock Vitaltron',
+              fallbackLabel: 'Use Passcode',
+            });
+            if (result.success) {
+              router.replace('/(tabs)' as any);
+            } else {
+              // If they fail or cancel, route to login or give an option to retry
+              router.replace('/welcome');
+            }
+          } else {
+            router.replace('/(tabs)' as any);
+          }
           return;
         }
 
