@@ -166,13 +166,15 @@ const createStyles = (colors: any) => StyleSheet.create({
   pageWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
   },
   tagline: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
     color: colors.textMuted,
-    letterSpacing: 3,
+    letterSpacing: 2.5,
     textAlign: 'center',
     textTransform: 'uppercase',
+    width: 220, // Forces the text to wrap tightly under the logo
   },
 });
