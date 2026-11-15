@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,48 +14,55 @@ const BIOMETRIC_KEY = '@vitaltron/biometric-login';
 export default function OpenSplashScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.85)).current;
-  const pulseAnim = useRef(new Animated.Value(0.9)).current;
+
+  // Entrance Animations
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.85)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const textTranslateY = useRef(new Animated.Value(12)).current;
+
+  // Exit Animations
+  const pageOpacity = useRef(new Animated.Value(1)).current;
+  const pageScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // Logo entrance animation
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 900,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 6,
-        tension: 40,
-        useNativeDriver: true,
-      }),
+    // 1. Entrance Sequence
+    Animated.sequence([
+      // Logo fades and gently springs in
+      Animated.parallel([
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.cubic),
+        }),
+        Animated.spring(logoScale, {
+          toValue: 1,
+          friction: 7,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
+      // Tagline slides up and fades in
+      Animated.parallel([
+        Animated.timing(textOpacity, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.cubic),
+        }),
+        Animated.timing(textTranslateY, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.cubic),
+        }),
+      ]),
     ]).start();
 
-    // Pulse animation loop
-    const pulseLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.12,
-          duration: 1200,
-          useNativeDriver: true,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 0.9,
-          duration: 1200,
-          useNativeDriver: true,
-          easing: Easing.inOut(Easing.ease),
-        }),
-      ])
-    );
-    pulseLoop.start();
-
-    // Destination check & transition timer
-    const timer = setTimeout(async () => {
+    // 2. Auth Check & Routing logic (run in background)
+    const processRouting = async () => {
+      let nextRoute: any = '/onboarding';
       try {
         const token = await getStoredAccessToken();
         if (token) {
@@ -68,63 +75,82 @@ export default function OpenSplashScreen() {
                 disableDeviceFallback: true,
               });
               if (result.success) {
-                router.replace('/(tabs)' as any);
+                nextRoute = '/(tabs)';
               } else {
-                // If they fail or cancel, route to login or give an option to retry
-                router.replace('/welcome');
+                nextRoute = '/welcome';
               }
             } catch (error) {
-              // If hardware fails, just push to login
-              router.replace('/welcome');
+              nextRoute = '/welcome';
             }
           } else {
-            router.replace('/(tabs)' as any);
+            nextRoute = '/(tabs)';
           }
-          return;
-        }
-
-        const completed = await AsyncStorage.getItem(ONBOARDING_KEY);
-        if (completed === 'true') {
-          router.replace('/welcome');
         } else {
-          router.replace('/onboarding');
+          const completed = await AsyncStorage.getItem(ONBOARDING_KEY);
+          if (completed === 'true') {
+            nextRoute = '/welcome';
+          }
         }
       } catch {
-        router.replace('/onboarding');
+        nextRoute = '/onboarding';
       }
-    }, 2200);
 
-    return () => {
-      clearTimeout(timer);
-      pulseLoop.stop();
+      // Wait for reading/animation to feel natural (min time ~1.6s total)
+      setTimeout(() => {
+        // 3. Exit Animation (Zoom in and Fade out before transitioning)
+        Animated.parallel([
+          Animated.timing(pageOpacity, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+            easing: Easing.in(Easing.cubic),
+          }),
+          Animated.timing(pageScale, {
+            toValue: 1.1,
+            duration: 400,
+            useNativeDriver: true,
+            easing: Easing.in(Easing.cubic),
+          }),
+        ]).start(() => {
+          // Finally execute the route change
+          router.replace(nextRoute);
+        });
+      }, 1600);
     };
+
+    processRouting();
   }, []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Background Pulsing Glow Circle */}
       <Animated.View
         style={[
-          styles.pulseCircle,
+          styles.pageWrapper,
           {
-            transform: [{ scale: pulseAnim }],
-            opacity: fadeAnim,
-          },
-        ]}
-      />
-
-      {/* Main Animated Branding Content */}
-      <Animated.View
-        style={[
-          styles.content,
-          {
-            opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }],
+            opacity: pageOpacity,
+            transform: [{ scale: pageScale }],
           },
         ]}
       >
-        <AppLogo size="large" showText={true} />
-        <Text style={styles.tagline}>Portable Intelligent Health Identity</Text>
+        <Animated.View
+          style={{
+            opacity: logoOpacity,
+            transform: [{ scale: logoScale }],
+            alignItems: 'center',
+          }}
+        >
+          <AppLogo size="large" showText={true} />
+        </Animated.View>
+
+        <Animated.View
+          style={{
+            opacity: textOpacity,
+            transform: [{ translateY: textTranslateY }],
+            marginTop: 24,
+          }}
+        >
+          <Text style={styles.tagline}>INTELLIGENT HEALTH IDENTITY</Text>
+        </Animated.View>
       </Animated.View>
     </SafeAreaView>
   );
@@ -133,28 +159,20 @@ export default function OpenSplashScreen() {
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.white,
   },
-  pulseCircle: {
-    position: 'absolute',
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: colors.softBackground,
-  },
-  content: {
+  pageWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   tagline: {
-    marginTop: 16,
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    color: colors.primary,
-    letterSpacing: 0.8,
+    color: colors.textMuted,
+    letterSpacing: 3,
     textAlign: 'center',
-    opacity: 0.85,
+    textTransform: 'uppercase',
   },
 });
