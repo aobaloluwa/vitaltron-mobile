@@ -218,7 +218,7 @@ export default function HomeScreen() {
                 <Pressable style={styles.iconBtn} onPress={() => setSearchModalVisible(true)}>
                   <Ionicons name="search-outline" size={20} color={colors.darkText} />
                 </Pressable>
-                <Pressable style={styles.iconBtn}>
+                <Pressable style={styles.iconBtn} onPress={() => router.push('/notifications')}>
                   <Ionicons name="notifications-outline" size={20} color={colors.darkText} />
                   <View style={styles.notifDot} />
                 </Pressable>

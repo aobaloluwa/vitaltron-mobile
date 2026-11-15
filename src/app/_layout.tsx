@@ -3,9 +3,13 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LanguageProvider } from '../i18n/LanguageContext';
 import { ThemeProvider, useTheme } from '../theme';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 function AppNavigator() {
   const { colors, isDarkMode } = useTheme();
+
+  // Register and handle push notifications for the entire app
+  usePushNotifications();
 
   return (
     <>
