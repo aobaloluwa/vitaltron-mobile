@@ -16,12 +16,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { logoutUser, User } from '../../services/auth';
 import { Dependent, getDependents, getUserProfile, updateUserInfo } from '../../services/users';
 import { LanguageCode } from '../../i18n/translations';
 import { useTranslation } from '../../i18n/LanguageContext';
 import { useTheme } from '../../theme';
+import { BIOMETRIC_KEY } from '../profile/privacy-security';
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
@@ -79,11 +82,49 @@ export default function ProfileScreen() {
 
       const depList = await getDependents().catch(() => []);
       setDependents(depList || []);
+
+      const biometricSetting = await AsyncStorage.getItem(BIOMETRIC_KEY);
+      setBiometricsEnabled(biometricSetting === 'true');
     } catch {
       // Fallback
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const toggleBiometrics = async (value: boolean) => {
+    try {
+      if (value) {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+        if (!hasHardware || !isEnrolled) {
+          Alert.alert(
+            'Unavailable',
+            'Face ID is not set up or permission is denied for Expo Go in your iOS Settings.'
+          );
+          return;
+        }
+
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Authenticate to enable biometric login',
+          fallbackLabel: '',
+          disableDeviceFallback: true,
+        });
+
+        if (result.success) {
+          await AsyncStorage.setItem(BIOMETRIC_KEY, 'true');
+          setBiometricsEnabled(true);
+        } else {
+          Alert.alert('Authentication Failed', result.warning || result.error || 'Face ID attempt failed or was cancelled.');
+        }
+      } else {
+        await AsyncStorage.removeItem(BIOMETRIC_KEY);
+        setBiometricsEnabled(false);
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'An unexpected error occurred accessing Face ID.');
     }
   };
 
@@ -261,7 +302,7 @@ export default function ProfileScreen() {
                 <Text style={[styles.menuItemText, { flex: 1 }]}>{t('enableBiometrics')}</Text>
                 <Switch
                   value={biometricsEnabled}
-                  onValueChange={setBiometricsEnabled}
+                  onValueChange={toggleBiometrics}
                   trackColor={{ false: colors.softBackground, true: colors.secondary }}
                   thumbColor={biometricsEnabled ? colors.primary : '#F3F4F6'}
                 />
