@@ -376,7 +376,7 @@ export default function FullTimelineScreen() {
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAF8FC',
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -608,7 +608,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.primary,
   },
   modalDescContainer: {
-    backgroundColor: '#FAF8FC',
+    backgroundColor: colors.background,
     borderRadius: 14,
     padding: 12,
     gap: 4,

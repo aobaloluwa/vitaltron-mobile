@@ -175,7 +175,7 @@ export default function HealthVitalsScreen() {
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAF8FC',
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingHorizontal: 20,

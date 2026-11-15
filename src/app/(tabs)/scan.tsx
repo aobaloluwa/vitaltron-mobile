@@ -513,7 +513,7 @@ export default function ScanScreen() {
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAF8FC',
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -791,7 +791,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     elevation: 2,
   },
   documentTextViewer: {
-    backgroundColor: '#FCFBFD',
+    backgroundColor: colors.inputBackground,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.softBackground,
