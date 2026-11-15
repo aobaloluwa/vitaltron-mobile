@@ -433,8 +433,147 @@ export default function HomeScreen() {
               );
             })()}
 
+            {/* Health Analytics Display */}
+            <View style={styles.sectionHeaderRow}>
+              <Text style={styles.sectionTitle}>{t('healthAnalytics')}</Text>
+            </View>
+
+            {/* Hero Statistic Card (Moved from Analytics) */}
+            <View style={styles.heroStatCard}>
+              <View style={styles.heroTextRow}>
+                <View>
+                  <Text style={styles.statCategoryLabel}>{t('dailyVitalsAndIntake')}</Text>
+                  <View style={styles.valueRow}>
+                    <Text style={styles.heroValue}>1250</Text>
+                    <Text style={styles.heroUnit}>Kcal</Text>
+                  </View>
+                </View>
+                <View style={styles.targetBadge}>
+                  <Text style={styles.targetText}>{t('target')} <Text style={styles.targetBold}>1920 Kcal</Text></Text>
+                </View>
+              </View>
+
+              {/* Bar Chart Container */}
+              <View style={styles.chartContainer}>
+                <View style={styles.barsRow}>
+                  {[
+                    { day: 'Mon', value: 44, heightPercent: 44 },
+                    { day: 'Tue', value: 34, heightPercent: 34 },
+                    { day: 'Wed', value: 110, heightPercent: 95, active: true },
+                    { day: 'Thu', value: 47, heightPercent: 47 },
+                    { day: 'Fri', value: 32, heightPercent: 32 },
+                    { day: 'Sat', value: 79, heightPercent: 79 },
+                    { day: 'Sun', value: 24, heightPercent: 24 },
+                  ].map((item, idx) => (
+                    <View key={idx} style={styles.columnContainer}>
+                      {/* Percentage Tooltip Badge */}
+                      <View
+                        style={[
+                          styles.tooltipBadge,
+                          item.active && styles.tooltipBadgeActive,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.tooltipText,
+                            item.active && styles.tooltipTextActive,
+                          ]}
+                        >
+                          {item.value}%
+                        </Text>
+                      </View>
+
+                      {/* Vertical Bar Stack */}
+                      <View style={styles.barTrack}>
+                        <View
+                          style={[
+                            styles.barFill,
+                            { height: `${item.heightPercent}%` },
+                            item.active && styles.barFillActive,
+                          ]}
+                        />
+                      </View>
+
+                      <Text style={styles.dayLabel}>{item.day}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+
+            {/* Additional Vital Cards Grid (Moved from Analytics) */}
+            <View style={styles.vitalsGrid}>
+              <View style={styles.vitalCard}>
+                <View style={styles.vitalCardHeader}>
+                  <View style={[styles.vitalIconBox, { backgroundColor: colors.softBackground }]}>
+                    <Ionicons name="fitness-outline" size={18} color={colors.primary} />
+                  </View>
+                  <Text style={styles.vitalCardTitle}>Exercise</Text>
+                </View>
+
+                <View style={styles.sparklineBarRow}>
+                  <View style={[styles.miniBar, { height: 12 }]} />
+                  <View style={[styles.miniBar, { height: 20 }]} />
+                  <View style={[styles.miniBarActive, { height: 28 }]} />
+                  <View style={[styles.miniBar, { height: 16 }]} />
+                  <View style={[styles.miniBarActive, { height: 24 }]} />
+                </View>
+
+                <Text style={styles.vitalValue}>2.0 <Text style={styles.vitalUnit}>hours</Text></Text>
+              </View>
+
+              <View style={styles.vitalCard}>
+                <View style={styles.vitalCardHeader}>
+                  <View style={[styles.vitalIconBox, { backgroundColor: '#FEE2E2' }]}>
+                    <Ionicons name="heart" size={18} color="#EF4444" />
+                  </View>
+                  <Text style={styles.vitalCardTitle}>BPM</Text>
+                </View>
+
+                <View style={styles.ecgWaveContainer}>
+                  <Ionicons name="pulse" size={26} color="#EF4444" />
+                  <View style={styles.waveLineActive} />
+                </View>
+
+                <Text style={styles.vitalValue}>86 <Text style={styles.vitalUnit}>bpm</Text></Text>
+              </View>
+
+              <View style={styles.vitalCard}>
+                <View style={styles.vitalCardHeader}>
+                  <View style={[styles.vitalIconBox, { backgroundColor: '#FEF3C7' }]}>
+                    <Ionicons name="scale-outline" size={18} color="#D97706" />
+                  </View>
+                  <Text style={styles.vitalCardTitle}>Weight</Text>
+                </View>
+
+                <View style={styles.weightBarBox}>
+                  <View style={styles.weightProgressFill} />
+                </View>
+
+                <Text style={styles.vitalValue}>68 <Text style={styles.vitalUnit}>kg</Text></Text>
+              </View>
+
+              <View style={styles.vitalCard}>
+                <View style={styles.vitalCardHeader}>
+                  <View style={[styles.vitalIconBox, { backgroundColor: '#E0F2FE' }]}>
+                    <Ionicons name="water-outline" size={18} color="#0284C7" />
+                  </View>
+                  <Text style={styles.vitalCardTitle}>Water</Text>
+                </View>
+
+                <View style={styles.dropsRow}>
+                  <Ionicons name="water" size={16} color="#0284C7" />
+                  <Ionicons name="water" size={16} color="#0284C7" />
+                  <Ionicons name="water" size={16} color="#0284C7" />
+                  <Ionicons name="water-outline" size={16} color="#94A3B8" />
+                </View>
+
+                <Text style={styles.vitalValue}>12 <Text style={styles.vitalUnit}>glasses</Text></Text>
+              </View>
+            </View>
+
             {/* Universal Health Timeline Entries */}
-            <View style={styles.timelineCard}>
+            <View style={[styles.timelineCard, { marginTop: 24 }]}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={styles.sectionTitle}>{t('universalTimeline')}</Text>
                 <Pressable onPress={() => router.push('/records/timeline')}>
