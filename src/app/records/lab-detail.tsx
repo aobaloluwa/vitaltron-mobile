@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 const CHART_YEARS = [
   { year: '2020', min: 20, max: 55, active: false },
@@ -21,6 +21,8 @@ const CHART_YEARS = [
 ];
 
 export default function LabDetailScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const params = useLocalSearchParams<{ title?: string; value?: string }>();
   const testTitle = params.title || 'Potassium';
   const [activeFrame, setActiveFrame] = useState('1d');
@@ -131,7 +133,7 @@ export default function LabDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

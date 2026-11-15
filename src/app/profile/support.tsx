@@ -11,9 +11,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export default function SupportScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -72,7 +74,7 @@ export default function SupportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

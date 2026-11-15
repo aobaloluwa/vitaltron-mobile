@@ -26,7 +26,7 @@ import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { confirmEntity, DocumentItem, getDocuments, uploadDocument } from '../../services/documents';
 import { RecordType } from '../../services/healthRecords';
 import { useTranslation } from '../../i18n/LanguageContext';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 const RECORD_TYPES: RecordType[] = [
   'LAB_TEST',
@@ -39,6 +39,8 @@ const RECORD_TYPES: RecordType[] = [
 ];
 
 export default function ScanScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -508,7 +510,7 @@ export default function ScanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

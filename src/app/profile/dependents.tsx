@@ -18,9 +18,11 @@ import { AppLogo } from '../../components/ui/AppLogo';
 import { AppTextInput } from '../../components/ui/AppTextInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { addDependent, Dependent, getDependents } from '../../services/users';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export default function DependentsScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [dependents, setDependents] = useState<Dependent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -189,7 +191,7 @@ export default function DependentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

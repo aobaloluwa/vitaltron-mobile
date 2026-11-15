@@ -30,7 +30,7 @@ import {
 import { RecordType } from '../../services/healthRecords';
 import { copyToClipboard } from '../../utils/clipboard';
 import { useTranslation } from '../../i18n/LanguageContext';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 const ALL_TYPES: RecordType[] = [
   'LAB_TEST',
@@ -42,6 +42,8 @@ const ALL_TYPES: RecordType[] = [
 ];
 
 export default function SharingTabScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const [grants, setGrants] = useState<AccessGrant[]>([]);
@@ -518,7 +520,7 @@ export default function SharingTabScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

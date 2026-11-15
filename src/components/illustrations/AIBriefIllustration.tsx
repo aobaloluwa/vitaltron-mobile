@@ -1,9 +1,11 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export function AIBriefIllustration() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <View style={styles.container}>
       <View style={styles.bgCircleLarge} />
@@ -55,7 +57,7 @@ export function AIBriefIllustration() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     width: 280,
     height: 280,

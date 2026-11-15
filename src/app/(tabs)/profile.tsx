@@ -21,9 +21,11 @@ import { logoutUser, User } from '../../services/auth';
 import { Dependent, getDependents, getUserProfile, updateUserInfo } from '../../services/users';
 import { LanguageCode } from '../../i18n/translations';
 import { useTranslation } from '../../i18n/LanguageContext';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export default function ProfileScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { currentLang, changeLanguage, t } = useTranslation();
   const [user, setUser] = useState<(User & { avatarUrl?: string }) | null>(null);
   const [dependents, setDependents] = useState<Dependent[]>([]);
@@ -387,7 +389,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

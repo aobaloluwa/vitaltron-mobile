@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 interface PrimaryButtonProps {
   title: string;
@@ -19,6 +19,8 @@ export function PrimaryButton({
   disabled = false,
   style,
 }: PrimaryButtonProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const isDark = variant === 'dark';
   const isSecondary = variant === 'secondary';
   const isOutline = variant === 'outline';
@@ -61,7 +63,7 @@ export function PrimaryButton({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   button: {
     height: 56,
     borderRadius: 28,

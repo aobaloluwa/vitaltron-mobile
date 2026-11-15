@@ -22,13 +22,15 @@ import Svg, {
 import { Ionicons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
 import { getTimeline, HealthRecord } from '../../services/healthRecords';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_WIDTH = SCREEN_WIDTH - 72;
 const CHART_HEIGHT = 180;
 
 export default function VitalAnalyticsScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [activeFrame, setActiveFrame] = useState('Hourly');
   const [vitals, setVitals] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -193,7 +195,7 @@ export default function VitalAnalyticsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

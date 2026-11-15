@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 interface AppTextInputProps extends TextInputProps {
   label?: string;
@@ -27,6 +27,8 @@ export function AppTextInput({
   onBlur,
   ...props
 }: AppTextInputProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(!secureTextEntry);
   const inputRef = useRef<React.ElementRef<typeof TextInput>>(null);
@@ -94,7 +96,7 @@ export function AppTextInput({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     width: '100%',
     marginBottom: 16,

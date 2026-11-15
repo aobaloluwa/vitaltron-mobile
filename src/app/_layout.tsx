@@ -2,13 +2,14 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LanguageProvider } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { ThemeProvider, useTheme } from '../theme';
 
-export default function RootLayout() {
+function AppNavigator() {
+  const { colors, isDarkMode } = useTheme();
+
   return (
-    <SafeAreaProvider>
-      <LanguageProvider>
-        <StatusBar style="dark" />
+    <>
+      <StatusBar style={isDarkMode ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -36,6 +37,17 @@ export default function RootLayout() {
         <Stack.Screen name="profile/support" />
         <Stack.Screen name="profile/feedback" />
       </Stack>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <SafeAreaProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AppNavigator />
+        </ThemeProvider>
       </LanguageProvider>
     </SafeAreaProvider>
   );

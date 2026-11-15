@@ -16,9 +16,11 @@ import { AppLogo } from '../components/ui/AppLogo';
 import { AppTextInput } from '../components/ui/AppTextInput';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { resetPassword } from '../services/auth';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 export default function ResetPasswordScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const params = useLocalSearchParams<{ email?: string }>();
   const emailParam = params.email || '';
 
@@ -151,7 +153,7 @@ export default function ResetPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,

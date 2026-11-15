@@ -1,9 +1,11 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { FontAwesome5, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export function WelcomeHeroIllustration() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <View style={styles.container}>
       {/* Background Soft Glow */}
@@ -66,7 +68,7 @@ export function WelcomeHeroIllustration() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     width: 300,
     height: 250,

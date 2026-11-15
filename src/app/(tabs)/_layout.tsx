@@ -4,9 +4,11 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '../../i18n/LanguageContext';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export default function TabLayout() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const bottomInset = Math.max(insets.bottom, 8);
@@ -100,7 +102,7 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   tabBar: {
     backgroundColor: colors.white,
     borderTopWidth: 1,

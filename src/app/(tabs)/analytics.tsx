@@ -13,7 +13,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { useTranslation } from '../../i18n/LanguageContext';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 const CHART_DATA = [
   { day: 'Mon', value: 44, heightPercent: 44 },
@@ -26,6 +26,8 @@ const CHART_DATA = [
 ];
 
 export default function AnalyticsScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -235,7 +237,7 @@ export default function AnalyticsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

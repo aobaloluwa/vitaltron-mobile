@@ -11,9 +11,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppLogo } from '../components/ui/AppLogo';
 import { WelcomeHeroIllustration } from '../components/illustrations/WelcomeHeroIllustration';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 export default function WelcomeScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const handleAccessAccount = () => {
     router.push('/login');
   };
@@ -73,7 +75,7 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,

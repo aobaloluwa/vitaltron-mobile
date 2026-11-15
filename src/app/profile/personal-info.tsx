@@ -21,9 +21,11 @@ import { AppTextInput } from '../../components/ui/AppTextInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { uploadDocument } from '../../services/documents';
 import { getUserProfile, updateUserInfo } from '../../services/users';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export default function PersonalInfoScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { width: windowWidth } = useWindowDimensions();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -203,7 +205,7 @@ export default function PersonalInfoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

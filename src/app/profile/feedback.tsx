@@ -16,9 +16,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
 import { AppTextInput } from '../../components/ui/AppTextInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export default function FeedbackScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { width: windowWidth } = useWindowDimensions();
   const [category, setCategory] = useState('Feature Request');
   const [feedback, setFeedback] = useState('');
@@ -117,7 +119,7 @@ export default function FeedbackScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

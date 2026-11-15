@@ -17,9 +17,11 @@ import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { getCurrentUser, User } from '../../services/auth';
 import { getFhirPatient } from '../../services/interoperability';
 import { getUserProfile, PatientProfile } from '../../services/users';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export default function HealthPassportScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<PatientProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -150,7 +152,7 @@ export default function HealthPassportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

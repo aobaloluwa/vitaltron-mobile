@@ -16,9 +16,11 @@ import { AppLogo } from '../../components/ui/AppLogo';
 import { AppTextInput } from '../../components/ui/AppTextInput';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { getUserProfile, updatePatientProfile } from '../../services/users';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export default function HealthVitalsScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [bloodType, setBloodType] = useState('');
   const [allergiesSummary, setAllergiesSummary] = useState('');
   const [chronicConditions, setChronicConditions] = useState('');
@@ -170,7 +172,7 @@ export default function HealthVitalsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

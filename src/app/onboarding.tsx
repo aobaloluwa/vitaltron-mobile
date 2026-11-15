@@ -16,7 +16,7 @@ import { HealthPassportIllustration } from '../components/illustrations/HealthPa
 import { AIBriefIllustration } from '../components/illustrations/AIBriefIllustration';
 import { SecureSharingIllustration } from '../components/illustrations/SecureSharingIllustration';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ONBOARDING_KEY = '@vitaltron/onboarding-completed';
@@ -53,6 +53,8 @@ const slides: SlideItem[] = [
 ];
 
 export default function OnboardingScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList<SlideItem>>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -180,7 +182,7 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,

@@ -27,9 +27,11 @@ import { logoutUser } from '../../services/auth';
 import { createHealthRecord, getTimeline, globalSearch, GlobalSearchResult, HealthRecord, RecordType } from '../../services/healthRecords';
 import { getUserProfile } from '../../services/users';
 import { useTranslation } from '../../i18n/LanguageContext';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { t } = useTranslation();
   const { width: windowWidth } = useWindowDimensions();
   const [userName, setUserName] = useState('');
@@ -816,7 +818,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

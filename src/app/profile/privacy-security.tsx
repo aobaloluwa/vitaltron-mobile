@@ -14,12 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { AppLogo } from '../../components/ui/AppLogo';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 export const BIOMETRIC_KEY = '@vitaltron/biometric-login';
 
 export default function PrivacySecurityScreen() {
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
+  const { colors, isDarkMode, toggleTheme } = useTheme();
+  const styles = createStyles(colors);
 
   useEffect(() => {
     AsyncStorage.getItem(BIOMETRIC_KEY).then(val => {
@@ -113,6 +115,21 @@ export default function PrivacySecurityScreen() {
           <View style={styles.divider} />
 
           <View style={styles.infoRow}>
+            <Ionicons name="moon-outline" size={20} color={colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.infoTitle}>Dark Mode</Text>
+              <Text style={styles.infoBody}>Toggle application wide dark mode theme.</Text>
+            </View>
+            <Switch
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              trackColor={{ false: colors.softBackground, true: colors.primary }}
+            />
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.infoRow}>
             <Ionicons name="globe-outline" size={20} color={colors.primary} />
             <View style={{ flex: 1 }}>
               <Text style={styles.infoTitle}>HL7 FHIR International Standard</Text>
@@ -125,10 +142,10 @@ export default function PrivacySecurityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAF8FC',
+    backgroundColor: colors.background,
   },
   scrollContent: {
     paddingHorizontal: 20,

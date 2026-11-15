@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 interface AppLogoProps {
   size?: 'small' | 'medium' | 'large';
@@ -10,6 +10,8 @@ interface AppLogoProps {
 }
 
 export function AppLogo({ size = 'medium', showText = true, lightMode = false }: AppLogoProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const iconSizes = {
     small: 20,
     medium: 28,
@@ -70,7 +72,7 @@ export function AppLogo({ size = 'medium', showText = true, lightMode = false }:
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -6,12 +6,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { AppLogo } from '../components/ui/AppLogo';
 import { getStoredAccessToken } from '../services/api';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 const ONBOARDING_KEY = '@vitaltron/onboarding-completed';
 const BIOMETRIC_KEY = '@vitaltron/biometric-login';
 
 export default function OpenSplashScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
   const pulseAnim = useRef(new Animated.Value(0.9)).current;
@@ -128,7 +130,7 @@ export default function OpenSplashScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',

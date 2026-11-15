@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, ViewStyle } from 'react-native';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 interface SkeletonLoaderProps {
   width?: number | `${number}%`;
@@ -15,6 +15,8 @@ export function SkeletonLoader({
   borderRadius = 10,
   style,
 }: SkeletonLoaderProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const opacityAnim = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export function SkeletonLoader({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   skeleton: {
     backgroundColor: colors.softBackground,
   },

@@ -16,9 +16,11 @@ import { AppLogo } from '../components/ui/AppLogo';
 import { AppTextInput } from '../components/ui/AppTextInput';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { loginUser, resendVerification } from '../services/auth';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 export default function LoginScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -190,7 +192,7 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,

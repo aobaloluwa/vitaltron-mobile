@@ -16,9 +16,11 @@ import { AppLogo } from '../components/ui/AppLogo';
 import { AppTextInput } from '../components/ui/AppTextInput';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { registerUser, resendVerification } from '../services/auth';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 export default function RegisterScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -231,7 +233,7 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,

@@ -24,7 +24,7 @@ import {
 } from '../../services/sharing';
 import { RecordType } from '../../services/healthRecords';
 import { copyToClipboard } from '../../utils/clipboard';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 const ALL_TYPES: RecordType[] = [
   'LAB_TEST',
@@ -36,6 +36,8 @@ const ALL_TYPES: RecordType[] = [
 ];
 
 export default function SharingPreferencesScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [grants, setGrants] = useState<AccessGrant[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -400,7 +402,7 @@ export default function SharingPreferencesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',

@@ -15,11 +15,13 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppLogo } from '../../components/ui/AppLogo';
 import { AppTextInput } from '../../components/ui/AppTextInput';
 import { getTimeline, HealthRecord } from '../../services/healthRecords';
-import { colors } from '../../theme';
+import { useTheme } from '../../theme';
 
 const FILTERS = ['All Tests', 'Out of Range', 'Normal', 'CBC Panel'];
 
 export default function LabResultsScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { width: windowWidth } = useWindowDimensions();
   const [labs, setLabs] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -406,7 +408,7 @@ export default function LabResultsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FAF8FC',
