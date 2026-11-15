@@ -141,16 +141,6 @@ export default function OpenSplashScreen() {
         >
           <AppLogo size="large" showText={true} />
         </Animated.View>
-
-        <Animated.View
-          style={{
-            opacity: textOpacity,
-            transform: [{ translateY: textTranslateY }],
-            marginTop: 24,
-          }}
-        >
-          <Text style={styles.tagline}>INTELLIGENT HEALTH IDENTITY</Text>
-        </Animated.View>
       </Animated.View>
     </SafeAreaView>
   );
