@@ -40,6 +40,25 @@ function AppNavigator() {
         <Stack.Screen name="profile/privacy-security" />
         <Stack.Screen name="profile/support" />
         <Stack.Screen name="profile/feedback" />
+        <Stack.Screen name="womens-health/index" />
+        <Stack.Screen name="womens-health/cycle/index" />
+        <Stack.Screen name="womens-health/cycle/calendar" />
+        <Stack.Screen name="womens-health/fertility/index" />
+        <Stack.Screen name="womens-health/pregnancy/index" />
+        <Stack.Screen name="womens-health/pregnancy/weekly-guide" />
+        <Stack.Screen name="womens-health/pregnancy/journal" />
+        <Stack.Screen name="womens-health/pregnancy/kick-counter" />
+        <Stack.Screen name="womens-health/pregnancy/contraction-timer" />
+        <Stack.Screen name="womens-health/postpartum/index" />
+        <Stack.Screen name="womens-health/menopause/index" />
+        <Stack.Screen name="womens-health/contraception/index" />
+        <Stack.Screen name="womens-health/sexual-health/index" />
+        <Stack.Screen name="womens-health/symptoms/index" />
+        <Stack.Screen name="womens-health/education/index" />
+        <Stack.Screen name="womens-health/reminders/index" />
+        <Stack.Screen name="womens-health/reports/index" />
+        <Stack.Screen name="womens-health/assistant/index" />
+        <Stack.Screen name="womens-health/settings" />
       </Stack>
     </>
   );
