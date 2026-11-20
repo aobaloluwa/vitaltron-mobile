@@ -150,7 +150,7 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
             {/* Glossy Top Edge Highlight */}
             <View style={styles.topGlossHighlight} />
 
-            {/* Ultra-Light Translucent Frosted Liquid Lens Oval Capsule */}
+            {/* Pure Dynamic Translucent Liquid Glass Lens Oval Capsule */}
             <Animated.View
               style={[
                 styles.liquidLensBubble,
@@ -159,8 +159,8 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                   height: 58,
                   borderRadius: 29,
                   backgroundColor: isDarkMode
-                    ? 'rgba(255, 255, 255, 0.05)'
-                    : 'rgba(255, 255, 255, 0.2)',
+                    ? 'rgba(255, 255, 255, 0.12)'
+                    : 'rgba(255, 255, 255, 0.35)',
                 },
                 animatedBubbleStyle,
               ]}
@@ -174,12 +174,13 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                 />
               ) : null}
 
-              {/* Extremely Light & Subtle Refraction Glass Rim */}
+              {/* Dynamic Glass Specular Highlight Rim */}
               <Svg width={tabWidth} height={58} style={StyleSheet.absoluteFill}>
                 <Defs>
-                  <SvgGradient id="extraLightGlassRefraction" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.2" />
-                    <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.02" />
+                  <SvgGradient id="pureDynamicGlassRefraction" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45" />
+                    <Stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.0" />
+                    <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.25" />
                   </SvgGradient>
                 </Defs>
                 <Rect
@@ -189,8 +190,8 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                   height={56}
                   rx={28}
                   ry={28}
-                  fill="url(#extraLightGlassRefraction)"
-                  stroke={isDarkMode ? 'rgba(255, 255, 255, 0.18)' : 'rgba(91, 42, 134, 0.08)'}
+                  fill="url(#pureDynamicGlassRefraction)"
+                  stroke="rgba(255, 255, 255, 0.5)"
                   strokeWidth={1}
                 />
               </Svg>
