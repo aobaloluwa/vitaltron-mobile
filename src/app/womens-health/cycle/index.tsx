@@ -34,6 +34,7 @@ export default function MenstrualCycleScreen() {
 
   // Form State
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState('');
   const [flow, setFlow] = useState<FlowIntensity>('MEDIUM');
   const [isSpotting, setIsSpotting] = useState(false);
   const [notes, setNotes] = useState('');
@@ -59,10 +60,12 @@ export default function MenstrualCycleScreen() {
     try {
       await createPeriodRecord({
         startDate,
+        endDate: endDate ? endDate : undefined,
         flow,
         isSpotting,
         notes,
       });
+      setEndDate('');
       setModalVisible(false);
       void loadData();
     } catch {
@@ -185,7 +188,7 @@ export default function MenstrualCycleScreen() {
         <SafetyDisclaimerBanner text="Calendar-based predictions are estimates based on your logged cycle dates and cannot guarantee contraception." />
       </ScrollView>
 
-      {/* Period Logging Modal with KeyboardAvoidingView & ScrollView */}
+      {/* Period Logging Modal with Start & End Dates */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -210,6 +213,14 @@ export default function MenstrualCycleScreen() {
                 value={startDate}
                 onChangeText={setStartDate}
                 placeholder="YYYY-MM-DD"
+              />
+
+              <Text style={styles.inputLabel}>End Date (Optional, YYYY-MM-DD)</Text>
+              <TextInput
+                style={styles.input}
+                value={endDate}
+                onChangeText={setEndDate}
+                placeholder="YYYY-MM-DD (Leave empty if ongoing)"
               />
 
               <Text style={styles.inputLabel}>Flow Intensity</Text>
