@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassView } from 'expo-glass-effect';
 import Svg, { Rect, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
@@ -41,11 +42,11 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
 
   const containerPadding = 8;
   const barWidth = Math.min(SCREEN_WIDTH - 32, 500);
-  const totalTabs = state.routes.length;
+  const totalTabs = state?.routes?.length || 5;
   const availableWidth = barWidth - containerPadding * 2;
   const tabWidth = availableWidth / totalTabs;
 
-  const activeIndex = state.index;
+  const activeIndex = state?.index || 0;
   const translateX = useSharedValue(activeIndex * tabWidth);
   const scaleX = useSharedValue(1);
   const scaleY = useSharedValue(1);
@@ -58,17 +59,26 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
   }, [activeIndex, tabWidth]);
 
   const switchTab = (index: number) => {
-    const route = state.routes[index];
+    const route = state?.routes?.[index];
     if (!route) return;
     const isFocused = state.index === index;
-    const event = navigation.emit({
-      type: 'tabPress',
-      target: route.key,
-      canPreventDefault: true,
-    });
 
-    if (!isFocused && !event.defaultPrevented) {
-      navigation.navigate(route.name);
+    if (navigation && typeof navigation.emit === 'function') {
+      const event = navigation.emit({
+        type: 'tabPress',
+        target: route.key,
+        canPreventDefault: true,
+      });
+
+      if (!isFocused && (!event || !event.defaultPrevented)) {
+        if (typeof navigation.navigate === 'function') {
+          navigation.navigate(route.name);
+        } else {
+          router.navigate(route.name === 'index' ? '/(tabs)' : `/(tabs)/${route.name}` as any);
+        }
+      }
+    } else {
+      router.navigate(route.name === 'index' ? '/(tabs)' : `/(tabs)/${route.name}` as any);
     }
   };
 
@@ -167,7 +177,7 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
 
             {/* Tab Items */}
             <View style={styles.tabsRow}>
-              {state.routes.map((route: any, index: number) => {
+              {state?.routes?.map((route: any, index: number) => {
                 const isFocused = state.index === index;
                 const meta = TAB_ICON_MAP[route.name] || {
                   active: 'ellipse',
