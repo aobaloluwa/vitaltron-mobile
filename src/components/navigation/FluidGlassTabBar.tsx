@@ -28,6 +28,12 @@ import { useTheme } from '../../theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const FAST_SPRING_CONFIG = {
+  damping: 25,
+  stiffness: 380,
+  mass: 0.5,
+};
+
 const TAB_ICON_MAP: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap; label: string }> = {
   index: { active: 'home', inactive: 'home-outline', label: 'Home' },
   analytics: { active: 'rose', inactive: 'rose-outline', label: "Women's" },
@@ -51,20 +57,14 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
   const translateX = useSharedValue(activeIndex * tabWidth);
 
   useEffect(() => {
-    translateX.value = withSpring(activeIndex * tabWidth, {
-      damping: 22,
-      stiffness: 220,
-    });
+    translateX.value = withSpring(activeIndex * tabWidth, FAST_SPRING_CONFIG);
   }, [activeIndex, tabWidth]);
 
   const switchTab = (index: number) => {
     const clampedIndex = Math.max(0, Math.min(totalTabs - 1, index));
 
-    // Force perfect center slot alignment
-    translateX.value = withSpring(clampedIndex * tabWidth, {
-      damping: 22,
-      stiffness: 220,
-    });
+    // Fast snap directly to target slot center
+    translateX.value = withSpring(clampedIndex * tabWidth, FAST_SPRING_CONFIG);
 
     const route = state?.routes?.[clampedIndex];
     if (!route) return;
@@ -103,12 +103,9 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
       translateX.value = Math.max(0, Math.min(maxTranslate, rawTranslate));
     }
 
-    // On Gesture release, cancel, or end, ALWAYS snap perfectly to slot center
+    // On Gesture release, cancel, or end, ALWAYS snap fast and crisp
     if (stateVal === State.END || stateVal === State.CANCELLED || stateVal === State.FAILED) {
-      translateX.value = withSpring(targetIdx * tabWidth, {
-        damping: 22,
-        stiffness: 220,
-      });
+      translateX.value = withSpring(targetIdx * tabWidth, FAST_SPRING_CONFIG);
 
       runOnJS(switchTab)(targetIdx);
     }
