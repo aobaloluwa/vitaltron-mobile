@@ -59,14 +59,18 @@ export default function MenstrualCycleScreen() {
   const handleSavePeriod = async () => {
     setSaving(true);
     try {
+      const cleanStartDate = startDate ? startDate.trim() : new Date().toISOString().split('T')[0];
       const cleanEndDate = endDate && endDate.trim().length > 0 ? endDate.trim() : undefined;
+
       await createPeriodRecord({
-        startDate,
+        startDate: cleanStartDate,
         ...(cleanEndDate && { endDate: cleanEndDate }),
         flow,
         isSpotting,
-        notes,
+        notes: notes ? notes.trim() : undefined,
       });
+
+      setNotes('');
       setEndDate('');
       setModalVisible(false);
       void loadData();
