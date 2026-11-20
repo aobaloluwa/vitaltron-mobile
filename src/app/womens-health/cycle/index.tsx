@@ -115,14 +115,18 @@ export default function MenstrualCycleScreen() {
             <View style={styles.vDivider} />
 
             <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>{cycle?.averageCycleLength || 28}d</Text>
+              <Text style={styles.metricVal}>
+                {cycle?.isDataSufficient ? `${cycle.averageCycleLength}d` : '-'}
+              </Text>
               <Text style={styles.metricLabel}>Avg Length</Text>
             </View>
 
             <View style={styles.vDivider} />
 
             <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>{cycle?.averagePeriodDuration || 5}d</Text>
+              <Text style={styles.metricVal}>
+                {cycle?.isDataSufficient ? `${cycle.averagePeriodDuration}d` : '-'}
+              </Text>
               <Text style={styles.metricLabel}>Avg Duration</Text>
             </View>
           </View>
