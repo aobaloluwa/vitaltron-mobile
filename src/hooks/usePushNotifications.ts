@@ -22,6 +22,8 @@ export function usePushNotifications() {
         // Send token to our backend
         registerPushToken(token, Platform.OS).catch(console.error);
       }
+    }).catch((err) => {
+      console.warn('Push notification initialization skipped:', err);
     });
 
     // Listeners for foreground push notifications
@@ -44,12 +46,16 @@ async function registerForPushNotificationsAsync() {
   let token;
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-    });
+    try {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
+    } catch (e) {
+      console.warn('Android notification channel setup skipped:', e);
+    }
   }
 
   if (Device.isDevice) {
@@ -80,7 +86,8 @@ async function registerForPushNotificationsAsync() {
       console.log('Expo Push Token:', token);
     } catch (e) {
       console.warn('Failed to get Expo push token:', e);
-    }  } else {
+    }
+  } else {
     console.log('Must use physical device for Push Notifications');
   }
 
