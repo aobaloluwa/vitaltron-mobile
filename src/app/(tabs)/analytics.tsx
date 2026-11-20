@@ -19,6 +19,8 @@ import { WomensHealthHeader } from '../../components/womens-health/WomensHealthH
 import { CyclePhaseRing } from '../../components/womens-health/CyclePhaseRing';
 import { SafetyDisclaimerBanner } from '../../components/womens-health/SafetyDisclaimerBanner';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
+import { WomensHealthOnboardingModal } from '../../components/womens-health/WomensHealthOnboardingModal';
+import { MaleAccessRestrictedView } from '../../components/womens-health/MaleAccessRestrictedView';
 
 export default function WomensHealthTabScreen() {
   const { colors } = useTheme();
@@ -27,34 +29,17 @@ export default function WomensHealthTabScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dashboard, setDashboard] = useState<WomensHealthDashboardData | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const loadDashboard = async () => {
     try {
       const data = await getWomensHealthDashboard();
       setDashboard(data);
+      if (!data.isOnboarded) {
+        setShowOnboarding(true);
+      }
     } catch {
-      // Fallback data if offline
-      setDashboard({
-        user: { name: 'User' },
-        activeMode: 'MENSTRUAL',
-        cycleMetrics: {
-          currentCycleDay: 14,
-          currentPhase: 'OVULATORY',
-          phaseDisplayName: 'Ovulatory Phase',
-          phaseDescription: 'Peak fertile window.',
-          estimatedNextPeriod: '2025-04-10',
-          estimatedOvulation: '2025-03-27',
-          fertileWindowStart: '2025-03-22',
-          fertileWindowEnd: '2025-03-28',
-          averageCycleLength: 28,
-          averagePeriodDuration: 5,
-          cycleVariabilityDays: 2,
-          isDataSufficient: true,
-          disclaimer: 'Statistical estimate',
-        },
-        recentLogs: [],
-        upcomingReminders: [],
-      });
+      setDashboard(null);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -80,7 +65,7 @@ export default function WomensHealthTabScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    setLoading(true); // Triggers SkeletonLoader layout on pull-to-refresh!
+    setLoading(true);
     void loadDashboard();
   };
 
@@ -93,18 +78,13 @@ export default function WomensHealthTabScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         >
-          {/* Skeleton Hero Card */}
           <SkeletonLoader width="100%" height={260} borderRadius={24} style={{ marginVertical: 12 }} />
-
-          {/* Skeleton Quick Actions Header & Row */}
           <SkeletonLoader width={140} height={20} borderRadius={10} style={{ marginVertical: 12 }} />
           <View style={styles.skeletonRow}>
             <SkeletonLoader width={100} height={90} borderRadius={18} />
             <SkeletonLoader width={100} height={90} borderRadius={18} />
             <SkeletonLoader width={100} height={90} borderRadius={18} />
           </View>
-
-          {/* Skeleton Modules Grid */}
           <SkeletonLoader width={180} height={20} borderRadius={10} style={{ marginVertical: 12 }} />
           <View style={styles.skeletonGrid}>
             <SkeletonLoader width="31%" height={80} borderRadius={18} />
@@ -114,12 +94,25 @@ export default function WomensHealthTabScreen() {
             <SkeletonLoader width="31%" height={80} borderRadius={18} />
             <SkeletonLoader width="31%" height={80} borderRadius={18} />
           </View>
-
-          {/* Skeleton Vitals & Reports */}
-          <SkeletonLoader width={200} height={20} borderRadius={10} style={{ marginVertical: 12 }} />
-          <SkeletonLoader width="100%" height={80} borderRadius={20} style={{ marginBottom: 12 }} />
-          <SkeletonLoader width="100%" height={80} borderRadius={20} style={{ marginBottom: 12 }} />
         </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Male Access Restriction
+  if (dashboard?.declaredSex === 'MALE' && !showOnboarding) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <WomensHealthHeader title="Women's Health" showBack={false} />
+        <MaleAccessRestrictedView onChangeDeclaration={() => setShowOnboarding(true)} />
+
+        <WomensHealthOnboardingModal
+          visible={showOnboarding}
+          onComplete={(sex) => {
+            setShowOnboarding(false);
+            void loadDashboard();
+          }}
+        />
       </SafeAreaView>
     );
   }
@@ -132,7 +125,7 @@ export default function WomensHealthTabScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader
         title="Women's Health"
-        subtitle={`${getTimeGreeting()}, ${dashboard?.user.name || ''}`}
+        subtitle={`${getTimeGreeting()}, ${dashboard?.user?.name || ''}`}
         modeBadge={activeMode}
         showBack={false}
         rightActionIcon="settings-outline"
@@ -376,6 +369,15 @@ export default function WomensHealthTabScreen() {
         {/* Safety Disclaimer */}
         <SafetyDisclaimerBanner />
       </ScrollView>
+
+      {/* Onboarding Modal */}
+      <WomensHealthOnboardingModal
+        visible={showOnboarding}
+        onComplete={(sex) => {
+          setShowOnboarding(false);
+          void loadDashboard();
+        }}
+      />
     </SafeAreaView>
   );
 }

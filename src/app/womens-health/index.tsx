@@ -19,6 +19,8 @@ import { WomensHealthHeader } from '../../components/womens-health/WomensHealthH
 import { CyclePhaseRing } from '../../components/womens-health/CyclePhaseRing';
 import { SafetyDisclaimerBanner } from '../../components/womens-health/SafetyDisclaimerBanner';
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
+import { WomensHealthOnboardingModal } from '../../components/womens-health/WomensHealthOnboardingModal';
+import { MaleAccessRestrictedView } from '../../components/womens-health/MaleAccessRestrictedView';
 
 export default function WomensHealthDashboardScreen() {
   const { colors } = useTheme();
@@ -27,34 +29,17 @@ export default function WomensHealthDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dashboard, setDashboard] = useState<WomensHealthDashboardData | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const loadDashboard = async () => {
     try {
       const data = await getWomensHealthDashboard();
       setDashboard(data);
+      if (!data.isOnboarded) {
+        setShowOnboarding(true);
+      }
     } catch {
-      // Fallback data if offline
-      setDashboard({
-        user: { name: 'User' },
-        activeMode: 'MENSTRUAL',
-        cycleMetrics: {
-          currentCycleDay: 14,
-          currentPhase: 'OVULATORY',
-          phaseDisplayName: 'Ovulatory Phase',
-          phaseDescription: 'Peak fertile window.',
-          estimatedNextPeriod: '2025-04-10',
-          estimatedOvulation: '2025-03-27',
-          fertileWindowStart: '2025-03-22',
-          fertileWindowEnd: '2025-03-28',
-          averageCycleLength: 28,
-          averagePeriodDuration: 5,
-          cycleVariabilityDays: 2,
-          isDataSufficient: true,
-          disclaimer: 'Statistical estimate',
-        },
-        recentLogs: [],
-        upcomingReminders: [],
-      });
+      setDashboard(null);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -80,10 +65,11 @@ export default function WomensHealthDashboardScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
+    setLoading(true);
     void loadDashboard();
   };
 
-  if (loading && !dashboard) {
+  if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Women's Health" />
@@ -109,6 +95,24 @@ export default function WomensHealthDashboardScreen() {
     );
   }
 
+  // Male Access Restriction View
+  if (dashboard?.declaredSex === 'MALE' && !showOnboarding) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <WomensHealthHeader title="Women's Health" />
+        <MaleAccessRestrictedView onChangeDeclaration={() => setShowOnboarding(true)} />
+
+        <WomensHealthOnboardingModal
+          visible={showOnboarding}
+          onComplete={(sex) => {
+            setShowOnboarding(false);
+            void loadDashboard();
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
+
   const activeMode = dashboard?.activeMode || 'MENSTRUAL';
   const cycle = dashboard?.cycleMetrics;
   const preg = dashboard?.pregnancyMetrics;
@@ -117,7 +121,7 @@ export default function WomensHealthDashboardScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader
         title="Women's Health"
-        subtitle={`${getTimeGreeting()}, ${dashboard?.user.name || ''}`}
+        subtitle={`${getTimeGreeting()}, ${dashboard?.user?.name || ''}`}
         modeBadge={activeMode}
         rightActionIcon="settings-outline"
         onRightAction={() => router.push('/womens-health/settings' as any)}
@@ -325,6 +329,15 @@ export default function WomensHealthDashboardScreen() {
         {/* Safety Disclaimer */}
         <SafetyDisclaimerBanner />
       </ScrollView>
+
+      {/* Onboarding Modal */}
+      <WomensHealthOnboardingModal
+        visible={showOnboarding}
+        onComplete={(sex) => {
+          setShowOnboarding(false);
+          void loadDashboard();
+        }}
+      />
     </SafeAreaView>
   );
 }

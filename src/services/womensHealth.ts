@@ -8,6 +8,8 @@ export interface WomensHealthProfile {
   id: string;
   userId: string;
   activeMode: TrackingMode;
+  isOnboarded?: boolean;
+  declaredSex?: string;
   averageCycleLength: number;
   averagePeriodDuration: number;
   lastPeriodStart?: string;
@@ -51,6 +53,8 @@ export interface PregnancyMetrics {
 export interface WomensHealthDashboardData {
   user: { name: string };
   activeMode: TrackingMode;
+  isOnboarded?: boolean;
+  declaredSex?: string;
   cycleMetrics: CycleMetrics;
   pregnancyMetrics?: PregnancyMetrics;
   menopauseSummary?: any;
