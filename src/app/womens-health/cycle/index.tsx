@@ -74,8 +74,8 @@ export default function MenstrualCycleScreen() {
       setEndDate('');
       setModalVisible(false);
       void loadData();
-    } catch (err) {
-      console.error('Failed to save period record:', err);
+    } catch (err: any) {
+      console.error('Failed to save period record:', err?.message || err);
     } finally {
       setSaving(false);
     }
