@@ -22,6 +22,7 @@ import {
   GestureHandlerRootView,
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
+  State,
 } from 'react-native-gesture-handler';
 import { useTheme } from '../../theme';
 
@@ -51,21 +52,23 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
 
   useEffect(() => {
     translateX.value = withSpring(activeIndex * tabWidth, {
-      damping: 20,
-      stiffness: 200,
+      damping: 22,
+      stiffness: 220,
     });
   }, [activeIndex, tabWidth]);
 
   const switchTab = (index: number) => {
-    // Snap active lens bubble directly to the target tab slot center
-    translateX.value = withSpring(index * tabWidth, {
-      damping: 20,
-      stiffness: 200,
+    const clampedIndex = Math.max(0, Math.min(totalTabs - 1, index));
+
+    // Force perfect center slot alignment
+    translateX.value = withSpring(clampedIndex * tabWidth, {
+      damping: 22,
+      stiffness: 220,
     });
 
-    const route = state?.routes?.[index];
+    const route = state?.routes?.[clampedIndex];
     if (!route) return;
-    const isFocused = state.index === index;
+    const isFocused = state.index === clampedIndex;
 
     if (navigation && typeof navigation.emit === 'function') {
       const event = navigation.emit({
@@ -90,17 +93,21 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
     'worklet';
     const touchX = event.nativeEvent.x - containerPadding;
     const targetIdx = Math.max(0, Math.min(totalTabs - 1, Math.floor(touchX / tabWidth)));
-
-    const maxTranslate = (totalTabs - 1) * tabWidth;
-    const rawTranslate = touchX - tabWidth / 2;
-    translateX.value = Math.max(0, Math.min(maxTranslate, rawTranslate));
-
     const stateVal = event.nativeEvent.state;
-    // 4: END, 5: END/CANCELLED
-    if (stateVal === 4 || stateVal === 5) {
+    const translationX = event.nativeEvent.translationX;
+
+    // Only drag follow if user is actively panning (moving finger > 4px)
+    if (stateVal === State.ACTIVE && Math.abs(translationX) > 4) {
+      const maxTranslate = (totalTabs - 1) * tabWidth;
+      const rawTranslate = touchX - tabWidth / 2;
+      translateX.value = Math.max(0, Math.min(maxTranslate, rawTranslate));
+    }
+
+    // On Gesture release, cancel, or end, ALWAYS snap perfectly to slot center
+    if (stateVal === State.END || stateVal === State.CANCELLED || stateVal === State.FAILED) {
       translateX.value = withSpring(targetIdx * tabWidth, {
-        damping: 20,
-        stiffness: 200,
+        damping: 22,
+        stiffness: 220,
       });
 
       runOnJS(switchTab)(targetIdx);
@@ -118,7 +125,11 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
   return (
     <View style={[styles.outerWrapper, { bottom: bottomMargin }]} pointerEvents="box-none">
       <GestureHandlerRootView>
-        <PanGestureHandler onGestureEvent={onPanGesture} onHandlerStateChange={onPanGesture}>
+        <PanGestureHandler
+          onGestureEvent={onPanGesture}
+          onHandlerStateChange={onPanGesture}
+          activeOffsetX={[-8, 8]}
+        >
           <Animated.View style={[styles.floatingBarContainer, { width: barWidth }]}>
             {/* Liquid Glass Dock Backdrop */}
             {isIos ? (
