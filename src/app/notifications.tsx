@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
@@ -13,6 +12,7 @@ import { router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { fetchNotifications, markAsRead, markAllAsRead, NotificationItem } from '../services/notifications';
 import { useTheme } from '../theme';
+import { SkeletonLoader } from '../components/ui/SkeletonLoader';
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
@@ -25,9 +25,9 @@ export default function NotificationsScreen() {
   const loadNotifications = async () => {
     try {
       const data = await fetchNotifications();
-      setNotifications(data);
-    } catch (e) {
-      console.error(e);
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch {
+      setNotifications([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -40,22 +40,30 @@ export default function NotificationsScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
+    setLoading(true); // Triggers SkeletonLoader layout on pull-to-refresh
     void loadNotifications();
   };
 
   const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch {
+      // ignore
+    }
   };
 
   const handleNotificationPress = async (item: NotificationItem) => {
     if (!item.isRead) {
-      await markAsRead(item.id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === item.id ? { ...n, isRead: true } : n))
-      );
+      try {
+        await markAsRead(item.id);
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === item.id ? { ...n, isRead: true } : n))
+        );
+      } catch {
+        // ignore
+      }
     }
-    // You could route to specific pages based on item.type here
   };
 
   const renderItem = ({ item }: { item: NotificationItem }) => (
@@ -92,9 +100,14 @@ export default function NotificationsScreen() {
         </Pressable>
       </View>
 
-      {/* List */}
+      {/* Content / List */}
       {loading ? (
-        <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} />
+        <View style={styles.listContent}>
+          <SkeletonLoader width="100%" height={80} borderRadius={16} />
+          <SkeletonLoader width="100%" height={80} borderRadius={16} />
+          <SkeletonLoader width="100%" height={80} borderRadius={16} />
+          <SkeletonLoader width="100%" height={80} borderRadius={16} />
+        </View>
       ) : (
         <FlatList
           data={notifications}
