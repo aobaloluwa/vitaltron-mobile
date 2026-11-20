@@ -48,13 +48,11 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
 
   const activeIndex = state?.index || 0;
   const translateX = useSharedValue(activeIndex * tabWidth);
-  const scaleX = useSharedValue(1);
-  const scaleY = useSharedValue(1);
 
   useEffect(() => {
     translateX.value = withSpring(activeIndex * tabWidth, {
-      damping: 18,
-      stiffness: 180,
+      damping: 20,
+      stiffness: 200,
     });
   }, [activeIndex, tabWidth]);
 
@@ -88,17 +86,12 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
     const targetIdx = Math.max(0, Math.min(totalTabs - 1, Math.floor(touchX / tabWidth)));
 
     translateX.value = touchX - tabWidth / 2;
-    scaleX.value = withSpring(1.18, { damping: 12 });
-    scaleY.value = withSpring(0.92, { damping: 12 });
 
     if (event.nativeEvent.state === 5) {
       // Gesture END / CANCELLED
-      scaleX.value = withSpring(1, { damping: 15 });
-      scaleY.value = withSpring(1, { damping: 15 });
-
       translateX.value = withSpring(targetIdx * tabWidth, {
-        damping: 18,
-        stiffness: 180,
+        damping: 20,
+        stiffness: 200,
       });
 
       runOnJS(switchTab)(targetIdx);
@@ -107,11 +100,7 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
 
   const animatedBubbleStyle = useAnimatedStyle(() => {
     return {
-      transform: [
-        { translateX: translateX.value },
-        { scaleX: scaleX.value },
-        { scaleY: scaleY.value },
-      ],
+      transform: [{ translateX: translateX.value }],
     };
   });
 
@@ -122,7 +111,7 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
       <GestureHandlerRootView>
         <PanGestureHandler onGestureEvent={onPanGesture} onHandlerStateChange={onPanGesture}>
           <Animated.View style={[styles.floatingBarContainer, { width: barWidth }]}>
-            {/* Glass / Translucent Backdrop */}
+            {/* Transparent Liquid Glass Backdrop */}
             {isIos ? (
               <GlassView
                 glassEffectStyle="clear"
@@ -133,15 +122,15 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
               <View
                 style={[
                   styles.androidBackdrop,
-                  { backgroundColor: isDarkMode ? 'rgba(30,30,30,0.85)' : 'rgba(255,255,255,0.85)' },
+                  { backgroundColor: isDarkMode ? 'rgba(26,26,26,0.85)' : 'rgba(255,255,255,0.85)' },
                 ]}
               />
             )}
 
-            {/* Glossy Glass Top Highlight Reflection */}
+            {/* Glossy Top Reflection Edge */}
             <View style={styles.topGlossHighlight} />
 
-            {/* Liquid Glass Lens Active Bubble Indicator */}
+            {/* Liquid Glass Lens Active Oval Capsule Indicator (Maintains Perfect Oval Shape) */}
             <Animated.View
               style={[
                 styles.liquidLensBubble,
@@ -152,24 +141,39 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
             >
               {isIos ? (
                 <GlassView
-                  glassEffectStyle="regular"
+                  glassEffectStyle="clear"
                   colorScheme={isDarkMode ? 'dark' : 'light'}
                   style={StyleSheet.absoluteFill}
                 />
               ) : (
-                <View style={[styles.androidBubbleFill, { backgroundColor: colors.softBackground }]} />
+                <View
+                  style={[
+                    styles.androidBubbleFill,
+                    { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' },
+                  ]}
+                />
               )}
 
-              {/* Cyan / Blue Liquid Glass Glow Fill */}
+              {/* Ultra-Clear Transparent Liquid Glass Specular Rim Highlight */}
               <Svg width={tabWidth} height={58} style={StyleSheet.absoluteFill}>
                 <Defs>
-                  <SvgGradient id="glossyGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.55" />
-                    <Stop offset="60%" stopColor="#0284C7" stopOpacity="0.25" />
-                    <Stop offset="100%" stopColor="#818CF8" stopOpacity="0.15" />
+                  <SvgGradient id="glassRefraction" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45" />
+                    <Stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.1" />
+                    <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.25" />
                   </SvgGradient>
                 </Defs>
-                <Rect x={0} y={0} width={tabWidth} height={58} rx={29} ry={29} fill="url(#glossyGlow)" />
+                <Rect
+                  x={1}
+                  y={1}
+                  width={tabWidth - 2}
+                  height={56}
+                  rx={28}
+                  ry={28}
+                  fill="url(#glassRefraction)"
+                  stroke="rgba(255, 255, 255, 0.4)"
+                  strokeWidth={1}
+                />
               </Svg>
             </Animated.View>
 
@@ -193,12 +197,12 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                     <Ionicons
                       name={isFocused ? meta.active : meta.inactive}
                       size={24}
-                      color={isFocused ? (isDarkMode ? '#38BDF8' : colors.primary) : '#9CA3AF'}
+                      color={isFocused ? colors.primary : '#9CA3AF'}
                     />
                     <Text
                       style={[
                         styles.tabLabel,
-                        { color: isFocused ? (isDarkMode ? '#38BDF8' : colors.primary) : '#9CA3AF' },
+                        { color: isFocused ? colors.primary : '#9CA3AF' },
                         isFocused && styles.tabLabelActive,
                       ]}
                       numberOfLines={1}
@@ -231,10 +235,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 10,
   },
   androidBackdrop: {
     ...StyleSheet.absoluteFill,
@@ -246,18 +250,18 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.45)',
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
   },
   liquidLensBubble: {
     position: 'absolute',
     top: 8,
     left: 8,
     overflow: 'hidden',
-    shadowColor: '#38BDF8',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   androidBubbleFill: {
     ...StyleSheet.absoluteFill,
