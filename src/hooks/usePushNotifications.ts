@@ -20,11 +20,9 @@ export function usePushNotifications() {
     registerForPushNotificationsAsync().then((token) => {
       if (token) {
         // Send token to our backend
-        registerPushToken(token, Platform.OS).catch(console.error);
+        registerPushToken(token, Platform.OS).catch(() => {});
       }
-    }).catch((err) => {
-      console.warn('Push notification initialization skipped:', err);
-    });
+    }).catch(() => {});
 
     // Listeners for foreground push notifications
     const notificationListener = Notifications.addNotificationReceivedListener((notification) => {
@@ -53,8 +51,8 @@ async function registerForPushNotificationsAsync() {
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#FF231F7C',
       });
-    } catch (e) {
-      console.warn('Android notification channel setup skipped:', e);
+    } catch {
+      // Android notification channel setup skipped
     }
   }
 
@@ -68,27 +66,21 @@ async function registerForPushNotificationsAsync() {
     }
 
     if (finalStatus !== 'granted') {
-      console.log('Failed to get push token for push notification!');
       return;
     }
 
     const projectId =
       Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
     if (!projectId) {
-      console.log(
-        'Push notifications disabled: no EAS projectId. Run `npx eas-cli@latest init` to create one.'
-      );
+      // EAS Project ID not configured yet for remote push
       return;
     }
 
     try {
       token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-      console.log('Expo Push Token:', token);
-    } catch (e) {
-      console.warn('Failed to get Expo push token:', e);
+    } catch {
+      // Expo push token retrieval skipped
     }
-  } else {
-    console.log('Must use physical device for Push Notifications');
   }
 
   return token;
