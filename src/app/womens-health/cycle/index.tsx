@@ -42,7 +42,7 @@ export default function MenstrualCycleScreen() {
       const data = await getWomensHealthDashboard();
       setDashboard(data);
     } catch {
-      // ignore
+      setDashboard(null);
     } finally {
       setLoading(false);
     }
@@ -87,6 +87,7 @@ export default function MenstrualCycleScreen() {
   }
 
   const cycle = dashboard?.cycleMetrics;
+  const hasHistory = cycle && cycle.isDataSufficient;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -104,22 +105,24 @@ export default function MenstrualCycleScreen() {
 
           <View style={styles.metricsRow}>
             <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>{cycle?.currentCycleDay || 14}</Text>
-              <Text style={styles.metricLabel}>Current Day</Text>
+              <Text style={styles.metricVal}>
+                {cycle?.currentCycleDay ? `Day ${cycle.currentCycleDay}` : '-'}
+              </Text>
+              <Text style={styles.metricLabel}>Current Cycle</Text>
             </View>
 
             <View style={styles.vDivider} />
 
             <View style={styles.metricItem}>
               <Text style={styles.metricVal}>{cycle?.averageCycleLength || 28}d</Text>
-              <Text style={styles.metricLabel}>Avg Cycle</Text>
+              <Text style={styles.metricLabel}>Avg Length</Text>
             </View>
 
             <View style={styles.vDivider} />
 
             <View style={styles.metricItem}>
               <Text style={styles.metricVal}>{cycle?.averagePeriodDuration || 5}d</Text>
-              <Text style={styles.metricLabel}>Avg Period</Text>
+              <Text style={styles.metricLabel}>Avg Duration</Text>
             </View>
           </View>
         </View>
@@ -135,7 +138,7 @@ export default function MenstrualCycleScreen() {
           <Text style={styles.infoTitle}>{cycle?.phaseDisplayName || 'Follicular Phase'}</Text>
           <Text style={styles.infoDesc}>
             {cycle?.phaseDescription ||
-              'Estrogen levels gradually rise as follicles mature in preparation for egg release.'}
+              'Log your period start date to unlock dynamic phase calculations and cycle predictions.'}
           </Text>
         </View>
 
@@ -146,7 +149,9 @@ export default function MenstrualCycleScreen() {
           <Ionicons name="water-outline" size={22} color={colors.primary} />
           <View style={styles.dateInfo}>
             <Text style={styles.dateTitle}>Next Predicted Period</Text>
-            <Text style={styles.dateSub}>{cycle?.estimatedNextPeriod || '2025-04-10'}</Text>
+            <Text style={styles.dateSub}>
+              {cycle?.estimatedNextPeriod ? cycle.estimatedNextPeriod : 'Log period start to estimate date'}
+            </Text>
           </View>
         </View>
 
@@ -154,7 +159,9 @@ export default function MenstrualCycleScreen() {
           <Ionicons name="sparkles-outline" size={22} color="#EC4899" />
           <View style={styles.dateInfo}>
             <Text style={styles.dateTitle}>Estimated Ovulation</Text>
-            <Text style={styles.dateSub}>{cycle?.estimatedOvulation || '2025-03-27'}</Text>
+            <Text style={styles.dateSub}>
+              {cycle?.estimatedOvulation ? cycle.estimatedOvulation : 'Log period start to estimate ovulation'}
+            </Text>
           </View>
         </View>
 
@@ -163,12 +170,14 @@ export default function MenstrualCycleScreen() {
           <View style={styles.dateInfo}>
             <Text style={styles.dateTitle}>Estimated Fertile Window</Text>
             <Text style={styles.dateSub}>
-              {cycle?.fertileWindowStart} - {cycle?.fertileWindowEnd}
+              {cycle?.fertileWindowStart
+                ? `${cycle.fertileWindowStart} to ${cycle.fertileWindowEnd}`
+                : 'Log period start to calculate fertile window'}
             </Text>
           </View>
         </View>
 
-        <SafetyDisclaimerBanner text="Calendar-based predictions are estimates and must not be used as a primary method of contraception." />
+        <SafetyDisclaimerBanner text="Calendar-based predictions are estimates based on your logged cycle dates and cannot guarantee contraception." />
       </ScrollView>
 
       {/* Period Logging Modal */}
@@ -272,7 +281,7 @@ const createStyles = (colors: any) =>
       alignItems: 'center',
     },
     metricVal: {
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: '800',
       color: colors.darkText,
     },
@@ -337,6 +346,7 @@ const createStyles = (colors: any) =>
     },
     dateInfo: {
       marginLeft: 12,
+      flex: 1,
     },
     dateTitle: {
       fontSize: 13,

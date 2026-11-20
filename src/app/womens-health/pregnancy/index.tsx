@@ -20,6 +20,7 @@ import {
 } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 export default function PregnancyHubScreen() {
   const { colors } = useTheme();
@@ -42,7 +43,7 @@ export default function PregnancyHubScreen() {
         setDueDate(res.metrics.dueDate);
       }
     } catch {
-      // ignore
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -72,9 +73,16 @@ export default function PregnancyHubScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Pregnancy Hub" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader width="100%" height={240} borderRadius={22} style={{ marginVertical: 12 }} />
+          <SkeletonLoader width={180} height={20} borderRadius={10} style={{ marginVertical: 12 }} />
+          <View style={styles.toolsGrid}>
+            <SkeletonLoader width="48%" height={90} borderRadius={18} />
+            <SkeletonLoader width="48%" height={90} borderRadius={18} />
+            <SkeletonLoader width="48%" height={90} borderRadius={18} />
+            <SkeletonLoader width="48%" height={90} borderRadius={18} />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -97,7 +105,7 @@ export default function PregnancyHubScreen() {
             <View>
               <Text style={styles.cardTag}>{m?.trimesterName.toUpperCase() || 'TRIMESTER PROGRESS'}</Text>
               <Text style={styles.cardTitle}>
-                Week {m?.gestationalAgeWeeks || 12}, Day {m?.gestationalAgeDays || 0}
+                Week {m?.gestationalAgeWeeks || 1}, Day {m?.gestationalAgeDays || 0}
               </Text>
             </View>
             <View style={styles.trimesterBadge}>
@@ -109,27 +117,27 @@ export default function PregnancyHubScreen() {
           <View style={styles.babyCard}>
             <Ionicons name="nutrition-outline" size={28} color={colors.primary} />
             <View style={styles.babyInfo}>
-              <Text style={styles.babyTitle}>Size of a {m?.babySizeFruit || 'Plum'}</Text>
+              <Text style={styles.babyTitle}>Size of a {m?.babySizeFruit || 'Poppy Seed'}</Text>
               <Text style={styles.babyStats}>
-                ~{m?.babyLengthCm || 5.4} cm • ~{m?.babyWeightGrams || 14} g
+                ~{m?.babyLengthCm || 0.1} cm • ~{m?.babyWeightGrams || 0.1} g
               </Text>
             </View>
           </View>
 
           {/* Milestone Title & Summary */}
-          <Text style={styles.milestoneTitle}>{m?.weeklyMilestoneTitle || 'Developmental Milestone'}</Text>
+          <Text style={styles.milestoneTitle}>{m?.weeklyMilestoneTitle || 'Pregnancy Confirmation'}</Text>
           <Text style={styles.milestoneSummary}>
-            {m?.weeklySummary || 'Vital organs are developing rapidly.'}
+            {m?.weeklySummary || 'Set your confirmed due date to begin gestational week tracking.'}
           </Text>
 
           {/* Progress Bar */}
           <View style={styles.progressContainer}>
             <View style={styles.progressBg}>
-              <View style={[styles.progressFill, { width: `${m?.progressPercent || 30}%` }]} />
+              <View style={[styles.progressFill, { width: `${m?.progressPercent || 0}%` }]} />
             </View>
             <View style={styles.progressMeta}>
-              <Text style={styles.progressMetaText}>{m?.progressPercent || 30}% Completed</Text>
-              <Text style={styles.progressMetaText}>{m?.daysRemaining || 200} Days to Due Date</Text>
+              <Text style={styles.progressMetaText}>{m?.progressPercent || 0}% Completed</Text>
+              <Text style={styles.progressMetaText}>{m?.daysRemaining || 280} Days to Due Date</Text>
             </View>
           </View>
         </View>

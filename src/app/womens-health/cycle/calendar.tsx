@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
 import { getCycleCalendar } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 export default function CycleCalendarScreen() {
   const { colors } = useTheme();
@@ -26,7 +26,7 @@ export default function CycleCalendarScreen() {
       const data = await getCycleCalendar();
       setCalendarData(data);
     } catch {
-      // ignore
+      setCalendarData(null);
     } finally {
       setLoading(false);
     }
@@ -57,15 +57,32 @@ export default function CycleCalendarScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Cycle Calendar" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader width="100%" height={48} borderRadius={16} style={{ marginVertical: 14 }} />
+          <SkeletonLoader width="100%" height={320} borderRadius={20} style={{ marginVertical: 10 }} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
   const days = getDaysInMonth();
   const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const yearStr = currentMonth.getFullYear();
+  const monthStr = String(currentMonth.getMonth() + 1).padStart(2, '0');
+
+  // Real logged records set for matching
+  const periodDatesSet = new Set(
+    (calendarData?.periodRecords || []).map((r: any) =>
+      new Date(r.date).toISOString().split('T')[0]
+    )
+  );
+
+  const fertileStart = calendarData?.predictions?.isDataSufficient
+    ? calendarData?.predictions?.fertileWindowStart
+    : null;
+  const fertileEnd = calendarData?.predictions?.isDataSufficient
+    ? calendarData?.predictions?.fertileWindowEnd
+    : null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -95,7 +112,17 @@ export default function CycleCalendarScreen() {
         {/* Calendar Grid */}
         <View style={styles.gridContainer}>
           {days.map((dayNum) => {
-            const isToday = dayNum === new Date().getDate() && currentMonth.getMonth() === new Date().getMonth();
+            const dayStr = String(dayNum).padStart(2, '0');
+            const dateISO = `${yearStr}-${monthStr}-${dayStr}`;
+
+            const isToday =
+              dayNum === new Date().getDate() &&
+              currentMonth.getMonth() === new Date().getMonth() &&
+              currentMonth.getFullYear() === new Date().getFullYear();
+
+            const isRecordedPeriod = periodDatesSet.has(dateISO);
+            const isFertile = fertileStart && fertileEnd && dateISO >= fertileStart && dateISO <= fertileEnd;
+
             return (
               <View
                 key={dayNum}
@@ -107,10 +134,14 @@ export default function CycleCalendarScreen() {
                 <Text style={[styles.dayNumText, isToday && { color: colors.primary, fontWeight: '800' }]}>
                   {dayNum}
                 </Text>
-                {/* Visual Indicators */}
+                {/* Visual Indicators strictly based on REAL user logs */}
                 <View style={styles.dotsRow}>
-                  {dayNum >= 1 && dayNum <= 5 ? <View style={[styles.dot, { backgroundColor: colors.primary }]} /> : null}
-                  {dayNum >= 12 && dayNum <= 16 ? <View style={[styles.dot, { backgroundColor: '#EC4899' }]} /> : null}
+                  {isRecordedPeriod ? (
+                    <View style={[styles.dot, { backgroundColor: colors.primary }]} />
+                  ) : null}
+                  {isFertile ? (
+                    <View style={[styles.dot, { backgroundColor: '#EC4899' }]} />
+                  ) : null}
                 </View>
               </View>
             );
@@ -122,7 +153,7 @@ export default function CycleCalendarScreen() {
           <Text style={styles.legendTitle}>Calendar Legend</Text>
           <View style={styles.legendRow}>
             <View style={[styles.dot, { backgroundColor: colors.primary }]} />
-            <Text style={styles.legendText}>Recorded Period</Text>
+            <Text style={styles.legendText}>Recorded Period (From User Logs)</Text>
           </View>
           <View style={styles.legendRow}>
             <View style={[styles.dot, { backgroundColor: '#EC4899' }]} />

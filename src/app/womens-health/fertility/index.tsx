@@ -18,6 +18,7 @@ import {
 } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 export default function FertilityTrackerScreen() {
   const { colors } = useTheme();
@@ -27,7 +28,7 @@ export default function FertilityTrackerScreen() {
   const [dashboard, setDashboard] = useState<any>(null);
 
   // Observations State
-  const [bbt, setBbt] = useState('36.6');
+  const [bbt, setBbt] = useState('');
   const [mucus, setMucus] = useState<CervicalMucusType>('CREAMY');
   const [lhTest, setLhTest] = useState('NEGATIVE');
   const [saving, setSaving] = useState(false);
@@ -38,7 +39,7 @@ export default function FertilityTrackerScreen() {
       const data = await getWomensHealthDashboard();
       setDashboard(data);
     } catch {
-      // ignore
+      setDashboard(null);
     } finally {
       setLoading(false);
     }
@@ -54,7 +55,7 @@ export default function FertilityTrackerScreen() {
     try {
       await logDailyCycle({
         date: new Date().toISOString().split('T')[0],
-        bbt: parseFloat(bbt),
+        bbt: bbt ? parseFloat(bbt) : undefined,
         cervicalMucus: mucus,
         ovulationTestResult: lhTest,
       });
@@ -70,9 +71,11 @@ export default function FertilityTrackerScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Ovulation & Fertility" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader width="100%" height={140} borderRadius={22} style={{ marginVertical: 12 }} />
+          <SkeletonLoader width={200} height={20} borderRadius={10} style={{ marginVertical: 12 }} />
+          <SkeletonLoader width="100%" height={260} borderRadius={22} style={{ marginBottom: 16 }} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -95,13 +98,15 @@ export default function FertilityTrackerScreen() {
           </View>
 
           <Text style={styles.datesText}>
-            {cycle?.fertileWindowStart || '2025-03-22'} to {cycle?.fertileWindowEnd || '2025-03-28'}
+            {cycle?.fertileWindowStart
+              ? `${cycle.fertileWindowStart} to ${cycle.fertileWindowEnd}`
+              : 'Log period start date to calculate fertile window'}
           </Text>
 
           <View style={styles.ovulationPill}>
             <Ionicons name="ellipse" size={10} color="#EC4899" />
             <Text style={styles.ovulationPillText}>
-              Estimated Ovulation: {cycle?.estimatedOvulation || '2025-03-27'}
+              Estimated Ovulation: {cycle?.estimatedOvulation || 'Log period start to estimate date'}
             </Text>
           </View>
         </View>
@@ -116,7 +121,7 @@ export default function FertilityTrackerScreen() {
             value={bbt}
             onChangeText={setBbt}
             keyboardType="numeric"
-            placeholder="36.6"
+            placeholder="e.g. 36.6"
           />
 
           <Text style={styles.label}>Cervical Mucus Consistency</Text>
@@ -208,7 +213,7 @@ const createStyles = (colors: any) =>
       marginTop: 2,
     },
     datesText: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '700',
       color: colors.primary,
       marginTop: 10,
