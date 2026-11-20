@@ -1,17 +1,19 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { GlassView } from 'expo-glass-effect';
 import { useTranslation } from '../../i18n/LanguageContext';
 import { useTheme } from '../../theme';
 
 export default function TabLayout() {
-  const { colors } = useTheme();
+  const { colors, isDarkMode } = useTheme();
   const styles = createStyles(colors);
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const bottomInset = Math.max(insets.bottom, 8);
+  const isIos = Platform.OS === 'ios';
 
   return (
     <Tabs
@@ -26,7 +28,17 @@ export default function TabLayout() {
             height: 60 + bottomInset,
             paddingBottom: bottomInset,
           },
+          isIos && styles.iosGlassTabBar,
         ],
+        tabBarBackground: isIos
+          ? () => (
+              <GlassView
+                glassEffectStyle="regular"
+                colorScheme={isDarkMode ? 'dark' : 'light'}
+                style={StyleSheet.absoluteFill}
+              />
+            )
+          : undefined,
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
@@ -113,6 +125,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 10,
     elevation: 8,
+  },
+  iosGlassTabBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   tabBarLabel: {
     fontSize: 11,
