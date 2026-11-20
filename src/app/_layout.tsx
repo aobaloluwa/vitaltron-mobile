@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LanguageProvider } from '../i18n/LanguageContext';
 import { ThemeProvider, useTheme } from '../theme';
 import { usePushNotifications } from '../hooks/usePushNotifications';
@@ -66,12 +67,14 @@ function AppNavigator() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <LanguageProvider>
-        <ThemeProvider>
-          <AppNavigator />
-        </ThemeProvider>
-      </LanguageProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <AppNavigator />
+          </ThemeProvider>
+        </LanguageProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

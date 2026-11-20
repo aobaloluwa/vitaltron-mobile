@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   Dimensions,
   Platform,
@@ -18,6 +18,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import {
+  GestureHandlerRootView,
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
 } from 'react-native-gesture-handler';
@@ -108,99 +109,101 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
 
   return (
     <View style={[styles.outerWrapper, { bottom: bottomMargin }]} pointerEvents="box-none">
-      <PanGestureHandler onGestureEvent={onPanGesture} onHandlerStateChange={onPanGesture}>
-        <Animated.View style={[styles.floatingBarContainer, { width: barWidth }]}>
-          {/* Glass / Translucent Backdrop */}
-          {isIos ? (
-            <GlassView
-              glassEffectStyle="regular"
-              colorScheme={isDarkMode ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
-          ) : (
-            <View style={[styles.androidBackdrop, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }]} />
-          )}
-
-          {/* Fluid Liquid Glass Lens Active Bubble Indicator */}
-          <Animated.View
-            style={[
-              styles.liquidLensBubble,
-              { width: tabWidth, height: 48, borderRadius: 24 },
-              animatedBubbleStyle,
-            ]}
-            pointerEvents="none"
-          >
+      <GestureHandlerRootView>
+        <PanGestureHandler onGestureEvent={onPanGesture} onHandlerStateChange={onPanGesture}>
+          <Animated.View style={[styles.floatingBarContainer, { width: barWidth }]}>
+            {/* Glass / Translucent Backdrop */}
             {isIos ? (
               <GlassView
-                glassEffectStyle="clear"
+                glassEffectStyle="regular"
                 colorScheme={isDarkMode ? 'dark' : 'light'}
                 style={StyleSheet.absoluteFill}
               />
             ) : (
-              <View style={[styles.androidBubbleFill, { backgroundColor: colors.softBackground }]} />
+              <View style={[styles.androidBackdrop, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }]} />
             )}
 
-            {/* Chromatic Liquid Prism Border Gradient */}
-            <Svg width={tabWidth} height={48} style={StyleSheet.absoluteFill}>
-              <Defs>
-                <SvgGradient id="liquidPrism" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.8" />
-                  <Stop offset="50%" stopColor="#A855F7" stopOpacity="0.8" />
-                  <Stop offset="100%" stopColor="#EC4899" stopOpacity="0.8" />
-                </SvgGradient>
-              </Defs>
-              <Rect
-                x={1}
-                y={1}
-                width={tabWidth - 2}
-                height={46}
-                rx={23}
-                ry={23}
-                fill="none"
-                stroke="url(#liquidPrism)"
-                strokeWidth={2}
-              />
-            </Svg>
-          </Animated.View>
+            {/* Fluid Liquid Glass Lens Active Bubble Indicator */}
+            <Animated.View
+              style={[
+                styles.liquidLensBubble,
+                { width: tabWidth, height: 48, borderRadius: 24 },
+                animatedBubbleStyle,
+              ]}
+              pointerEvents="none"
+            >
+              {isIos ? (
+                <GlassView
+                  glassEffectStyle="clear"
+                  colorScheme={isDarkMode ? 'dark' : 'light'}
+                  style={StyleSheet.absoluteFill}
+                />
+              ) : (
+                <View style={[styles.androidBubbleFill, { backgroundColor: colors.softBackground }]} />
+              )}
 
-          {/* Tab Items */}
-          <View style={styles.tabsRow}>
-            {state.routes.map((route: any, index: number) => {
-              const isFocused = state.index === index;
-              const meta = TAB_ICON_MAP[route.name] || {
-                active: 'ellipse',
-                inactive: 'ellipse-outline',
-                label: route.name,
-              };
+              {/* Chromatic Liquid Prism Border Gradient */}
+              <Svg width={tabWidth} height={48} style={StyleSheet.absoluteFill}>
+                <Defs>
+                  <SvgGradient id="liquidPrism" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.8" />
+                    <Stop offset="50%" stopColor="#A855F7" stopOpacity="0.8" />
+                    <Stop offset="100%" stopColor="#EC4899" stopOpacity="0.8" />
+                  </SvgGradient>
+                </Defs>
+                <Rect
+                  x={1}
+                  y={1}
+                  width={tabWidth - 2}
+                  height={46}
+                  rx={23}
+                  ry={23}
+                  fill="none"
+                  stroke="url(#liquidPrism)"
+                  strokeWidth={2}
+                />
+              </Svg>
+            </Animated.View>
 
-              return (
-                <Pressable
-                  key={route.key}
-                  style={styles.tabCell}
-                  onPress={() => switchTab(index)}
-                  hitSlop={8}
-                >
-                  <Ionicons
-                    name={isFocused ? meta.active : meta.inactive}
-                    size={22}
-                    color={isFocused ? colors.primary : '#9CA3AF'}
-                  />
-                  <Text
-                    style={[
-                      styles.tabLabel,
-                      { color: isFocused ? colors.primary : '#9CA3AF' },
-                      isFocused && styles.tabLabelActive,
-                    ]}
-                    numberOfLines={1}
+            {/* Tab Items */}
+            <View style={styles.tabsRow}>
+              {state.routes.map((route: any, index: number) => {
+                const isFocused = state.index === index;
+                const meta = TAB_ICON_MAP[route.name] || {
+                  active: 'ellipse',
+                  inactive: 'ellipse-outline',
+                  label: route.name,
+                };
+
+                return (
+                  <Pressable
+                    key={route.key}
+                    style={styles.tabCell}
+                    onPress={() => switchTab(index)}
+                    hitSlop={8}
                   >
-                    {meta.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </Animated.View>
-      </PanGestureHandler>
+                    <Ionicons
+                      name={isFocused ? meta.active : meta.inactive}
+                      size={22}
+                      color={isFocused ? colors.primary : '#9CA3AF'}
+                    />
+                    <Text
+                      style={[
+                        styles.tabLabel,
+                        { color: isFocused ? colors.primary : '#9CA3AF' },
+                        isFocused && styles.tabLabelActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {meta.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Animated.View>
+        </PanGestureHandler>
+      </GestureHandlerRootView>
     </View>
   );
 }
