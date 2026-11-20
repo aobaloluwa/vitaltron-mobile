@@ -57,6 +57,12 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
   }, [activeIndex, tabWidth]);
 
   const switchTab = (index: number) => {
+    // Snap active lens bubble directly to the target tab slot center
+    translateX.value = withSpring(index * tabWidth, {
+      damping: 20,
+      stiffness: 200,
+    });
+
     const route = state?.routes?.[index];
     if (!route) return;
     const isFocused = state.index === index;
@@ -85,10 +91,13 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
     const touchX = event.nativeEvent.x - containerPadding;
     const targetIdx = Math.max(0, Math.min(totalTabs - 1, Math.floor(touchX / tabWidth)));
 
-    translateX.value = touchX - tabWidth / 2;
+    const maxTranslate = (totalTabs - 1) * tabWidth;
+    const rawTranslate = touchX - tabWidth / 2;
+    translateX.value = Math.max(0, Math.min(maxTranslate, rawTranslate));
 
-    if (event.nativeEvent.state === 5) {
-      // Gesture END / CANCELLED
+    const stateVal = event.nativeEvent.state;
+    // 4: END, 5: END/CANCELLED
+    if (stateVal === 4 || stateVal === 5) {
       translateX.value = withSpring(targetIdx * tabWidth, {
         damping: 20,
         stiffness: 200,
@@ -130,7 +139,7 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
             {/* Glossy Top Edge Highlight */}
             <View style={styles.topGlossHighlight} />
 
-            {/* Light & Subtle Frosted Liquid Lens Oval Capsule */}
+            {/* Subtle Frosted Liquid Lens Oval Capsule (Always Perfectly Centered) */}
             <Animated.View
               style={[
                 styles.liquidLensBubble,
@@ -139,8 +148,8 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                   height: 58,
                   borderRadius: 29,
                   backgroundColor: isDarkMode
-                    ? 'rgba(255, 255, 255, 0.08)'
-                    : 'rgba(255, 255, 255, 0.35)',
+                    ? 'rgba(255, 255, 255, 0.14)'
+                    : 'rgba(237, 231, 246, 0.65)',
                 },
                 animatedBubbleStyle,
               ]}
@@ -154,12 +163,12 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                 />
               ) : null}
 
-              {/* Ultra-Light Refraction Glass Rim Highlight */}
+              {/* Subtle Refraction Glass Rim Highlight */}
               <Svg width={tabWidth} height={58} style={StyleSheet.absoluteFill}>
                 <Defs>
-                  <SvgGradient id="ultraLightGlassRefraction" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.3" />
-                    <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.05" />
+                  <SvgGradient id="subtleGlassRefraction" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45" />
+                    <Stop offset="100%" stopColor={colors.primary} stopOpacity="0.08" />
                   </SvgGradient>
                 </Defs>
                 <Rect
@@ -169,8 +178,8 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                   height={56}
                   rx={28}
                   ry={28}
-                  fill="url(#ultraLightGlassRefraction)"
-                  stroke={isDarkMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(91, 42, 134, 0.12)'}
+                  fill="url(#subtleGlassRefraction)"
+                  stroke={isDarkMode ? 'rgba(255, 255, 255, 0.35)' : 'rgba(91, 42, 134, 0.2)'}
                   strokeWidth={1}
                 />
               </Svg>
