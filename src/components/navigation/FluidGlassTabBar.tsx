@@ -130,7 +130,7 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
             {/* Glossy Top Edge Highlight */}
             <View style={styles.topGlossHighlight} />
 
-            {/* Distinct Glass Lens Oval Capsule (Perfectly Centered & Aligned) */}
+            {/* Subtle Frosted Liquid Lens Oval Capsule */}
             <Animated.View
               style={[
                 styles.liquidLensBubble,
@@ -138,7 +138,9 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                   width: tabWidth,
                   height: 58,
                   borderRadius: 29,
-                  backgroundColor: isDarkMode ? 'rgba(255,255,255,0.18)' : colors.softBackground,
+                  backgroundColor: isDarkMode
+                    ? 'rgba(255, 255, 255, 0.14)'
+                    : 'rgba(237, 231, 246, 0.65)',
                 },
                 animatedBubbleStyle,
               ]}
@@ -152,11 +154,11 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                 />
               ) : null}
 
-              {/* Distinct Refraction Glass Highlight Rim */}
+              {/* Subtle Refraction Glass Rim Highlight */}
               <Svg width={tabWidth} height={58} style={StyleSheet.absoluteFill}>
                 <Defs>
-                  <SvgGradient id="distinctRefraction" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <Stop offset="0%" stopColor={colors.primary} stopOpacity="0.25" />
+                  <SvgGradient id="subtleGlassRefraction" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45" />
                     <Stop offset="100%" stopColor={colors.primary} stopOpacity="0.08" />
                   </SvgGradient>
                 </Defs>
@@ -167,15 +169,14 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                   height={56}
                   rx={28}
                   ry={28}
-                  fill="url(#distinctRefraction)"
-                  stroke={colors.primary}
-                  strokeOpacity={0.35}
-                  strokeWidth={1.5}
+                  fill="url(#subtleGlassRefraction)"
+                  stroke={isDarkMode ? 'rgba(255, 255, 255, 0.35)' : 'rgba(91, 42, 134, 0.2)'}
+                  strokeWidth={1}
                 />
               </Svg>
             </Animated.View>
 
-            {/* Tab Items Row (Perfect Vertical & Horizontal Alignment) */}
+            {/* Tab Items Row */}
             <View style={styles.tabsRow}>
               {state?.routes?.map((route: any, index: number) => {
                 const isFocused = state.index === index;
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
