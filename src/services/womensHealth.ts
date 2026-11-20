@@ -84,9 +84,13 @@ export async function createPeriodRecord(dto: {
   isSpotting?: boolean;
   notes?: string;
 }): Promise<any> {
+  const payload: any = { ...dto };
+  if (!payload.endDate || typeof payload.endDate !== 'string' || !payload.endDate.trim()) {
+    delete payload.endDate;
+  }
   return apiRequest('/womens-health/periods', {
     method: 'POST',
-    body: JSON.stringify(dto),
+    body: JSON.stringify(payload),
   });
 }
 

@@ -59,9 +59,10 @@ export default function MenstrualCycleScreen() {
   const handleSavePeriod = async () => {
     setSaving(true);
     try {
+      const cleanEndDate = endDate && endDate.trim().length > 0 ? endDate.trim() : undefined;
       await createPeriodRecord({
         startDate,
-        endDate: endDate ? endDate : undefined,
+        ...(cleanEndDate && { endDate: cleanEndDate }),
         flow,
         isSpotting,
         notes,
@@ -69,8 +70,8 @@ export default function MenstrualCycleScreen() {
       setEndDate('');
       setModalVisible(false);
       void loadData();
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('Failed to save period record:', err);
     } finally {
       setSaving(false);
     }
