@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -87,7 +89,6 @@ export default function MenstrualCycleScreen() {
   }
 
   const cycle = dashboard?.cycleMetrics;
-  const hasHistory = cycle && cycle.isDataSufficient;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -180,68 +181,77 @@ export default function MenstrualCycleScreen() {
         <SafetyDisclaimerBanner text="Calendar-based predictions are estimates based on your logged cycle dates and cannot guarantee contraception." />
       </ScrollView>
 
-      {/* Period Logging Modal */}
+      {/* Period Logging Modal with KeyboardAvoidingView & ScrollView */}
       <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Log Period Entry</Text>
-              <Pressable onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={22} color={colors.darkText} />
-              </Pressable>
-            </View>
-
-            <Text style={styles.inputLabel}>Start Date (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.input}
-              value={startDate}
-              onChangeText={setStartDate}
-              placeholder="YYYY-MM-DD"
-            />
-
-            <Text style={styles.inputLabel}>Flow Intensity</Text>
-            <View style={styles.flowRow}>
-              {(['LIGHT', 'MEDIUM', 'HEAVY', 'VERY_HEAVY'] as FlowIntensity[]).map((f) => (
-                <Pressable
-                  key={f}
-                  style={[styles.flowPill, flow === f && styles.flowPillActive]}
-                  onPress={() => setFlow(f)}
-                >
-                  <Text style={[styles.flowText, flow === f && styles.flowTextActive]}>{f}</Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <Pressable
-              style={styles.checkboxRow}
-              onPress={() => setIsSpotting(!isSpotting)}
+            <ScrollView
+              contentContainerStyle={styles.modalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
             >
-              <Ionicons
-                name={isSpotting ? 'checkbox' : 'square-outline'}
-                size={20}
-                color={colors.primary}
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Log Period Entry</Text>
+                <Pressable onPress={() => setModalVisible(false)}>
+                  <Ionicons name="close" size={22} color={colors.darkText} />
+                </Pressable>
+              </View>
+
+              <Text style={styles.inputLabel}>Start Date (YYYY-MM-DD)</Text>
+              <TextInput
+                style={styles.input}
+                value={startDate}
+                onChangeText={setStartDate}
+                placeholder="YYYY-MM-DD"
               />
-              <Text style={styles.checkboxLabel}>Light Spotting Only</Text>
-            </Pressable>
 
-            <Text style={styles.inputLabel}>Notes</Text>
-            <TextInput
-              style={[styles.input, { height: 70 }]}
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Any symptoms or observations..."
-              multiline
-            />
+              <Text style={styles.inputLabel}>Flow Intensity</Text>
+              <View style={styles.flowRow}>
+                {(['LIGHT', 'MEDIUM', 'HEAVY', 'VERY_HEAVY'] as FlowIntensity[]).map((f) => (
+                  <Pressable
+                    key={f}
+                    style={[styles.flowPill, flow === f && styles.flowPillActive]}
+                    onPress={() => setFlow(f)}
+                  >
+                    <Text style={[styles.flowText, flow === f && styles.flowTextActive]}>{f}</Text>
+                  </Pressable>
+                ))}
+              </View>
 
-            <Pressable style={styles.saveBtn} onPress={() => void handleSavePeriod()} disabled={saving}>
-              {saving ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text style={styles.saveBtnText}>Save Period Entry</Text>
-              )}
-            </Pressable>
+              <Pressable
+                style={styles.checkboxRow}
+                onPress={() => setIsSpotting(!isSpotting)}
+              >
+                <Ionicons
+                  name={isSpotting ? 'checkbox' : 'square-outline'}
+                  size={20}
+                  color={colors.primary}
+                />
+                <Text style={styles.checkboxLabel}>Light Spotting Only</Text>
+              </Pressable>
+
+              <Text style={styles.inputLabel}>Notes</Text>
+              <TextInput
+                style={[styles.input, { height: 70 }]}
+                value={notes}
+                onChangeText={setNotes}
+                placeholder="Any symptoms or observations..."
+                multiline
+              />
+
+              <Pressable style={styles.saveBtn} onPress={() => void handleSavePeriod()} disabled={saving}>
+                {saving ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save Period Entry</Text>
+                )}
+              </Pressable>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -367,7 +377,14 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.white,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 24,
+      maxHeight: '85%',
+    },
+    modalScrollContent: {
+      flexGrow: 1,
+      paddingBottom: 16,
     },
     modalHeader: {
       flexDirection: 'row',

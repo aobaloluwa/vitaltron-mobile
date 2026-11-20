@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -28,7 +30,7 @@ export default function RemindersScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   // Form State
-  const [title, setTitle] = useState('Prenatal Vitamin');
+  const [title, setTitle] = useState('');
   const [category, setCategory] = useState('MEDICATION');
   const [time, setTime] = useState('09:00 AM');
   const [saving, setSaving] = useState(false);
@@ -49,6 +51,7 @@ export default function RemindersScreen() {
   }, []);
 
   const handleCreate = async () => {
+    if (!title) return;
     setSaving(true);
     try {
       await createWomensHealthReminder({
@@ -56,6 +59,7 @@ export default function RemindersScreen() {
         category,
         reminderTime: time,
       });
+      setTitle('');
       setModalVisible(false);
       void loadReminders();
     } catch {
@@ -124,41 +128,51 @@ export default function RemindersScreen() {
         )}
       </ScrollView>
 
+      {/* Modal with KeyboardAvoidingView */}
       <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>New Reminder</Text>
-              <Pressable onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={22} color={colors.darkText} />
+            <ScrollView
+              contentContainerStyle={styles.modalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>New Reminder</Text>
+                <Pressable onPress={() => setModalVisible(false)}>
+                  <Ionicons name="close" size={22} color={colors.darkText} />
+                </Pressable>
+              </View>
+
+              <Text style={styles.label}>Reminder Title</Text>
+              <TextInput
+                style={styles.input}
+                value={title}
+                onChangeText={setTitle}
+                placeholder="Prenatal Vitamin / Fertile Window"
+              />
+
+              <Text style={styles.label}>Preferred Time</Text>
+              <TextInput
+                style={styles.input}
+                value={time}
+                onChangeText={setTime}
+                placeholder="09:00 AM"
+              />
+
+              <Pressable style={styles.saveBtn} onPress={() => void handleCreate()} disabled={saving || !title}>
+                {saving ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save Reminder</Text>
+                )}
               </Pressable>
-            </View>
-
-            <Text style={styles.label}>Reminder Title</Text>
-            <TextInput
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Prenatal Vitamin / Fertile Window"
-            />
-
-            <Text style={styles.label}>Preferred Time</Text>
-            <TextInput
-              style={styles.input}
-              value={time}
-              onChangeText={setTime}
-              placeholder="09:00 AM"
-            />
-
-            <Pressable style={styles.saveBtn} onPress={() => void handleCreate()} disabled={saving}>
-              {saving ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text style={styles.saveBtnText}>Save Reminder</Text>
-              )}
-            </Pressable>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -250,7 +264,14 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.white,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 24,
+      maxHeight: '85%',
+    },
+    modalScrollContent: {
+      flexGrow: 1,
+      paddingBottom: 16,
     },
     modalHeader: {
       flexDirection: 'row',

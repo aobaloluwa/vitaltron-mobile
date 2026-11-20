@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -186,42 +188,51 @@ export default function PregnancyHubScreen() {
         <SafetyDisclaimerBanner text="Gestational dates and baby sizes are general guidelines. Follow your healthcare provider for clinical ultrasound dating." />
       </ScrollView>
 
-      {/* Profile Setup Modal */}
+      {/* Profile Setup Modal with KeyboardAvoidingView */}
       <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Update Pregnancy Profile</Text>
-              <Pressable onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={22} color={colors.darkText} />
+            <ScrollView
+              contentContainerStyle={styles.modalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Update Pregnancy Profile</Text>
+                <Pressable onPress={() => setModalVisible(false)}>
+                  <Ionicons name="close" size={22} color={colors.darkText} />
+                </Pressable>
+              </View>
+
+              <Text style={styles.inputLabel}>Estimated Due Date (YYYY-MM-DD)</Text>
+              <TextInput
+                style={styles.input}
+                value={dueDate}
+                onChangeText={setDueDate}
+                placeholder="YYYY-MM-DD"
+              />
+
+              <Text style={styles.inputLabel}>Healthcare Provider / OB-GYN</Text>
+              <TextInput
+                style={styles.input}
+                value={provider}
+                onChangeText={setProvider}
+                placeholder="Dr. Sarah Jenkins"
+              />
+
+              <Pressable style={styles.saveBtn} onPress={() => void handleSaveProfile()} disabled={saving}>
+                {saving ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save Pregnancy Profile</Text>
+                )}
               </Pressable>
-            </View>
-
-            <Text style={styles.inputLabel}>Estimated Due Date (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.input}
-              value={dueDate}
-              onChangeText={setDueDate}
-              placeholder="YYYY-MM-DD"
-            />
-
-            <Text style={styles.inputLabel}>Healthcare Provider / OB-GYN</Text>
-            <TextInput
-              style={styles.input}
-              value={provider}
-              onChangeText={setProvider}
-              placeholder="Dr. Sarah Jenkins"
-            />
-
-            <Pressable style={styles.saveBtn} onPress={() => void handleSaveProfile()} disabled={saving}>
-              {saving ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text style={styles.saveBtnText}>Save Pregnancy Profile</Text>
-              )}
-            </Pressable>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -377,7 +388,14 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.white,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 24,
+      maxHeight: '85%',
+    },
+    modalScrollContent: {
+      flexGrow: 1,
+      paddingBottom: 16,
     },
     modalHeader: {
       flexDirection: 'row',

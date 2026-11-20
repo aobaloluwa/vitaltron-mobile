@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -83,64 +85,74 @@ export default function WomensHealthAssistantScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="AI Health Companion" subtitle="Educational Insights & Guidance" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {messages.map((m) => (
-          <View
-            key={m.id}
-            style={[styles.msgWrapper, m.sender === 'USER' ? styles.userAlign : styles.aiAlign]}
-          >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardContainer}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {messages.map((m) => (
             <View
-              style={[
-                styles.msgBubble,
-                m.sender === 'USER' ? styles.userBubble : styles.aiBubble,
-              ]}
+              key={m.id}
+              style={[styles.msgWrapper, m.sender === 'USER' ? styles.userAlign : styles.aiAlign]}
             >
-              {m.emergencyWarning ? (
-                <View style={styles.urgentBanner}>
-                  <Ionicons name="warning" size={18} color="#DC2626" />
-                  <Text style={styles.urgentText}>{m.emergencyWarning}</Text>
+              <View
+                style={[
+                  styles.msgBubble,
+                  m.sender === 'USER' ? styles.userBubble : styles.aiBubble,
+                ]}
+              >
+                {m.emergencyWarning ? (
+                  <View style={styles.urgentBanner}>
+                    <Ionicons name="warning" size={18} color="#DC2626" />
+                    <Text style={styles.urgentText}>{m.emergencyWarning}</Text>
+                  </View>
+                ) : null}
+
+                <Text style={m.sender === 'USER' ? styles.userText : styles.aiText}>
+                  {m.text}
+                </Text>
+              </View>
+
+              {m.suggestedQuestions?.length ? (
+                <View style={styles.suggestedContainer}>
+                  {m.suggestedQuestions.map((sq, idx) => (
+                    <Pressable
+                      key={idx}
+                      style={styles.sqPill}
+                      onPress={() => void handleSend(sq)}
+                    >
+                      <Text style={styles.sqText}>{sq}</Text>
+                    </Pressable>
+                  ))}
                 </View>
               ) : null}
-
-              <Text style={m.sender === 'USER' ? styles.userText : styles.aiText}>
-                {m.text}
-              </Text>
             </View>
+          ))}
 
-            {m.suggestedQuestions?.length ? (
-              <View style={styles.suggestedContainer}>
-                {m.suggestedQuestions.map((sq, idx) => (
-                  <Pressable
-                    key={idx}
-                    style={styles.sqPill}
-                    onPress={() => void handleSend(sq)}
-                  >
-                    <Text style={styles.sqText}>{sq}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-          </View>
-        ))}
+          {loading ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 12 }} />
+          ) : null}
+        </ScrollView>
 
-        {loading ? (
-          <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 12 }} />
-        ) : null}
-      </ScrollView>
-
-      <View style={styles.inputArea}>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Ask about your cycle, symptoms, pregnancy..."
-          placeholderTextColor={colors.textMuted}
-          onSubmitEditing={() => void handleSend()}
-        />
-        <Pressable style={styles.sendBtn} onPress={() => void handleSend()}>
-          <Ionicons name="send" size={18} color={colors.white} />
-        </Pressable>
-      </View>
+        <View style={styles.inputArea}>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Ask about your cycle, symptoms, pregnancy..."
+            placeholderTextColor={colors.textMuted}
+            onSubmitEditing={() => void handleSend()}
+          />
+          <Pressable style={styles.sendBtn} onPress={() => void handleSend()}>
+            <Ionicons name="send" size={18} color={colors.white} />
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -150,6 +162,9 @@ const createStyles = (colors: any) =>
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    keyboardContainer: {
+      flex: 1,
     },
     scrollContent: {
       paddingHorizontal: 20,

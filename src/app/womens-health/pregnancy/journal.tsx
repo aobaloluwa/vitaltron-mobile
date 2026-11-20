@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -126,52 +128,61 @@ export default function PregnancyJournalScreen() {
         )}
       </ScrollView>
 
-      {/* Modal Entry */}
+      {/* Modal Entry with KeyboardAvoidingView */}
       <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>New Journal Entry</Text>
-              <Pressable onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={22} color={colors.darkText} />
+            <ScrollView
+              contentContainerStyle={styles.modalScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>New Journal Entry</Text>
+                <Pressable onPress={() => setModalVisible(false)}>
+                  <Ionicons name="close" size={22} color={colors.darkText} />
+                </Pressable>
+              </View>
+
+              <Text style={styles.label}>Title</Text>
+              <TextInput
+                style={styles.input}
+                value={title}
+                onChangeText={setTitle}
+                placeholder="First Kick / Ultrasound Day"
+              />
+
+              <Text style={styles.label}>Gestational Week Number</Text>
+              <TextInput
+                style={styles.input}
+                value={weekNumber}
+                onChangeText={setWeekNumber}
+                keyboardType="numeric"
+                placeholder="14"
+              />
+
+              <Text style={styles.label}>Reflection & Content</Text>
+              <TextInput
+                style={[styles.input, { height: 90 }]}
+                value={content}
+                onChangeText={setContent}
+                placeholder="How are you feeling today?"
+                multiline
+              />
+
+              <Pressable style={styles.saveBtn} onPress={() => void handleCreateEntry()} disabled={saving}>
+                {saving ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save Memory Entry</Text>
+                )}
               </Pressable>
-            </View>
-
-            <Text style={styles.label}>Title</Text>
-            <TextInput
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="First Kick / Ultrasound Day"
-            />
-
-            <Text style={styles.label}>Gestational Week Number</Text>
-            <TextInput
-              style={styles.input}
-              value={weekNumber}
-              onChangeText={setWeekNumber}
-              keyboardType="numeric"
-              placeholder="14"
-            />
-
-            <Text style={styles.label}>Reflection & Content</Text>
-            <TextInput
-              style={[styles.input, { height: 90 }]}
-              value={content}
-              onChangeText={setContent}
-              placeholder="How are you feeling today?"
-              multiline
-            />
-
-            <Pressable style={styles.saveBtn} onPress={() => void handleCreateEntry()} disabled={saving}>
-              {saving ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text style={styles.saveBtnText}>Save Memory Entry</Text>
-              )}
-            </Pressable>
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -281,7 +292,14 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.white,
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 24,
+      maxHeight: '85%',
+    },
+    modalScrollContent: {
+      flexGrow: 1,
+      paddingBottom: 16,
     },
     modalHeader: {
       flexDirection: 'row',
