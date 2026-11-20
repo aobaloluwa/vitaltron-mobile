@@ -115,7 +115,7 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
     };
   });
 
-  const bottomMargin = Math.max(insets.bottom, 12);
+  const bottomMargin = Math.max(insets.bottom, 10);
 
   return (
     <View style={[styles.outerWrapper, { bottom: bottomMargin }]} pointerEvents="box-none">
@@ -125,26 +125,34 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
             {/* Glass / Translucent Backdrop */}
             {isIos ? (
               <GlassView
-                glassEffectStyle="regular"
+                glassEffectStyle="clear"
                 colorScheme={isDarkMode ? 'dark' : 'light'}
                 style={StyleSheet.absoluteFill}
               />
             ) : (
-              <View style={[styles.androidBackdrop, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF' }]} />
+              <View
+                style={[
+                  styles.androidBackdrop,
+                  { backgroundColor: isDarkMode ? 'rgba(30,30,30,0.85)' : 'rgba(255,255,255,0.85)' },
+                ]}
+              />
             )}
 
-            {/* Fluid Liquid Glass Lens Active Bubble Indicator */}
+            {/* Glossy Glass Top Highlight Reflection */}
+            <View style={styles.topGlossHighlight} />
+
+            {/* Liquid Glass Lens Active Bubble Indicator */}
             <Animated.View
               style={[
                 styles.liquidLensBubble,
-                { width: tabWidth, height: 48, borderRadius: 24 },
+                { width: tabWidth, height: 58, borderRadius: 29 },
                 animatedBubbleStyle,
               ]}
               pointerEvents="none"
             >
               {isIos ? (
                 <GlassView
-                  glassEffectStyle="clear"
+                  glassEffectStyle="regular"
                   colorScheme={isDarkMode ? 'dark' : 'light'}
                   style={StyleSheet.absoluteFill}
                 />
@@ -152,26 +160,16 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                 <View style={[styles.androidBubbleFill, { backgroundColor: colors.softBackground }]} />
               )}
 
-              {/* Chromatic Liquid Prism Border Gradient */}
-              <Svg width={tabWidth} height={48} style={StyleSheet.absoluteFill}>
+              {/* Cyan / Blue Liquid Glass Glow Fill */}
+              <Svg width={tabWidth} height={58} style={StyleSheet.absoluteFill}>
                 <Defs>
-                  <SvgGradient id="liquidPrism" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.8" />
-                    <Stop offset="50%" stopColor="#A855F7" stopOpacity="0.8" />
-                    <Stop offset="100%" stopColor="#EC4899" stopOpacity="0.8" />
+                  <SvgGradient id="glossyGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <Stop offset="0%" stopColor="#38BDF8" stopOpacity="0.55" />
+                    <Stop offset="60%" stopColor="#0284C7" stopOpacity="0.25" />
+                    <Stop offset="100%" stopColor="#818CF8" stopOpacity="0.15" />
                   </SvgGradient>
                 </Defs>
-                <Rect
-                  x={1}
-                  y={1}
-                  width={tabWidth - 2}
-                  height={46}
-                  rx={23}
-                  ry={23}
-                  fill="none"
-                  stroke="url(#liquidPrism)"
-                  strokeWidth={2}
-                />
+                <Rect x={0} y={0} width={tabWidth} height={58} rx={29} ry={29} fill="url(#glossyGlow)" />
               </Svg>
             </Animated.View>
 
@@ -194,13 +192,13 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                   >
                     <Ionicons
                       name={isFocused ? meta.active : meta.inactive}
-                      size={22}
-                      color={isFocused ? colors.primary : '#9CA3AF'}
+                      size={24}
+                      color={isFocused ? (isDarkMode ? '#38BDF8' : colors.primary) : '#9CA3AF'}
                     />
                     <Text
                       style={[
                         styles.tabLabel,
-                        { color: isFocused ? colors.primary : '#9CA3AF' },
+                        { color: isFocused ? (isDarkMode ? '#38BDF8' : colors.primary) : '#9CA3AF' },
                         isFocused && styles.tabLabelActive,
                       ]}
                       numberOfLines={1}
@@ -227,20 +225,28 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   floatingBarContainer: {
-    height: 64,
-    borderRadius: 36,
+    height: 74,
+    borderRadius: 37,
     overflow: 'hidden',
     justifyContent: 'center',
     paddingHorizontal: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    elevation: 12,
   },
   androidBackdrop: {
     ...StyleSheet.absoluteFill,
-    borderRadius: 36,
+    borderRadius: 37,
+  },
+  topGlossHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 20,
+    right: 20,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
   },
   liquidLensBubble: {
     position: 'absolute',
@@ -249,13 +255,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     shadowColor: '#38BDF8',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
     elevation: 6,
   },
   androidBubbleFill: {
     ...StyleSheet.absoluteFill,
-    borderRadius: 24,
+    borderRadius: 29,
   },
   tabsRow: {
     flexDirection: 'row',
@@ -271,7 +277,7 @@ const styles = StyleSheet.create({
   tabLabel: {
     fontSize: 10,
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: 3,
   },
   tabLabelActive: {
     fontWeight: '800',
