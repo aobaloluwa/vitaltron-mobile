@@ -23,6 +23,7 @@ import {
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
 import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
+import { DatePickerInput } from '../../../components/ui/DatePickerInput';
 
 export default function MenstrualCycleScreen() {
   const { colors } = useTheme();
@@ -188,7 +189,7 @@ export default function MenstrualCycleScreen() {
         <SafetyDisclaimerBanner text="Calendar-based predictions are estimates based on your logged cycle dates and cannot guarantee contraception." />
       </ScrollView>
 
-      {/* Period Logging Modal with Start & End Dates */}
+      {/* Period Logging Modal with DatePickerInput */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -207,20 +208,19 @@ export default function MenstrualCycleScreen() {
                 </Pressable>
               </View>
 
-              <Text style={styles.inputLabel}>Start Date (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.input}
+              <DatePickerInput
+                label="Start Date"
                 value={startDate}
-                onChangeText={setStartDate}
-                placeholder="YYYY-MM-DD"
+                onChange={setStartDate}
+                placeholder="Select Period Start Date"
               />
 
-              <Text style={styles.inputLabel}>End Date (Optional, YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.input}
+              <DatePickerInput
+                label="End Date"
                 value={endDate}
-                onChangeText={setEndDate}
-                placeholder="YYYY-MM-DD (Leave empty if ongoing)"
+                onChange={setEndDate}
+                placeholder="Select End Date (If finished)"
+                optional
               />
 
               <Text style={styles.inputLabel}>Flow Intensity</Text>

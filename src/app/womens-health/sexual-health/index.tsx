@@ -17,25 +17,27 @@ import {
 } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
+import { DatePickerInput } from '../../../components/ui/DatePickerInput';
 
 export default function SexualHealthScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>({ logs: [], screenings: [] });
+  const [screenings, setScreenings] = useState<any[]>([]);
 
-  // STI Screening Log Form
-  const [testType, setTestType] = useState('Pap Smear / HPV');
-  const [result, setResult] = useState('NORMAL');
-  const [provider, setProvider] = useState('City Women Health Clinic');
+  // Form State
+  const [testType, setTestType] = useState('Pap Smear');
   const [testDate, setTestDate] = useState(new Date().toISOString().split('T')[0]);
+  const [result, setResult] = useState('NORMAL');
+  const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
 
   const loadData = async () => {
     try {
-      const res = await getSexualHealthRecords();
-      setData(res);
+      const data = await getSexualHealthRecords();
+      setScreenings(data?.screenings || []);
     } catch {
       // ignore
     } finally {
@@ -48,14 +50,17 @@ export default function SexualHealthScreen() {
   }, []);
 
   const handleSaveScreening = async () => {
+    if (!testType) return;
     setSaving(true);
+    setSavedSuccess(false);
     try {
       await logStiScreening({
-        testDate,
         testType,
+        testDate,
         result,
-        provider,
+        notes,
       });
+      setSavedSuccess(true);
       void loadData();
     } catch {
       // ignore
@@ -103,12 +108,11 @@ export default function SexualHealthScreen() {
             placeholder="Pap Smear / HPV / Full Panel"
           />
 
-          <Text style={styles.label}>Test Date (YYYY-MM-DD)</Text>
-          <TextInput
-            style={styles.input}
+          <DatePickerInput
+            label="Test Date"
             value={testDate}
-            onChangeText={setTestDate}
-            placeholder="YYYY-MM-DD"
+            onChange={setTestDate}
+            placeholder="Select Test Date"
           />
 
           <Text style={styles.label}>Result Status</Text>
@@ -124,44 +128,54 @@ export default function SexualHealthScreen() {
             ))}
           </View>
 
-          <Text style={styles.label}>Clinic / Provider</Text>
+          <Text style={styles.label}>Notes / Provider Remarks</Text>
           <TextInput
-            style={styles.input}
-            value={provider}
-            onChangeText={setProvider}
-            placeholder="Healthcare Provider"
+            style={[styles.input, { height: 60 }]}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Clinic name, doctor notes..."
+            multiline
           />
 
-          <Pressable style={styles.saveBtn} onPress={() => void handleSaveScreening()} disabled={saving}>
+          <Pressable
+            style={styles.saveBtn}
+            onPress={() => void handleSaveScreening()}
+            disabled={saving}
+          >
             {saving ? (
               <ActivityIndicator color={colors.white} />
             ) : (
               <Text style={styles.saveBtnText}>Save Screening Record</Text>
             )}
           </Pressable>
+
+          {savedSuccess ? (
+            <Text style={styles.successText}>✓ Screening entry saved confidentially!</Text>
+          ) : null}
         </View>
 
-        {/* Screening History */}
+        {/* Historical Screenings List */}
         <Text style={styles.sectionTitle}>Screening History</Text>
-        {data.screenings?.length === 0 ? (
-          <Text style={styles.emptyText}>No screening records saved yet.</Text>
+        {screenings.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Ionicons name="shield-outline" size={32} color={colors.textMuted} />
+            <Text style={styles.emptyText}>No screening records logged yet.</Text>
+          </View>
         ) : (
-          data.screenings.map((item: any) => (
-            <View key={item.id} style={styles.historyCard}>
-              <View style={styles.row}>
-                <Text style={styles.histTitle}>{item.testType}</Text>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.result}</Text>
-                </View>
+          screenings.map((item) => (
+            <View key={item.id} style={styles.recordCard}>
+              <View style={styles.recordHeader}>
+                <Text style={styles.recordTitle}>{item.testType}</Text>
+                <Text style={styles.recordResult}>{item.result}</Text>
               </View>
-              <Text style={styles.histSub}>
-                {new Date(item.testDate).toLocaleDateString()} • {item.provider || 'Private Clinic'}
+              <Text style={styles.recordDate}>
+                {new Date(item.testDate).toLocaleDateString()}
               </Text>
             </View>
           ))
         )}
 
-        <SafetyDisclaimerBanner text="Regular cervical screening and reproductive checkups promote long-term wellness. Consult your clinician for screening intervals." />
+        <SafetyDisclaimerBanner text="Self-reported screening logs do not constitute an official lab report. Maintain official records with your physician." />
       </ScrollView>
     </SafeAreaView>
   );
@@ -202,7 +216,7 @@ const createStyles = (colors: any) =>
       fontSize: 16,
       fontWeight: '800',
       color: colors.darkText,
-      marginVertical: 10,
+      marginVertical: 12,
     },
     inputCard: {
       backgroundColor: colors.white,
@@ -245,7 +259,7 @@ const createStyles = (colors: any) =>
     },
     pillText: {
       fontSize: 11,
-      fontWeight: '800',
+      fontWeight: '700',
       color: colors.darkText,
     },
     pillTextActive: {
@@ -260,44 +274,54 @@ const createStyles = (colors: any) =>
     },
     saveBtnText: {
       color: colors.white,
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: '800',
+    },
+    successText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.success,
+      textAlign: 'center',
+      marginTop: 10,
+    },
+    emptyCard: {
+      backgroundColor: colors.white,
+      borderRadius: 18,
+      padding: 24,
+      alignItems: 'center',
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.softBackground,
     },
     emptyText: {
       fontSize: 13,
       color: colors.textMuted,
-      marginBottom: 16,
+      marginTop: 8,
     },
-    historyCard: {
+    recordCard: {
       backgroundColor: colors.white,
-      borderRadius: 16,
-      padding: 14,
+      borderRadius: 18,
+      padding: 16,
       marginBottom: 10,
       borderWidth: 1,
       borderColor: colors.softBackground,
     },
-    row: {
+    recordHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    histTitle: {
-      fontSize: 14,
+    recordTitle: {
+      fontSize: 15,
       fontWeight: '800',
       color: colors.darkText,
     },
-    badge: {
-      backgroundColor: colors.softBackground,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 8,
-    },
-    badgeText: {
-      fontSize: 11,
-      fontWeight: '700',
+    recordResult: {
+      fontSize: 12,
+      fontWeight: '800',
       color: colors.primary,
     },
-    histSub: {
+    recordDate: {
       fontSize: 12,
       color: colors.textMuted,
       marginTop: 4,

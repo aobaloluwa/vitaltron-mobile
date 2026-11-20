@@ -23,6 +23,7 @@ import {
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
 import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
+import { DatePickerInput } from '../../../components/ui/DatePickerInput';
 
 export default function PregnancyHubScreen() {
   const { colors } = useTheme();
@@ -188,7 +189,7 @@ export default function PregnancyHubScreen() {
         <SafetyDisclaimerBanner text="Gestational dates and baby sizes are general guidelines. Follow your healthcare provider for clinical ultrasound dating." />
       </ScrollView>
 
-      {/* Profile Setup Modal with KeyboardAvoidingView */}
+      {/* Profile Setup Modal with DatePickerInput */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -207,12 +208,11 @@ export default function PregnancyHubScreen() {
                 </Pressable>
               </View>
 
-              <Text style={styles.inputLabel}>Estimated Due Date (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.input}
+              <DatePickerInput
+                label="Estimated Due Date"
                 value={dueDate}
-                onChangeText={setDueDate}
-                placeholder="YYYY-MM-DD"
+                onChange={setDueDate}
+                placeholder="Select Due Date"
               />
 
               <Text style={styles.inputLabel}>Healthcare Provider / OB-GYN</Text>
@@ -223,7 +223,7 @@ export default function PregnancyHubScreen() {
                 placeholder="Dr. Sarah Jenkins"
               />
 
-              <Pressable style={styles.saveBtn} onPress={() => void handleSaveProfile()} disabled={saving}>
+              <Pressable style={styles.saveBtn} onPress={() => void handleSaveProfile()} disabled={saving || !dueDate}>
                 {saving ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (

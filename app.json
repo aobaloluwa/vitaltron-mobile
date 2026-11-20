@@ -44,7 +44,8 @@
         {
           "faceIDPermission": "Allow Vitaltron to use Face ID to securely lock and unlock your health records."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
