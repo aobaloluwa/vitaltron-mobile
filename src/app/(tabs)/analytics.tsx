@@ -80,14 +80,19 @@ export default function WomensHealthTabScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
+    setLoading(true); // Triggers SkeletonLoader layout on pull-to-refresh!
     void loadDashboard();
   };
 
-  if (loading && !dashboard) {
+  if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Women's Health" showBack={false} />
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        >
           {/* Skeleton Hero Card */}
           <SkeletonLoader width="100%" height={260} borderRadius={24} style={{ marginVertical: 12 }} />
 
