@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -19,6 +18,7 @@ import {
 import { WomensHealthHeader } from '../../components/womens-health/WomensHealthHeader';
 import { CyclePhaseRing } from '../../components/womens-health/CyclePhaseRing';
 import { SafetyDisclaimerBanner } from '../../components/womens-health/SafetyDisclaimerBanner';
+import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 
 export default function WomensHealthTabScreen() {
   const { colors } = useTheme();
@@ -87,10 +87,34 @@ export default function WomensHealthTabScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Women's Health" showBack={false} />
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading Women's Health Dashboard...</Text>
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Skeleton Hero Card */}
+          <SkeletonLoader width="100%" height={260} borderRadius={24} style={{ marginVertical: 12 }} />
+
+          {/* Skeleton Quick Actions Header & Row */}
+          <SkeletonLoader width={140} height={20} borderRadius={10} style={{ marginVertical: 12 }} />
+          <View style={styles.skeletonRow}>
+            <SkeletonLoader width={100} height={90} borderRadius={18} />
+            <SkeletonLoader width={100} height={90} borderRadius={18} />
+            <SkeletonLoader width={100} height={90} borderRadius={18} />
+          </View>
+
+          {/* Skeleton Modules Grid */}
+          <SkeletonLoader width={180} height={20} borderRadius={10} style={{ marginVertical: 12 }} />
+          <View style={styles.skeletonGrid}>
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+          </View>
+
+          {/* Skeleton Vitals & Reports */}
+          <SkeletonLoader width={200} height={20} borderRadius={10} style={{ marginVertical: 12 }} />
+          <SkeletonLoader width="100%" height={80} borderRadius={20} style={{ marginBottom: 12 }} />
+          <SkeletonLoader width="100%" height={80} borderRadius={20} style={{ marginBottom: 12 }} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -309,7 +333,7 @@ export default function WomensHealthTabScreen() {
           </Pressable>
         </View>
 
-        {/* Vital Signs & Analytics Shortcuts (Relocated as requested) */}
+        {/* Vital Signs & Analytics Shortcuts */}
         <Text style={styles.sectionHeader}>Vitals & Historical Analytics</Text>
 
         <Pressable
@@ -357,20 +381,20 @@ const createStyles = (colors: any) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-    loadingBox: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    loadingText: {
-      marginTop: 12,
-      fontSize: 14,
-      color: colors.textMuted,
-      fontWeight: '600',
-    },
     scrollContent: {
       paddingHorizontal: 20,
       paddingBottom: 32,
+    },
+    skeletonRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 16,
+    },
+    skeletonGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+      marginBottom: 16,
     },
     heroCard: {
       backgroundColor: colors.white,

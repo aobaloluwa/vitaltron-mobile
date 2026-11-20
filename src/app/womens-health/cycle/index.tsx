@@ -20,6 +20,7 @@ import {
 } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 export default function MenstrualCycleScreen() {
   const { colors } = useTheme();
@@ -73,9 +74,14 @@ export default function MenstrualCycleScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Menstrual Cycle" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader width="100%" height={120} borderRadius={22} style={{ marginVertical: 10 }} />
+          <SkeletonLoader width="100%" height={48} borderRadius={16} style={{ marginVertical: 12 }} />
+          <SkeletonLoader width="100%" height={90} borderRadius={18} style={{ marginBottom: 16 }} />
+          <SkeletonLoader width={180} height={20} borderRadius={10} style={{ marginVertical: 10 }} />
+          <SkeletonLoader width="100%" height={60} borderRadius={16} style={{ marginBottom: 10 }} />
+          <SkeletonLoader width="100%" height={60} borderRadius={16} style={{ marginBottom: 10 }} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -237,11 +243,6 @@ const createStyles = (colors: any) =>
     container: {
       flex: 1,
       backgroundColor: colors.background,
-    },
-    center: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
     },
     scrollContent: {
       paddingHorizontal: 20,

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -10,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 import {
   getWomensHealthDashboard,
@@ -19,6 +18,7 @@ import {
 import { WomensHealthHeader } from '../../components/womens-health/WomensHealthHeader';
 import { CyclePhaseRing } from '../../components/womens-health/CyclePhaseRing';
 import { SafetyDisclaimerBanner } from '../../components/womens-health/SafetyDisclaimerBanner';
+import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 
 export default function WomensHealthDashboardScreen() {
   const { colors } = useTheme();
@@ -87,10 +87,24 @@ export default function WomensHealthDashboardScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Women's Health" />
-        <View style={styles.loadingBox}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading your health overview...</Text>
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader width="100%" height={260} borderRadius={24} style={{ marginVertical: 12 }} />
+          <SkeletonLoader width={140} height={20} borderRadius={10} style={{ marginVertical: 12 }} />
+          <View style={styles.skeletonRow}>
+            <SkeletonLoader width={100} height={90} borderRadius={18} />
+            <SkeletonLoader width={100} height={90} borderRadius={18} />
+            <SkeletonLoader width={100} height={90} borderRadius={18} />
+          </View>
+          <SkeletonLoader width={180} height={20} borderRadius={10} style={{ marginVertical: 12 }} />
+          <View style={styles.skeletonGrid}>
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+            <SkeletonLoader width="31%" height={80} borderRadius={18} />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -164,7 +178,7 @@ export default function WomensHealthDashboardScreen() {
         ) : (
           <View style={styles.heroCard}>
             <View style={styles.heroHeader}>
-              <Text style={styles.heroTag}>MENSTUAL & CYCLE</Text>
+              <Text style={styles.heroTag}>MENSTRUAL & CYCLE</Text>
               <Pressable onPress={() => router.push('/womens-health/cycle/calendar' as any)}>
                 <Text style={styles.linkText}>View Calendar ›</Text>
               </Pressable>
@@ -321,20 +335,20 @@ const createStyles = (colors: any) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-    loadingBox: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    loadingText: {
-      marginTop: 12,
-      fontSize: 14,
-      color: colors.textMuted,
-      fontWeight: '600',
-    },
     scrollContent: {
       paddingHorizontal: 20,
       paddingBottom: 32,
+    },
+    skeletonRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 16,
+    },
+    skeletonGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+      marginBottom: 16,
     },
     heroCard: {
       backgroundColor: colors.white,
