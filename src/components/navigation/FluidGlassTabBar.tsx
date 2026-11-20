@@ -130,7 +130,7 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
             {/* Glossy Top Edge Highlight */}
             <View style={styles.topGlossHighlight} />
 
-            {/* Subtle Frosted Liquid Lens Oval Capsule */}
+            {/* Light & Subtle Frosted Liquid Lens Oval Capsule */}
             <Animated.View
               style={[
                 styles.liquidLensBubble,
@@ -139,8 +139,8 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                   height: 58,
                   borderRadius: 29,
                   backgroundColor: isDarkMode
-                    ? 'rgba(255, 255, 255, 0.14)'
-                    : 'rgba(237, 231, 246, 0.65)',
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(255, 255, 255, 0.35)',
                 },
                 animatedBubbleStyle,
               ]}
@@ -154,12 +154,12 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                 />
               ) : null}
 
-              {/* Subtle Refraction Glass Rim Highlight */}
+              {/* Ultra-Light Refraction Glass Rim Highlight */}
               <Svg width={tabWidth} height={58} style={StyleSheet.absoluteFill}>
                 <Defs>
-                  <SvgGradient id="subtleGlassRefraction" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45" />
-                    <Stop offset="100%" stopColor={colors.primary} stopOpacity="0.08" />
+                  <SvgGradient id="ultraLightGlassRefraction" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.3" />
+                    <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.05" />
                   </SvgGradient>
                 </Defs>
                 <Rect
@@ -169,8 +169,8 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                   height={56}
                   rx={28}
                   ry={28}
-                  fill="url(#subtleGlassRefraction)"
-                  stroke={isDarkMode ? 'rgba(255, 255, 255, 0.35)' : 'rgba(91, 42, 134, 0.2)'}
+                  fill="url(#ultraLightGlassRefraction)"
+                  stroke={isDarkMode ? 'rgba(255, 255, 255, 0.25)' : 'rgba(91, 42, 134, 0.12)'}
                   strokeWidth={1}
                 />
               </Svg>
