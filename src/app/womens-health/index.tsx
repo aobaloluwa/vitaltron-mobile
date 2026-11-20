@@ -35,11 +35,11 @@ export default function WomensHealthDashboardScreen() {
     try {
       const data = await getWomensHealthDashboard();
       setDashboard(data);
-      if (!data.isOnboarded) {
+      if (!data || !data.isOnboarded || !data.declaredSex) {
         setShowOnboarding(true);
       }
     } catch {
-      setDashboard(null);
+      setShowOnboarding(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
