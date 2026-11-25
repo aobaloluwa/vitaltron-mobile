@@ -438,7 +438,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: Platform.OS === 'ios' ? 130 : 40,
+    paddingBottom: Platform.OS === 'ios' ? 180 : 40,
   },
   headerBar: {
     height: 56,

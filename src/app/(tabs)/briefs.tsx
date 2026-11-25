@@ -528,7 +528,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: Platform.OS === 'ios' ? 130 : 40,
+    paddingBottom: Platform.OS === 'ios' ? 180 : 40,
   },
   scrollContentDesktop: {
     paddingHorizontal: 24,

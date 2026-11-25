@@ -23,13 +23,21 @@ export default function TabLayout() {
         tabBarShowLabel: true,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: '#9CA3AF',
-        tabBarStyle: [
-          styles.tabBar,
-          {
-            height: 60 + bottomInset,
-            paddingBottom: bottomInset,
-          },
-        ],
+        tabBarStyle: isIos
+          ? {
+              position: 'absolute',
+              backgroundColor: 'transparent',
+              borderTopWidth: 0,
+              elevation: 0,
+              shadowOpacity: 0,
+            }
+          : [
+              styles.tabBar,
+              {
+                height: 60 + bottomInset,
+                paddingBottom: bottomInset,
+              },
+            ],
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
