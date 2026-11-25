@@ -4,6 +4,7 @@ import {
   Alert,
   BackHandler,
   Image,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -527,7 +528,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 36,
+    paddingBottom: Platform.OS === 'ios' ? 130 : 40,
   },
   scrollContentDesktop: {
     paddingHorizontal: 24,

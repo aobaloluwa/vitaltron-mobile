@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -186,7 +187,7 @@ const createStyles = (colors: any) =>
     },
     scrollContent: {
       paddingHorizontal: 20,
-      paddingBottom: 32,
+      paddingBottom: Platform.OS === 'ios' ? 130 : 40,
     },
     fertileCard: {
       backgroundColor: colors.white,

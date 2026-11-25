@@ -201,7 +201,7 @@ const createStyles = (colors: any) =>
     },
     scrollContent: {
       paddingHorizontal: 20,
-      paddingBottom: 32,
+      paddingBottom: Platform.OS === 'ios' ? 130 : 40,
     },
     addBtn: {
       flexDirection: 'row',

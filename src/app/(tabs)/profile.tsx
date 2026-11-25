@@ -5,6 +5,7 @@ import {
   BackHandler,
   Image,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -437,7 +438,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 32,
+    paddingBottom: Platform.OS === 'ios' ? 130 : 40,
   },
   headerBar: {
     height: 56,
