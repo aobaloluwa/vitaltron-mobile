@@ -351,7 +351,7 @@ const createStyles = (colors: any) =>
     },
     scrollContent: {
       paddingHorizontal: 20,
-      paddingBottom: Platform.OS === 'ios' ? 180 : 40,
+      paddingBottom: Platform.OS === 'ios' ? 115 : 32,
     },
     skeletonRow: {
       flexDirection: 'row',
