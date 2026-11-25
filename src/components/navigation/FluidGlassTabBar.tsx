@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   View,
+  UIManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -25,6 +26,19 @@ import {
   State,
 } from 'react-native-gesture-handler';
 import { useTheme } from '../../theme';
+
+// Safely import the native module if it's available (Dev Client / EAS Build)
+let LiquidGlassNavigationView: any = null;
+try {
+  if (Platform.OS === 'ios') {
+    // Only attempt to load in iOS
+    const { LiquidGlassNavigationView: NativeView } = require('../../../modules/liquid-glass-navigation');
+    LiquidGlassNavigationView = NativeView;
+  }
+} catch (e) {
+  // Not available in Expo Go or not linked
+  console.log("Native Liquid Glass module not available, using JS fallback.");
+}
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -47,6 +61,9 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
   const isIos = Platform.OS === 'ios';
 
+  // Check if native component is truly available via UIManager to avoid crashes
+  const isNativeLiquidGlassAvailable = isIos && LiquidGlassNavigationView && UIManager.getViewManagerConfig('LiquidGlassNavigation') != null;
+
   const containerPadding = 8;
   const barWidth = Math.min(SCREEN_WIDTH - 32, 500);
   const totalTabs = state?.routes?.length || 5;
@@ -54,17 +71,22 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
   const tabWidth = availableWidth / totalTabs;
 
   const activeIndex = state?.index || 0;
+
+  // JS Fallback Animation Value
   const translateX = useSharedValue(activeIndex * tabWidth);
 
   useEffect(() => {
-    translateX.value = withSpring(activeIndex * tabWidth, FAST_SPRING_CONFIG);
-  }, [activeIndex, tabWidth]);
+    if (!isNativeLiquidGlassAvailable) {
+      translateX.value = withSpring(activeIndex * tabWidth, FAST_SPRING_CONFIG);
+    }
+  }, [activeIndex, tabWidth, isNativeLiquidGlassAvailable]);
 
   const switchTab = (index: number) => {
     const clampedIndex = Math.max(0, Math.min(totalTabs - 1, index));
 
-    // Fast snap directly to target slot center
-    translateX.value = withSpring(clampedIndex * tabWidth, FAST_SPRING_CONFIG);
+    if (!isNativeLiquidGlassAvailable) {
+      translateX.value = withSpring(clampedIndex * tabWidth, FAST_SPRING_CONFIG);
+    }
 
     const route = state?.routes?.[clampedIndex];
     if (!route) return;
@@ -91,22 +113,21 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
 
   const onPanGesture = (event: PanGestureHandlerGestureEvent) => {
     'worklet';
+    if (isNativeLiquidGlassAvailable) return;
+
     const touchX = event.nativeEvent.x - containerPadding;
     const targetIdx = Math.max(0, Math.min(totalTabs - 1, Math.floor(touchX / tabWidth)));
     const stateVal = event.nativeEvent.state;
     const translationX = event.nativeEvent.translationX;
 
-    // Only drag follow if user is actively panning (moving finger > 4px)
     if (stateVal === State.ACTIVE && Math.abs(translationX) > 4) {
       const maxTranslate = (totalTabs - 1) * tabWidth;
       const rawTranslate = touchX - tabWidth / 2;
       translateX.value = Math.max(0, Math.min(maxTranslate, rawTranslate));
     }
 
-    // On Gesture release, cancel, or end, ALWAYS snap fast and crisp
     if (stateVal === State.END || stateVal === State.CANCELLED || stateVal === State.FAILED) {
       translateX.value = withSpring(targetIdx * tabWidth, FAST_SPRING_CONFIG);
-
       runOnJS(switchTab)(targetIdx);
     }
   };
@@ -119,6 +140,69 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
 
   const bottomMargin = Math.max(insets.bottom, 10);
 
+  // Precise dimensions matching the native pill shape exactly
+  const lensWidth = tabWidth - 12;
+  const lensHeight = 58;
+  const lensRadius = lensHeight / 2;
+
+  // --- RENDER TABS CONTENT ---
+  const renderTabsRow = () => (
+    <View style={styles.tabsRow}>
+      {state?.routes?.map((route: any, index: number) => {
+        const isFocused = state.index === index;
+        const meta = TAB_ICON_MAP[route.name] || {
+          active: 'ellipse',
+          inactive: 'ellipse-outline',
+          label: route.name,
+        };
+
+        return (
+          <Pressable
+            key={route.key}
+            // Strict width applied directly to avoid any flex discrepancy
+            // that causes text strings (like "Women's") to shift the exact center geometric bounds.
+            style={[styles.tabCell, { width: tabWidth }]}
+            onPress={() => switchTab(index)}
+            hitSlop={8}
+          >
+            <Ionicons
+              name={isFocused ? meta.active : meta.inactive}
+              size={24}
+              color={isFocused ? colors.primary : '#9CA3AF'}
+              style={isFocused && styles.activeIconDropShadow}
+            />
+            <Text
+              style={[
+                styles.tabLabel,
+                { color: isFocused ? colors.primary : '#9CA3AF' },
+                isFocused && styles.tabLabelActive,
+              ]}
+              numberOfLines={1}
+            >
+              {meta.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  if (isNativeLiquidGlassAvailable) {
+    return (
+      <View style={[styles.outerWrapper, { bottom: bottomMargin }]} pointerEvents="box-none">
+        <LiquidGlassNavigationView
+          style={[styles.floatingBarContainer, { width: barWidth, paddingHorizontal: 0 }]}
+          activeIndex={activeIndex}
+          tabCount={totalTabs}
+          colorScheme={isDarkMode ? 'dark' : 'light'}
+        >
+          {renderTabsRow()}
+        </LiquidGlassNavigationView>
+      </View>
+    );
+  }
+
+  // JS FALLBACK (Older iOS without module & Expo Go & Android)
   return (
     <View style={[styles.outerWrapper, { bottom: bottomMargin }]} pointerEvents="box-none">
       <GestureHandlerRootView>
@@ -128,7 +212,6 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
           activeOffsetX={[-8, 8]}
         >
           <Animated.View style={[styles.floatingBarContainer, { width: barWidth }]}>
-            {/* Liquid Glass Dock Backdrop */}
             {isIos ? (
               <GlassView
                 glassEffectStyle="regular"
@@ -144,17 +227,16 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
               />
             )}
 
-            {/* Glossy Top Edge Highlight */}
             <View style={styles.topGlossHighlight} />
 
-            {/* Pure Dynamic Translucent Liquid Glass Lens Oval Capsule */}
             <Animated.View
               style={[
                 styles.liquidLensBubble,
                 {
-                  width: tabWidth,
-                  height: 58,
-                  borderRadius: 29,
+                  width: lensWidth,
+                  height: lensHeight,
+                  borderRadius: lensRadius,
+                  left: 14, // Exact offset alignment: 8px container padding + 6px pill inset
                   backgroundColor: isDarkMode
                     ? 'rgba(255, 255, 255, 0.12)'
                     : 'rgba(255, 255, 255, 0.35)',
@@ -171,8 +253,7 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                 />
               ) : null}
 
-              {/* Dynamic Glass Specular Highlight Rim */}
-              <Svg width={tabWidth} height={58} style={StyleSheet.absoluteFill}>
+              <Svg width={lensWidth} height={lensHeight} style={StyleSheet.absoluteFill}>
                 <Defs>
                   <SvgGradient id="pureDynamicGlassRefraction" x1="0%" y1="0%" x2="0%" y2="100%">
                     <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45" />
@@ -183,10 +264,10 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
                 <Rect
                   x={1}
                   y={1}
-                  width={tabWidth - 2}
-                  height={56}
-                  rx={28}
-                  ry={28}
+                  width={lensWidth - 2}
+                  height={lensHeight - 2}
+                  rx={(lensHeight - 2) / 2}
+                  ry={(lensHeight - 2) / 2}
                   fill="url(#pureDynamicGlassRefraction)"
                   stroke="rgba(255, 255, 255, 0.5)"
                   strokeWidth={1}
@@ -194,42 +275,7 @@ export function FluidGlassTabBar({ state, descriptors, navigation }: any) {
               </Svg>
             </Animated.View>
 
-            {/* Tab Items Row */}
-            <View style={styles.tabsRow}>
-              {state?.routes?.map((route: any, index: number) => {
-                const isFocused = state.index === index;
-                const meta = TAB_ICON_MAP[route.name] || {
-                  active: 'ellipse',
-                  inactive: 'ellipse-outline',
-                  label: route.name,
-                };
-
-                return (
-                  <Pressable
-                    key={route.key}
-                    style={styles.tabCell}
-                    onPress={() => switchTab(index)}
-                    hitSlop={8}
-                  >
-                    <Ionicons
-                      name={isFocused ? meta.active : meta.inactive}
-                      size={24}
-                      color={isFocused ? colors.primary : '#9CA3AF'}
-                    />
-                    <Text
-                      style={[
-                        styles.tabLabel,
-                        { color: isFocused ? colors.primary : '#9CA3AF' },
-                        isFocused && styles.tabLabelActive,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {meta.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+            {renderTabsRow()}
           </Animated.View>
         </PanGestureHandler>
       </GestureHandlerRootView>
@@ -248,7 +294,7 @@ const styles = StyleSheet.create({
   floatingBarContainer: {
     height: 74,
     borderRadius: 37,
-    overflow: 'hidden',
+    overflow: 'hidden', // Required for JS fallback
     justifyContent: 'center',
     paddingHorizontal: 8,
     shadowColor: '#000',
@@ -258,7 +304,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   androidBackdrop: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     borderRadius: 37,
   },
   topGlossHighlight: {
@@ -272,7 +318,6 @@ const styles = StyleSheet.create({
   liquidLensBubble: {
     position: 'absolute',
     top: 8,
-    left: 8,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -284,9 +329,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: '100%',
+    width: '100%',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    paddingHorizontal: 8,
   },
   tabCell: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
@@ -299,4 +349,10 @@ const styles = StyleSheet.create({
   tabLabelActive: {
     fontWeight: '800',
   },
+  activeIconDropShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  }
 });
