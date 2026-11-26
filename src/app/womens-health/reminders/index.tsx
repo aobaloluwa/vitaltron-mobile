@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 import { useTheme } from '../../../theme';
 import {
   getWomensHealthReminders,
@@ -20,6 +21,15 @@ import {
   deleteWomensHealthReminder,
 } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
+
+const REMINDER_CATEGORIES = [
+  'MEDICATION',
+  'PRENATAL',
+  'CYCLE',
+  'FERTILITY',
+  'APPOINTMENT',
+  'HYDRATION',
+];
 
 export default function RemindersScreen() {
   const { colors } = useTheme();
@@ -34,6 +44,7 @@ export default function RemindersScreen() {
   const [category, setCategory] = useState('MEDICATION');
   const [time, setTime] = useState('09:00 AM');
   const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadReminders = async () => {
     try {
@@ -50,7 +61,30 @@ export default function RemindersScreen() {
     void loadReminders();
   }, []);
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const triggerLocalPush = async (titleStr: string, catStr: string, timeStr: string) => {
+    try {
+      const { status } = await Notifications.getPermissionsAsync();
+      let finalStatus = status;
+      if (status !== 'granted') {
+        const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        finalStatus = newStatus;
+      }
+
+      if (finalStatus === 'granted') {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: `🔔 Reminder Scheduled: ${titleStr}`,
+            body: `Your ${catStr.toLowerCase().replace('_', ' ')} reminder is active for ${timeStr}. Check your Notifications tab!`,
+            sound: true,
+            data: { type: 'REMINDER' },
+          },
+          trigger: null, // null trigger = fires immediately as push notification!
+        });
+      }
+    } catch (err) {
+      console.warn('Could not fire local push notification:', err);
+    }
+  };
 
   const handleCreate = async () => {
     setErrorMessage(null);
@@ -66,6 +100,10 @@ export default function RemindersScreen() {
         category,
         reminderTime: time,
       });
+
+      // Fire real push notification on device
+      void triggerLocalPush(title.trim(), category, time);
+
       setTitle('');
       setErrorMessage(null);
       setModalVisible(false);
@@ -122,13 +160,19 @@ export default function RemindersScreen() {
           reminders.map((item) => (
             <View key={item.id} style={styles.reminderCard}>
               <View style={styles.row}>
-                <View>
-                  <Text style={styles.catTag}>{item.category}</Text>
+                <View style={styles.reminderInfo}>
+                  <View style={styles.catBadge}>
+                    <Text style={styles.catTag}>{item.category.replace('_', ' ')}</Text>
+                  </View>
                   <Text style={styles.title}>{item.title}</Text>
-                  <Text style={styles.timeText}>{item.reminderTime}</Text>
+                  <Text style={styles.timeText}>⏰ Scheduled for: {item.reminderTime}</Text>
                 </View>
-                <Pressable onPress={() => void handleDelete(item.id)}>
-                  <Ionicons name="trash-outline" size={20} color={colors.error} />
+                <Pressable
+                  style={styles.deleteBtn}
+                  onPress={() => void handleDelete(item.id)}
+                  hitSlop={8}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
                 </Pressable>
               </View>
             </View>
@@ -136,7 +180,7 @@ export default function RemindersScreen() {
         )}
       </ScrollView>
 
-      {/* Modal with KeyboardAvoidingView */}
+      {/* Modal Entry with Category Selector */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -149,10 +193,27 @@ export default function RemindersScreen() {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>New Reminder</Text>
+                <Text style={styles.modalTitle}>New Health Reminder</Text>
                 <Pressable onPress={() => setModalVisible(false)}>
                   <Ionicons name="close" size={22} color={colors.darkText} />
                 </Pressable>
+              </View>
+
+              <Text style={styles.label}>Reminder Category</Text>
+              <View style={styles.pillRow}>
+                {REMINDER_CATEGORIES.map((cat) => (
+                  <Pressable
+                    key={cat}
+                    style={[styles.catPill, category === cat && styles.catPillActive]}
+                    onPress={() => setCategory(cat)}
+                  >
+                    <Text
+                      style={[styles.catPillText, category === cat && styles.catPillTextActive]}
+                    >
+                      {cat.replace('_', ' ')}
+                    </Text>
+                  </Pressable>
+                ))}
               </View>
 
               <Text style={styles.label}>Reminder Title</Text>
@@ -163,7 +224,7 @@ export default function RemindersScreen() {
                 placeholder="Prenatal Vitamin / Fertile Window"
               />
 
-              <Text style={styles.label}>Preferred Time</Text>
+              <Text style={styles.label}>Preferred Reminder Time</Text>
               <TextInput
                 style={styles.input}
                 value={time}
@@ -171,15 +232,13 @@ export default function RemindersScreen() {
                 placeholder="09:00 AM"
               />
 
-              {errorMessage ? (
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              ) : null}
+              {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
               <Pressable style={styles.saveBtn} onPress={() => void handleCreate()} disabled={saving}>
                 {saving ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
-                  <Text style={styles.saveBtnText}>Save Reminder</Text>
+                  <Text style={styles.saveBtnText}>Save & Enable Push Notification</Text>
                 )}
               </Pressable>
             </ScrollView>
@@ -244,28 +303,51 @@ const createStyles = (colors: any) =>
       marginBottom: 10,
       borderWidth: 1,
       borderColor: colors.softBackground,
+      shadowColor: colors.darkText,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.03,
+      shadowRadius: 8,
+      elevation: 2,
     },
     row: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
     },
+    reminderInfo: {
+      flex: 1,
+    },
+    catBadge: {
+      backgroundColor: colors.inputBackground,
+      alignSelf: 'flex-start',
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      marginBottom: 4,
+    },
     catTag: {
-      fontSize: 11,
+      fontSize: 10,
       fontWeight: '800',
       color: colors.primary,
     },
     title: {
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: '800',
       color: colors.darkText,
-      marginTop: 2,
     },
     timeText: {
       fontSize: 12,
       fontWeight: '600',
       color: colors.textMuted,
-      marginTop: 2,
+      marginTop: 4,
+    },
+    deleteBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: '#FEF2F2',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     modalOverlay: {
       flex: 1,
@@ -302,6 +384,29 @@ const createStyles = (colors: any) =>
       color: colors.darkText,
       marginTop: 10,
       marginBottom: 6,
+    },
+    pillRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+      marginBottom: 8,
+    },
+    catPill: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+      backgroundColor: colors.inputBackground,
+    },
+    catPillActive: {
+      backgroundColor: colors.primary,
+    },
+    catPillText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.darkText,
+    },
+    catPillTextActive: {
+      color: colors.white,
     },
     input: {
       backgroundColor: colors.inputBackground,
