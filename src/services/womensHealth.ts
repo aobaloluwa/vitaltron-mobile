@@ -68,6 +68,16 @@ export interface PostpartumInsights {
   safetyFlags: string[];
 }
 
+export interface MenopauseInsights {
+  todayLogged: boolean;
+  todayHotFlash: number;
+  todayNightSweats: boolean;
+  todaySleepQuality: number;
+  todayBrainFog: number;
+  statusTitle: string;
+  personalizedTip: string;
+}
+
 export interface SymptomInsights {
   todayLogged: boolean;
   todayMood?: string;

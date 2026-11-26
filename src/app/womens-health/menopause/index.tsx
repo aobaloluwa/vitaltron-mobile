@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,13 +17,14 @@ import {
 } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
+import { MenopauseInsightsCard } from '../../../components/womens-health/MenopauseInsightsCard';
 
 export default function MenopauseTrackerScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
+  const [menopauseData, setMenopauseData] = useState<any>(null);
 
   // Symptom log state
   const [hotFlash, setHotFlash] = useState(3);
@@ -32,11 +33,26 @@ export default function MenopauseTrackerScreen() {
   const [brainFog, setBrainFog] = useState(2);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
       const data = await getMenopauseProfile();
-      setProfile(data);
+      setMenopauseData(data);
+      if (data?.todayLog) {
+        if (data.todayLog.hotFlashSeverity !== undefined) {
+          setHotFlash(data.todayLog.hotFlashSeverity);
+        }
+        if (data.todayLog.nightSweats !== undefined) {
+          setNightSweats(data.todayLog.nightSweats);
+        }
+        if (data.todayLog.sleepQuality !== undefined) {
+          setSleepQuality(data.todayLog.sleepQuality);
+        }
+        if (data.todayLog.brainFogRating !== undefined) {
+          setBrainFog(data.todayLog.brainFogRating);
+        }
+      }
     } catch {
       // ignore
     } finally {
@@ -51,6 +67,7 @@ export default function MenopauseTrackerScreen() {
   const handleSaveSymptom = async () => {
     setSaving(true);
     setSavedSuccess(false);
+    setErrorMessage(null);
     try {
       await logMenopauseSymptom({
         date: new Date().toISOString().split('T')[0],
@@ -61,8 +78,8 @@ export default function MenopauseTrackerScreen() {
       });
       setSavedSuccess(true);
       void loadData();
-    } catch {
-      // ignore
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to save symptoms. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -79,6 +96,9 @@ export default function MenopauseTrackerScreen() {
     );
   }
 
+  const profile = menopauseData?.profile;
+  const symptomLogs = profile?.symptoms || [];
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="Menopause Tracker" subtitle="Perimenopause & Menopause Symptoms" />
@@ -92,6 +112,9 @@ export default function MenopauseTrackerScreen() {
             Track hormonal transitions, vasomotor symptoms, sleep quality, and mood changes.
           </Text>
         </View>
+
+        {/* Personalized Real-Time Menopause Insights Card */}
+        <MenopauseInsightsCard insights={menopauseData?.menopauseInsights} />
 
         {/* Symptom Entry Card */}
         <Text style={styles.sectionTitle}>Log Today's Symptoms</Text>
@@ -148,6 +171,8 @@ export default function MenopauseTrackerScreen() {
             ))}
           </View>
 
+          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
           <Pressable style={styles.saveBtn} onPress={() => void handleSaveSymptom()} disabled={saving}>
             {saving ? (
               <ActivityIndicator color={colors.white} />
@@ -156,8 +181,39 @@ export default function MenopauseTrackerScreen() {
             )}
           </Pressable>
 
-          {savedSuccess ? <Text style={styles.successText}>✓ Symptoms saved!</Text> : null}
+          {savedSuccess ? (
+            <Text style={styles.successText}>✓ Symptoms saved & insights updated!</Text>
+          ) : null}
         </View>
+
+        {/* Menopause Symptom History */}
+        <Text style={styles.sectionTitle}>Recent Symptom Log History</Text>
+        {symptomLogs.length === 0 ? (
+          <View style={styles.historyCard}>
+            <Text style={styles.emptyHistoryText}>No menopause symptoms logged yet.</Text>
+          </View>
+        ) : (
+          <View style={styles.historyCard}>
+            {symptomLogs.map((item: any, idx: number) => (
+              <View key={item.id || idx} style={styles.historyRow}>
+                <View style={styles.historyIconBg}>
+                  <Ionicons name="flame" size={18} color="#F59E0B" />
+                </View>
+
+                <View style={styles.historyInfo}>
+                  <Text style={styles.historyTitle}>
+                    Hot Flashes: {item.hotFlashSeverity || 0}/10 • Sleep: {item.sleepQuality || 0}/10
+                  </Text>
+                  <Text style={styles.historySub}>
+                    {new Date(item.date).toLocaleDateString()}
+                    {item.nightSweats ? ' • Night Sweats Logged' : ''}
+                    {item.brainFogRating ? ` • Brain Fog: ${item.brainFogRating}/10` : ''}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
         <SafetyDisclaimerBanner text="Menopause timing and symptoms vary significantly. Discuss severe symptoms or hormone replacement therapy options with your gynecologist." />
       </ScrollView>
@@ -178,7 +234,7 @@ const createStyles = (colors: any) =>
     },
     scrollContent: {
       paddingHorizontal: 20,
-      paddingBottom: 32,
+      paddingBottom: Platform.OS === 'ios' ? 115 : 32,
     },
     card: {
       backgroundColor: colors.white,
@@ -206,10 +262,11 @@ const createStyles = (colors: any) =>
       marginTop: 4,
     },
     sectionTitle: {
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: '800',
       color: colors.darkText,
-      marginVertical: 12,
+      marginTop: 16,
+      marginBottom: 10,
     },
     inputCard: {
       backgroundColor: colors.white,
@@ -272,11 +329,62 @@ const createStyles = (colors: any) =>
       fontSize: 15,
       fontWeight: '800',
     },
+    errorText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#EF4444',
+      textAlign: 'center',
+      marginTop: 10,
+    },
     successText: {
       fontSize: 12,
       fontWeight: '700',
       color: colors.success,
       textAlign: 'center',
       marginTop: 10,
+    },
+    historyCard: {
+      backgroundColor: colors.white,
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.softBackground,
+    },
+    emptyHistoryText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    historyRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.softBackground,
+    },
+    historyIconBg: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: '#FEF3C7',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    historyInfo: {
+      flex: 1,
+    },
+    historyTitle: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: colors.darkText,
+    },
+    historySub: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textMuted,
+      marginTop: 2,
     },
   });
