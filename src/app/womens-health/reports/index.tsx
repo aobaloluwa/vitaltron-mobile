@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
 import { getWomensHealthDashboard } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_WIDTH = SCREEN_WIDTH - 72;
@@ -23,9 +25,10 @@ export default function ReportsScreen() {
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [dashboard, setDashboard] = useState<any>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const data = await getWomensHealthDashboard();
       setDashboard(data);
@@ -33,20 +36,27 @@ export default function ReportsScreen() {
       // ignore
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [loadData]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadData();
+  };
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Health Reports" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader height={240} borderRadius={22} style={{ marginVertical: 12 }} />
+          <SkeletonLoader height={90} borderRadius={20} style={{ marginBottom: 16 }} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -58,7 +68,18 @@ export default function ReportsScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="Health Reports & Charts" subtitle="Interactive Trend Analytics" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Trend Chart Card */}
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Cycle Length & BBT Trend</Text>
@@ -86,14 +107,18 @@ export default function ReportsScreen() {
         {/* Summary Stats */}
         <View style={styles.statsCard}>
           <View style={styles.statBox}>
-            <Text style={styles.statVal}>28.2 Days</Text>
+            <Text style={styles.statVal}>
+              {dashboard?.cycleMetrics?.averageCycleLength || 28} Days
+            </Text>
             <Text style={styles.statLabel}>Avg Cycle Length</Text>
           </View>
 
           <View style={styles.vDivider} />
 
           <View style={styles.statBox}>
-            <Text style={styles.statVal}>5.0 Days</Text>
+            <Text style={styles.statVal}>
+              {dashboard?.cycleMetrics?.averagePeriodDuration || 5} Days
+            </Text>
             <Text style={styles.statLabel}>Avg Duration</Text>
           </View>
         </View>

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,11 +14,14 @@ import { useTheme } from '../../../theme';
 import { getPregnancyProfile, logContractionSession } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 export default function ContractionTimerScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [timing, setTiming] = useState(false);
   const [durationSec, setDurationSec] = useState(0);
   const [startTime, setStartTime] = useState<Date | null>(null);
@@ -28,7 +32,7 @@ export default function ContractionTimerScreen() {
   const [successMsg, setSuccessMsg] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
 
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     try {
       const res = await getPregnancyProfile();
       if (res?.profile?.contractionSessions) {
@@ -36,12 +40,20 @@ export default function ContractionTimerScreen() {
       }
     } catch {
       // ignore
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadHistory();
-  }, []);
+  }, [loadHistory]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadHistory();
+  };
 
   useEffect(() => {
     let interval: any;
@@ -55,7 +67,6 @@ export default function ContractionTimerScreen() {
 
   const toggleTimer = () => {
     if (!timing) {
-      // Start contraction
       const now = new Date();
       setStartTime(now);
       if (lastContractionTime) {
@@ -66,7 +77,6 @@ export default function ContractionTimerScreen() {
       setTiming(true);
       setSuccessMsg(false);
     } else {
-      // Stop contraction & log
       setTiming(false);
       const now = new Date();
       setLastContractionTime(now);
@@ -100,17 +110,40 @@ export default function ContractionTimerScreen() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Check 5-1-1 Labor Pattern (Contractions ~5 mins apart, ~60s duration)
   const is511Pattern =
     history.length >= 3 &&
     history.slice(0, 3).every((h) => (h.durationSeconds || 0) >= 45) &&
     history.slice(0, 3).some((h) => h.intervalMinutes && h.intervalMinutes <= 6);
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <WomensHealthHeader title="Contraction Timer" />
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader height={220} borderRadius={24} style={{ marginVertical: 12 }} />
+          <SkeletonLoader height={80} borderRadius={20} style={{ marginBottom: 14 }} />
+          <SkeletonLoader height={140} borderRadius={20} style={{ marginBottom: 16 }} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="Contraction Timer" subtitle="Labor Duration & Interval Tracker" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* 5-1-1 Active Labor Warning Banner */}
         {is511Pattern ? (
           <View style={styles.alertBanner}>

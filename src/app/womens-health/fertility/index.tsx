@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -27,6 +28,7 @@ export default function FertilityTrackerScreen() {
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [dashboard, setDashboard] = useState<any>(null);
 
   // Observations State
@@ -36,7 +38,7 @@ export default function FertilityTrackerScreen() {
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const data = await getWomensHealthDashboard();
       setDashboard(data);
@@ -55,12 +57,18 @@ export default function FertilityTrackerScreen() {
       setDashboard(null);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [loadData]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadData();
+  };
 
   const handleSaveObservation = async () => {
     setSaving(true);
@@ -100,7 +108,18 @@ export default function FertilityTrackerScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="Ovulation & Fertility" subtitle="Conception & Vitals Tracker" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Fertile Window Card */}
         <View style={styles.fertileCard}>
           <View style={styles.cardRow}>

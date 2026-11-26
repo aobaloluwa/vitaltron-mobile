@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,6 +24,7 @@ import {
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { DatePickerInput } from '../../../components/ui/DatePickerInput';
 import { TimePickerInput } from '../../../components/ui/TimePickerInput';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 const REMINDER_CATEGORIES = [
   'MEDICATION',
@@ -38,6 +40,7 @@ export default function RemindersScreen() {
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [reminders, setReminders] = useState<any[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -49,7 +52,7 @@ export default function RemindersScreen() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadReminders = async () => {
+  const loadReminders = useCallback(async () => {
     try {
       const data = await getWomensHealthReminders();
       setReminders(data);
@@ -57,12 +60,18 @@ export default function RemindersScreen() {
       // ignore
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadReminders();
-  }, []);
+  }, [loadReminders]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadReminders();
+  };
 
   const triggerLocalPush = async (titleStr: string, catStr: string, fullTimeStr: string) => {
     try {
@@ -81,7 +90,7 @@ export default function RemindersScreen() {
             sound: true,
             data: { type: 'REMINDER' },
           },
-          trigger: null, // null trigger = fires immediately as push notification on device!
+          trigger: null,
         });
       }
     } catch (err) {
@@ -111,7 +120,6 @@ export default function RemindersScreen() {
         reminderTime: fullScheduleTime,
       });
 
-      // Fire real push notification on device
       void triggerLocalPush(title.trim(), category, fullScheduleTime);
 
       setTitle('');
@@ -138,9 +146,12 @@ export default function RemindersScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Reminders" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader height={50} borderRadius={16} style={{ marginVertical: 12 }} />
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonLoader key={i} height={80} borderRadius={20} style={{ marginBottom: 10 }} />
+          ))}
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -154,7 +165,18 @@ export default function RemindersScreen() {
         onRightAction={() => setModalVisible(true)}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         <Pressable style={styles.addBtn} onPress={() => setModalVisible(true)}>
           <Ionicons name="notifications-outline" size={20} color={colors.white} />
           <Text style={styles.addBtnText}>Schedule New Reminder</Text>

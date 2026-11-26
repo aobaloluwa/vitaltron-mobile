@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,11 +14,14 @@ import { useTheme } from '../../../theme';
 import { getPregnancyProfile, logKickSession } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 export default function KickCounterScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [kickCount, setKickCount] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
@@ -27,7 +31,7 @@ export default function KickCounterScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [kickHistory, setKickHistory] = useState<any[]>([]);
 
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     try {
       const res = await getPregnancyProfile();
       if (res?.profile?.kickSessions) {
@@ -35,12 +39,20 @@ export default function KickCounterScreen() {
       }
     } catch {
       // ignore
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadHistory();
-  }, []);
+  }, [loadHistory]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadHistory();
+  };
 
   useEffect(() => {
     let timer: any;
@@ -99,11 +111,35 @@ export default function KickCounterScreen() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <WomensHealthHeader title="Kick Counter" />
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader height={280} borderRadius={24} style={{ marginVertical: 12 }} />
+          <SkeletonLoader height={24} width="60%" style={{ marginVertical: 12 }} />
+          <SkeletonLoader height={140} borderRadius={20} style={{ marginBottom: 16 }} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="Kick Counter" subtitle="Fetal Movement Monitor" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Main Kick Counter Circle Card */}
         <View style={styles.counterCard}>
           <Text style={styles.sessionTimer}>Session Duration: {formatTime(elapsedSeconds)}</Text>

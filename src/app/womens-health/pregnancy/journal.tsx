@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -6,6 +6,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +22,7 @@ import {
   createPregnancyJournal,
 } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 const MOODS = ['Happy', 'Calm', 'Emotional', 'Anxious', 'Excited', 'Tired'];
 
@@ -29,6 +31,7 @@ export default function PregnancyJournalScreen() {
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [journals, setJournals] = useState<any[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -39,8 +42,9 @@ export default function PregnancyJournalScreen() {
   const [mood, setMood] = useState('Happy');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadJournals = async () => {
+  const loadJournals = useCallback(async () => {
     try {
       const data = await getPregnancyJournals();
       setJournals(data);
@@ -48,12 +52,18 @@ export default function PregnancyJournalScreen() {
       // ignore
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadJournals();
-  }, []);
+  }, [loadJournals]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadJournals();
+  };
 
   const handlePickImage = async (useCamera = false) => {
     try {
@@ -100,8 +110,6 @@ export default function PregnancyJournalScreen() {
     }
   };
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const handleCreateEntry = async () => {
     setErrorMessage(null);
     if (!title || !title.trim()) {
@@ -139,9 +147,12 @@ export default function PregnancyJournalScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Pregnancy Journal" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader height={50} borderRadius={16} style={{ marginVertical: 12 }} />
+          {[1, 2, 3].map((i) => (
+            <SkeletonLoader key={i} height={180} borderRadius={20} style={{ marginBottom: 14 }} />
+          ))}
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -155,7 +166,18 @@ export default function PregnancyJournalScreen() {
         onRightAction={() => setModalVisible(true)}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         <Pressable style={styles.addBtn} onPress={() => setModalVisible(true)}>
           <Ionicons name="camera-outline" size={20} color={colors.white} />
           <Text style={styles.addBtnText}>Write Entry & Upload Photo</Text>
@@ -293,9 +315,7 @@ export default function PregnancyJournalScreen() {
                 </View>
               )}
 
-              {errorMessage ? (
-                <Text style={styles.errorText}>{errorMessage}</Text>
-              ) : null}
+              {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
               <Pressable
                 style={styles.saveBtn}

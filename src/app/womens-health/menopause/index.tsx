@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,12 +19,14 @@ import {
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
 import { MenopauseInsightsCard } from '../../../components/womens-health/MenopauseInsightsCard';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 export default function MenopauseTrackerScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [menopauseData, setMenopauseData] = useState<any>(null);
 
   // Symptom log state
@@ -35,7 +38,7 @@ export default function MenopauseTrackerScreen() {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const data = await getMenopauseProfile();
       setMenopauseData(data);
@@ -58,12 +61,18 @@ export default function MenopauseTrackerScreen() {
       // ignore
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [loadData]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadData();
+  };
 
   const handleSaveSymptom = async () => {
     setSaving(true);
@@ -90,9 +99,11 @@ export default function MenopauseTrackerScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Menopause Tracker" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader height={110} borderRadius={22} style={{ marginVertical: 12 }} />
+          <SkeletonLoader height={120} borderRadius={22} style={{ marginBottom: 14 }} />
+          <SkeletonLoader height={240} borderRadius={22} style={{ marginBottom: 16 }} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -104,7 +115,18 @@ export default function MenopauseTrackerScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="Menopause Tracker" subtitle="Perimenopause & Menopause Symptoms" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Profile Stage Overview Card */}
         <View style={styles.card}>
           <Text style={styles.cardTag}>LIFE STAGE OVERVIEW</Text>

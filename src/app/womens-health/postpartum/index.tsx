@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,12 +24,14 @@ import { WomensHealthHeader } from '../../../components/womens-health/WomensHeal
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
 import { PostpartumInsightsCard } from '../../../components/womens-health/PostpartumInsightsCard';
 import { DatePickerInput } from '../../../components/ui/DatePickerInput';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 export default function PostpartumCareScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [postpartumData, setPostpartumData] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -46,7 +49,7 @@ export default function PostpartumCareScreen() {
   const [feedSuccess, setFeedSuccess] = useState(false);
   const [feedErrorMessage, setFeedErrorMessage] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const data = await getPostpartumProfile();
       setPostpartumData(data);
@@ -63,12 +66,18 @@ export default function PostpartumCareScreen() {
       // ignore
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [loadData]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadData();
+  };
 
   const handleSaveProfile = async () => {
     setProfileErrorMessage(null);
@@ -124,9 +133,22 @@ export default function PostpartumCareScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Postpartum Care" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
+          <SkeletonLoader height={140} borderRadius={22} style={{ marginVertical: 12 }} />
+          <SkeletonLoader height={120} borderRadius={22} style={{ marginBottom: 14 }} />
+          <SkeletonLoader height={220} borderRadius={22} style={{ marginBottom: 16 }} />
+        </ScrollView>
       </SafeAreaView>
     );
   }

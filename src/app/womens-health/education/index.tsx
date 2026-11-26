@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +17,7 @@ import { useTheme } from '../../../theme';
 import { getWomensHealthArticles } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 const CATEGORIES = [
   'ALL',
@@ -34,13 +36,13 @@ export default function EducationCenterScreen() {
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [articles, setArticles] = useState<any[]>([]);
   const [selectedCat, setSelectedCat] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
 
-  const loadArticles = async () => {
-    setLoading(true);
+  const loadArticles = useCallback(async () => {
     try {
       const cat = selectedCat === 'ALL' ? undefined : selectedCat;
       const res = await getWomensHealthArticles(cat, searchQuery);
@@ -49,12 +51,19 @@ export default function EducationCenterScreen() {
       // ignore
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [selectedCat, searchQuery]);
 
   useEffect(() => {
+    setLoading(true);
     void loadArticles();
   }, [selectedCat]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadArticles();
+  };
 
   const renderArticleContent = (content: string) => {
     if (!content) return null;
@@ -131,9 +140,24 @@ export default function EducationCenterScreen() {
         </ScrollView>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {loading ? (
-          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+          <View style={{ marginTop: 12 }}>
+            {[1, 2, 3, 4].map((i) => (
+              <SkeletonLoader key={i} height={160} borderRadius={20} style={{ marginBottom: 14 }} />
+            ))}
+          </View>
         ) : articles.length === 0 ? (
           <Text style={styles.emptyText}>No articles found for selected category.</Text>
         ) : (

@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -31,6 +32,7 @@ export default function PregnancyHubScreen() {
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [data, setData] = useState<{ profile: any; metrics: PregnancyMetrics } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -39,7 +41,7 @@ export default function PregnancyHubScreen() {
   const [provider, setProvider] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const res = await getPregnancyProfile();
       setData(res);
@@ -50,12 +52,18 @@ export default function PregnancyHubScreen() {
       setData(null);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [loadData]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadData();
+  };
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -111,7 +119,18 @@ export default function PregnancyHubScreen() {
         onRightAction={() => setModalVisible(true)}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Main Gestational Progress Card */}
         <View style={styles.heroCard}>
           <View style={styles.cardHeader}>

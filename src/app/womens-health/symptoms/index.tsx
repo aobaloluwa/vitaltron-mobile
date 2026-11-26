@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
 import { getWomensHealthDashboard, logDailyCycle } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 const COMMON_SYMPTOMS = [
   'Cramps',
@@ -33,33 +35,44 @@ export default function SymptomsTrackerScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedSymptoms, setSelectedSymptoms] = useState<Record<string, number>>({});
   const [selectedMood, setSelectedMood] = useState('Calm');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  useEffect(() => {
-    async function loadTodayLog() {
-      try {
-        const dashboard = await getWomensHealthDashboard();
-        if (dashboard?.todayLog) {
-          if (dashboard.todayLog.mood) {
-            setSelectedMood(dashboard.todayLog.mood);
-          }
-          if (dashboard.todayLog.symptoms && typeof dashboard.todayLog.symptoms === 'object') {
-            setSelectedSymptoms(dashboard.todayLog.symptoms);
-          }
-          if (dashboard.todayLog.notes) {
-            setNotes(dashboard.todayLog.notes);
-          }
+  const loadTodayLog = useCallback(async () => {
+    try {
+      const dashboard = await getWomensHealthDashboard();
+      if (dashboard?.todayLog) {
+        if (dashboard.todayLog.mood) {
+          setSelectedMood(dashboard.todayLog.mood);
         }
-      } catch {
-        // ignore
+        if (dashboard.todayLog.symptoms && typeof dashboard.todayLog.symptoms === 'object') {
+          setSelectedSymptoms(dashboard.todayLog.symptoms);
+        }
+        if (dashboard.todayLog.notes) {
+          setNotes(dashboard.todayLog.notes);
+        }
       }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    void loadTodayLog();
   }, []);
+
+  useEffect(() => {
+    void loadTodayLog();
+  }, [loadTodayLog]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadTodayLog();
+  };
 
   const toggleSymptom = (sym: string) => {
     setSelectedSymptoms((prev) => {
@@ -67,7 +80,7 @@ export default function SymptomsTrackerScreen() {
       if (next[sym]) {
         delete next[sym];
       } else {
-        next[sym] = 5; // default severity 5/10
+        next[sym] = 5;
       }
       return next;
     });
@@ -91,11 +104,48 @@ export default function SymptomsTrackerScreen() {
     }
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <WomensHealthHeader title="Symptoms & Mood" subtitle="Daily Wellness Log" />
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader height={24} width="60%" style={{ marginVertical: 12 }} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <SkeletonLoader key={i} height={40} width={100} borderRadius={14} />
+            ))}
+          </View>
+
+          <SkeletonLoader height={24} width="50%" style={{ marginVertical: 16 }} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <SkeletonLoader key={i} height={40} width={110} borderRadius={14} />
+            ))}
+          </View>
+
+          <SkeletonLoader height={80} borderRadius={16} style={{ marginTop: 20 }} />
+          <SkeletonLoader height={50} borderRadius={16} style={{ marginTop: 20 }} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="Symptoms & Mood" subtitle="Daily Wellness Log" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Mood Selector */}
         <Text style={styles.sectionTitle}>How are you feeling today?</Text>
         <View style={styles.moodGrid}>

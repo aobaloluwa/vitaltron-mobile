@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,12 +17,14 @@ import { WomensHealthHeader } from '../../../components/womens-health/WomensHeal
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
 import { DatePickerInput } from '../../../components/ui/DatePickerInput';
 import { ContraceptionInsightsCard } from '../../../components/womens-health/ContraceptionInsightsCard';
+import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 
 export default function ContraceptionScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [contraceptionData, setContraceptionData] = useState<any>(null);
 
   const [methodType, setMethodType] = useState('PILL');
@@ -32,7 +35,7 @@ export default function ContraceptionScreen() {
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const data = await getContraception();
       setContraceptionData(data);
@@ -47,12 +50,18 @@ export default function ContraceptionScreen() {
       // ignore
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [loadData]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadData();
+  };
 
   const handleSave = async () => {
     setErrorMessage(null);
@@ -84,9 +93,10 @@ export default function ContraceptionScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Birth Control Tracker" />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <SkeletonLoader height={140} borderRadius={22} style={{ marginVertical: 12 }} />
+          <SkeletonLoader height={260} borderRadius={22} style={{ marginBottom: 16 }} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -95,7 +105,18 @@ export default function ContraceptionScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="Birth Control Tracker" subtitle="Contraceptive Schedule & Method" />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Real-Time Contraception Insights Card */}
         <ContraceptionInsightsCard insights={contraceptionData?.contraceptionInsights} />
 
