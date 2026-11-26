@@ -21,16 +21,23 @@ export const PersonalizedChartsCard: React.FC<PersonalizedChartsCardProps> = ({ 
   const totalDays = cycle?.averageCycleLength || 28;
   const cyclePercent = Math.min(100, Math.max(0, Math.round((currentDay / totalDays) * 100)));
 
+  // Clamp pin left position between 2% and 96% to prevent sticking out of card boundaries
+  const pinLeftPercent = Math.min(96, Math.max(2, cyclePercent));
+
   return (
     <View style={styles.card}>
       {/* Header Title */}
       <View style={styles.headerRow}>
         <View style={styles.titleGroup}>
           <Ionicons name="stats-chart" size={18} color={colors.primary} />
-          <Text style={styles.headerTitle}>MY PERSONALIZED HEALTH CHARTS</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            PERSONALIZED HEALTH CHARTS
+          </Text>
         </View>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{dashboard?.activeMode || 'MENSTRUAL'}</Text>
+          <Text style={styles.badgeText} numberOfLines={1}>
+            {dashboard?.activeMode || 'MENSTRUAL'}
+          </Text>
         </View>
       </View>
 
@@ -43,26 +50,36 @@ export const PersonalizedChartsCard: React.FC<PersonalizedChartsCardProps> = ({ 
           </Text>
         </View>
 
-        {/* Multi-Segment Phase Bar */}
-        <View style={styles.phaseBarTrack}>
-          {/* Menses Segment (~18% of total) */}
-          <View style={[styles.phaseSegment, { width: '18%', backgroundColor: '#F43F5E' }]} />
-          {/* Follicular Segment (~28% of total) */}
-          <View style={[styles.phaseSegment, { width: '28%', backgroundColor: '#3B82F6' }]} />
-          {/* Ovulatory Segment (~14% of total) */}
-          <View style={[styles.phaseSegment, { width: '14%', backgroundColor: '#EC4899' }]} />
-          {/* Luteal Segment (~40% of total) */}
-          <View style={[styles.phaseSegment, { width: '40%', backgroundColor: '#8B5CF6' }]} />
+        {/* Multi-Segment Phase Bar Container */}
+        <View style={styles.phaseBarContainer}>
+          <View style={styles.phaseBarTrack}>
+            {/* Menses Segment (~18% of total) */}
+            <View style={[styles.phaseSegment, { width: '18%', backgroundColor: '#F43F5E' }]} />
+            {/* Follicular Segment (~28% of total) */}
+            <View style={[styles.phaseSegment, { width: '28%', backgroundColor: '#3B82F6' }]} />
+            {/* Ovulatory Segment (~14% of total) */}
+            <View style={[styles.phaseSegment, { width: '14%', backgroundColor: '#EC4899' }]} />
+            {/* Luteal Segment (~40% of total) */}
+            <View style={[styles.phaseSegment, { width: '40%', backgroundColor: '#8B5CF6' }]} />
+          </View>
 
-          {/* Current Day Pointer Pin */}
-          <View style={[styles.currentDayPin, { left: `${cyclePercent}%` }]} />
+          {/* Current Day Pointer Pin with transform centering */}
+          <View
+            style={[
+              styles.currentDayPin,
+              {
+                left: `${pinLeftPercent}%`,
+                transform: [{ translateX: -3 }],
+              },
+            ]}
+          />
         </View>
 
-        {/* Phase Legend */}
+        {/* Phase Legend with FlexWrap for small screens */}
         <View style={styles.legendRow}>
           <View style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: '#F43F5E' }]} />
-            <Text style={styles.legendText}>Menses (1-5d)</Text>
+            <Text style={styles.legendText}>Menses</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: '#3B82F6' }]} />
@@ -82,8 +99,8 @@ export const PersonalizedChartsCard: React.FC<PersonalizedChartsCardProps> = ({ 
       {/* Chart 2: Symptom Frequency Distribution Spectrum */}
       <View style={styles.chartBlock}>
         <View style={styles.chartBlockHeader}>
-          <Text style={styles.chartTitle}>2. Recent Symptom & Wellness Spectrum</Text>
-          <Text style={styles.chartSubText}>Past 14 Days Analysis</Text>
+          <Text style={styles.chartTitle}>2. Recent Symptom Spectrum</Text>
+          <Text style={styles.chartSubText}>Past 14 Days</Text>
         </View>
 
         {topSymptoms.length === 0 ? (
@@ -121,26 +138,36 @@ export const PersonalizedChartsCard: React.FC<PersonalizedChartsCardProps> = ({ 
         )}
       </View>
 
-      {/* Chart 3: Gestational / Fertility Probability Metrics */}
+      {/* Chart 3: Gestational / Fertility Metrics Grid */}
       <View style={styles.metricsGrid}>
         <View style={styles.metricBox}>
           <Ionicons name="calendar-outline" size={18} color={colors.primary} />
-          <Text style={styles.metricVal}>{cycle?.averageCycleLength || 28} Days</Text>
-          <Text style={styles.metricLabel}>Avg. Cycle Length</Text>
+          <Text style={styles.metricVal} numberOfLines={1}>
+            {cycle?.averageCycleLength || 28} Days
+          </Text>
+          <Text style={styles.metricLabel} numberOfLines={1}>
+            Avg. Cycle
+          </Text>
         </View>
 
         <View style={styles.metricBox}>
           <Ionicons name="water-outline" size={18} color="#F43F5E" />
-          <Text style={styles.metricVal}>{cycle?.averagePeriodDuration || 5} Days</Text>
-          <Text style={styles.metricLabel}>Period Duration</Text>
+          <Text style={styles.metricVal} numberOfLines={1}>
+            {cycle?.averagePeriodDuration || 5} Days
+          </Text>
+          <Text style={styles.metricLabel} numberOfLines={1}>
+            Period
+          </Text>
         </View>
 
         <View style={styles.metricBox}>
           <Ionicons name="sparkles-outline" size={18} color="#EC4899" />
-          <Text style={styles.metricVal}>
+          <Text style={styles.metricVal} numberOfLines={1}>
             {preg ? `Week ${preg.gestationalAgeWeeks}` : `${cycle?.phaseDisplayName || 'Follicular'}`}
           </Text>
-          <Text style={styles.metricLabel}>Current Phase / Age</Text>
+          <Text style={styles.metricLabel} numberOfLines={1}>
+            Phase
+          </Text>
         </View>
       </View>
     </View>
@@ -152,7 +179,7 @@ const createStyles = (colors: any) =>
     card: {
       backgroundColor: colors.white,
       borderRadius: 22,
-      padding: 18,
+      padding: 16,
       marginVertical: 12,
       borderWidth: 1,
       borderColor: colors.softBackground,
@@ -166,14 +193,17 @@ const createStyles = (colors: any) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: 14,
+      gap: 8,
     },
     titleGroup: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
     },
     headerTitle: {
+      flex: 1,
       fontSize: 11,
       fontWeight: '800',
       color: colors.primary,
@@ -181,9 +211,9 @@ const createStyles = (colors: any) =>
     },
     badge: {
       backgroundColor: colors.inputBackground,
-      paddingHorizontal: 10,
+      paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: 12,
+      borderRadius: 10,
     },
     badgeText: {
       fontSize: 10,
@@ -191,55 +221,63 @@ const createStyles = (colors: any) =>
       color: colors.darkText,
     },
     chartBlock: {
-      marginBottom: 18,
+      marginBottom: 16,
     },
     chartBlockHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 8,
+      gap: 6,
     },
     chartTitle: {
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: '800',
       color: colors.darkText,
+      flex: 1,
     },
     chartValueText: {
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: '700',
       color: colors.primary,
     },
     chartSubText: {
-      fontSize: 11,
+      fontSize: 10,
       fontWeight: '600',
       color: colors.textMuted,
     },
+    phaseBarContainer: {
+      position: 'relative',
+      marginVertical: 8,
+      justifyContent: 'center',
+    },
     phaseBarTrack: {
-      height: 14,
-      borderRadius: 7,
+      height: 12,
+      borderRadius: 6,
       backgroundColor: colors.inputBackground,
       flexDirection: 'row',
-      overflow: 'visible',
-      position: 'relative',
-      marginVertical: 6,
+      overflow: 'hidden',
     },
     phaseSegment: {
       height: '100%',
     },
     currentDayPin: {
       position: 'absolute',
-      top: -4,
+      top: -3,
       width: 6,
-      height: 22,
+      height: 18,
       backgroundColor: colors.darkText,
       borderRadius: 3,
       borderWidth: 1.5,
       borderColor: colors.white,
+      zIndex: 10,
     },
     legendRow: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       justifyContent: 'space-between',
       marginTop: 6,
+      gap: 6,
     },
     legendItem: {
       flexDirection: 'row',
@@ -247,9 +285,9 @@ const createStyles = (colors: any) =>
       gap: 4,
     },
     dot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
     },
     legendText: {
       fontSize: 10,
@@ -259,13 +297,14 @@ const createStyles = (colors: any) =>
     emptyChartBox: {
       backgroundColor: colors.inputBackground,
       borderRadius: 14,
-      padding: 14,
+      padding: 12,
       alignItems: 'center',
     },
     emptyText: {
-      fontSize: 12,
+      fontSize: 11,
       color: colors.textMuted,
       fontWeight: '600',
+      textAlign: 'center',
     },
     symptomBarList: {
       gap: 8,
@@ -277,8 +316,8 @@ const createStyles = (colors: any) =>
       gap: 8,
     },
     symNameText: {
-      width: 85,
-      fontSize: 12,
+      width: 75,
+      fontSize: 11,
       fontWeight: '700',
       color: colors.darkText,
     },
@@ -302,22 +341,23 @@ const createStyles = (colors: any) =>
     },
     metricsGrid: {
       flexDirection: 'row',
-      gap: 10,
+      gap: 8,
     },
     metricBox: {
       flex: 1,
       backgroundColor: colors.inputBackground,
-      borderRadius: 16,
-      padding: 12,
+      borderRadius: 14,
+      padding: 10,
       alignItems: 'center',
       borderWidth: 1,
       borderColor: colors.softBackground,
     },
     metricVal: {
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: '800',
       color: colors.darkText,
       marginTop: 4,
+      textAlign: 'center',
     },
     metricLabel: {
       fontSize: 10,
