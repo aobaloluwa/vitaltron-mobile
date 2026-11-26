@@ -39,18 +39,19 @@ export default function MenopauseTrackerScreen() {
     try {
       const data = await getMenopauseProfile();
       setMenopauseData(data);
-      if (data?.todayLog) {
-        if (data.todayLog.hotFlashSeverity !== undefined) {
-          setHotFlash(data.todayLog.hotFlashSeverity);
+      const activeLog = data?.todayLog || data?.profile?.symptoms?.[0];
+      if (activeLog) {
+        if (activeLog.hotFlashSeverity !== undefined && activeLog.hotFlashSeverity !== null) {
+          setHotFlash(activeLog.hotFlashSeverity);
         }
-        if (data.todayLog.nightSweats !== undefined) {
-          setNightSweats(data.todayLog.nightSweats);
+        if (activeLog.nightSweats !== undefined && activeLog.nightSweats !== null) {
+          setNightSweats(activeLog.nightSweats);
         }
-        if (data.todayLog.sleepQuality !== undefined) {
-          setSleepQuality(data.todayLog.sleepQuality);
+        if (activeLog.sleepQuality !== undefined && activeLog.sleepQuality !== null) {
+          setSleepQuality(activeLog.sleepQuality);
         }
-        if (data.todayLog.brainFogRating !== undefined) {
-          setBrainFog(data.todayLog.brainFogRating);
+        if (activeLog.brainFogRating !== undefined && activeLog.brainFogRating !== null) {
+          setBrainFog(activeLog.brainFogRating);
         }
       }
     } catch {
