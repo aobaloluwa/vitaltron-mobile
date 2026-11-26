@@ -23,6 +23,7 @@ import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { WomensHealthOnboardingModal } from '../../components/womens-health/WomensHealthOnboardingModal';
 import { MaleAccessRestrictedView } from '../../components/womens-health/MaleAccessRestrictedView';
 import { TodaySymptomsCard } from '../../components/womens-health/TodaySymptomsCard';
+import { PersonalizedChartsCard } from '../../components/womens-health/PersonalizedChartsCard';
 
 export default function WomensHealthTabScreen() {
   const { colors } = useTheme();
@@ -339,40 +340,8 @@ export default function WomensHealthTabScreen() {
           </Pressable>
         </View>
 
-        {/* Vital Signs & Analytics Shortcuts */}
-        <Text style={styles.sectionHeader}>Vitals & Historical Analytics</Text>
-
-        <Pressable
-          style={styles.analyticsCard}
-          onPress={() => router.push('/records/vital-analytics' as any)}
-        >
-          <View style={styles.analyticsCardRow}>
-            <View style={[styles.analyticsIconBg, { backgroundColor: '#FEE2E2' }]}>
-              <Ionicons name="pulse" size={24} color="#DC2626" />
-            </View>
-            <View style={styles.analyticsTextCol}>
-              <Text style={styles.analyticsTitle}>Vital Signs & Waveforms</Text>
-              <Text style={styles.analyticsSub}>Heart Rate, Blood Pressure & SpO2 ECG Waveforms</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </View>
-        </Pressable>
-
-        <Pressable
-          style={styles.analyticsCard}
-          onPress={() => router.push('/womens-health/reports' as any)}
-        >
-          <View style={styles.analyticsCardRow}>
-            <View style={[styles.analyticsIconBg, { backgroundColor: '#E0F2FE' }]}>
-              <Ionicons name="stats-chart-outline" size={24} color="#0284C7" />
-            </View>
-            <View style={styles.analyticsTextCol}>
-              <Text style={styles.analyticsTitle}>Historical Health Trends & Charts</Text>
-              <Text style={styles.analyticsSub}>Interactive BBT, Cycle & Weight Analytics</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </View>
-        </Pressable>
+        {/* Personalized Interactive Health Charts */}
+        <PersonalizedChartsCard dashboard={dashboard} />
 
         {/* Safety Disclaimer */}
         <SafetyDisclaimerBanner />

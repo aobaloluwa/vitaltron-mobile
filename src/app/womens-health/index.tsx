@@ -23,6 +23,7 @@ import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { WomensHealthOnboardingModal } from '../../components/womens-health/WomensHealthOnboardingModal';
 import { MaleAccessRestrictedView } from '../../components/womens-health/MaleAccessRestrictedView';
 import { TodaySymptomsCard } from '../../components/womens-health/TodaySymptomsCard';
+import { PersonalizedChartsCard } from '../../components/womens-health/PersonalizedChartsCard';
 
 export default function WomensHealthDashboardScreen() {
   const { colors } = useTheme();
@@ -333,6 +334,9 @@ export default function WomensHealthDashboardScreen() {
             <Text style={styles.moduleTitle}>Reports & Charts</Text>
           </Pressable>
         </View>
+
+        {/* Personalized Interactive Health Charts */}
+        <PersonalizedChartsCard dashboard={dashboard} />
 
         {/* Safety Disclaimer */}
         <SafetyDisclaimerBanner />
