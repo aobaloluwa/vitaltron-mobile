@@ -44,7 +44,9 @@ export const PersonalizedChartsCard: React.FC<PersonalizedChartsCardProps> = ({ 
       {/* Chart 1: Personal Cycle & Phase Horizon */}
       <View style={styles.chartBlock}>
         <View style={styles.chartBlockHeader}>
-          <Text style={styles.chartTitle}>1. Personal Cycle Progression</Text>
+          <Text style={styles.chartTitle} numberOfLines={1}>
+            1. Personal Cycle Progression
+          </Text>
           <Text style={styles.chartValueText}>
             Day {currentDay} of {totalDays}
           </Text>
@@ -99,7 +101,9 @@ export const PersonalizedChartsCard: React.FC<PersonalizedChartsCardProps> = ({ 
       {/* Chart 2: Symptom Frequency Distribution Spectrum */}
       <View style={styles.chartBlock}>
         <View style={styles.chartBlockHeader}>
-          <Text style={styles.chartTitle}>2. Recent Symptom Spectrum</Text>
+          <Text style={styles.chartTitle} numberOfLines={1}>
+            2. Recent Symptom Spectrum
+          </Text>
           <Text style={styles.chartSubText}>Past 14 Days</Text>
         </View>
 
@@ -197,13 +201,12 @@ const createStyles = (colors: any) =>
       gap: 8,
     },
     titleGroup: {
-      flex: 1,
+      flexShrink: 1,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
     },
     headerTitle: {
-      flex: 1,
       fontSize: 11,
       fontWeight: '800',
       color: colors.primary,
@@ -214,6 +217,7 @@ const createStyles = (colors: any) =>
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: 10,
+      flexShrink: 0,
     },
     badgeText: {
       fontSize: 10,
@@ -234,17 +238,19 @@ const createStyles = (colors: any) =>
       fontSize: 12,
       fontWeight: '800',
       color: colors.darkText,
-      flex: 1,
+      flexShrink: 1,
     },
     chartValueText: {
       fontSize: 11,
       fontWeight: '700',
       color: colors.primary,
+      flexShrink: 0,
     },
     chartSubText: {
       fontSize: 10,
       fontWeight: '600',
       color: colors.textMuted,
+      flexShrink: 0,
     },
     phaseBarContainer: {
       position: 'relative',
