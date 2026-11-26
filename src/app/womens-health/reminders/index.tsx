@@ -102,7 +102,7 @@ export default function RemindersScreen() {
     }
 
     setSaving(true);
-    const fullScheduleTime = `${date} at ${time}`;
+    const fullScheduleTime = date ? `${date} ${time}`.slice(0, 20) : `${time}`.slice(0, 20);
 
     try {
       await createWomensHealthReminder({
