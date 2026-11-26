@@ -89,6 +89,16 @@ export interface ContraceptionInsights {
   personalizedTip: string;
 }
 
+export interface SexualHealthInsights {
+  hasScreenings: boolean;
+  isUpToDate: boolean;
+  statusTitle: string;
+  mostRecentType?: string | null;
+  mostRecentDate?: string | null;
+  mostRecentResult?: string | null;
+  personalizedTip: string;
+}
+
 export interface SymptomInsights {
   todayLogged: boolean;
   todayMood?: string;

@@ -19,12 +19,14 @@ import {
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
 import { DatePickerInput } from '../../../components/ui/DatePickerInput';
+import { SexualHealthInsightsCard } from '../../../components/womens-health/SexualHealthInsightsCard';
 
 export default function SexualHealthScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [sexualHealthData, setSexualHealthData] = useState<any>(null);
   const [screenings, setScreenings] = useState<any[]>([]);
 
   // Form State
@@ -34,10 +36,12 @@ export default function SexualHealthScreen() {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
       const data = await getSexualHealthRecords();
+      setSexualHealthData(data);
       setScreenings(data?.screenings || []);
     } catch {
       // ignore
@@ -51,20 +55,33 @@ export default function SexualHealthScreen() {
   }, []);
 
   const handleSaveScreening = async () => {
-    if (!testType) return;
-    setSaving(true);
+    setErrorMessage(null);
     setSavedSuccess(false);
+
+    if (!testType || !testType.trim()) {
+      setErrorMessage('⚠️ Please enter the screening test type (e.g. Pap Smear / HPV).');
+      return;
+    }
+
+    if (!testDate || !testDate.trim()) {
+      setErrorMessage('⚠️ Please select the test date.');
+      return;
+    }
+
+    setSaving(true);
     try {
       await logStiScreening({
-        testType,
-        testDate,
+        testType: testType.trim(),
+        testDate: testDate.trim(),
         result,
-        notes,
+        notes: notes ? notes.trim() : undefined,
       });
       setSavedSuccess(true);
-      void loadData();
-    } catch {
-      // ignore
+      setNotes('');
+      setErrorMessage(null);
+      await loadData();
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to save screening record. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -96,6 +113,9 @@ export default function SexualHealthScreen() {
             Private & Encrypted: Your reproductive and STI screening logs are strictly personal and stored securely.
           </Text>
         </View>
+
+        {/* Real-Time Screening & Preventive Care Insights Card */}
+        <SexualHealthInsightsCard insights={sexualHealthData?.sexualHealthInsights} />
 
         {/* Log Screening Form */}
         <Text style={styles.sectionTitle}>Record STI / Pap Screening</Text>
@@ -138,6 +158,8 @@ export default function SexualHealthScreen() {
             multiline
           />
 
+          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
           <Pressable
             style={styles.saveBtn}
             onPress={() => void handleSaveScreening()}
@@ -172,6 +194,7 @@ export default function SexualHealthScreen() {
               <Text style={styles.recordDate}>
                 {new Date(item.testDate).toLocaleDateString()}
               </Text>
+              {item.notes ? <Text style={styles.recordNotes}>{item.notes}</Text> : null}
             </View>
           ))
         )}
@@ -278,6 +301,13 @@ const createStyles = (colors: any) =>
       fontSize: 14,
       fontWeight: '800',
     },
+    errorText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#EF4444',
+      textAlign: 'center',
+      marginTop: 10,
+    },
     successText: {
       fontSize: 12,
       fontWeight: '700',
@@ -326,5 +356,11 @@ const createStyles = (colors: any) =>
       fontSize: 12,
       color: colors.textMuted,
       marginTop: 4,
+    },
+    recordNotes: {
+      fontSize: 12,
+      color: colors.darkText,
+      marginTop: 6,
+      lineHeight: 16,
     },
   });
