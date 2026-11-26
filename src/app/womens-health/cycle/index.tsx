@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,6 +31,7 @@ export default function MenstrualCycleScreen() {
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [dashboard, setDashboard] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -41,7 +43,7 @@ export default function MenstrualCycleScreen() {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const data = await getWomensHealthDashboard();
       setDashboard(data);
@@ -49,12 +51,18 @@ export default function MenstrualCycleScreen() {
       setDashboard(null);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadData();
-  }, []);
+  }, [loadData]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    void loadData();
+  };
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -117,7 +125,18 @@ export default function MenstrualCycleScreen() {
         onRightAction={() => router.push('/womens-health/cycle/calendar' as any)}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Top Summary Card */}
         <View style={styles.summaryCard}>
           <Text style={styles.cardHeaderTag}>CYCLE ANALYSIS</Text>

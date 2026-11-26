@@ -133,18 +133,7 @@ export default function PostpartumCareScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <WomensHealthHeader title="Postpartum Care" />
-        <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
-      >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <SkeletonLoader height={140} borderRadius={22} style={{ marginVertical: 12 }} />
           <SkeletonLoader height={120} borderRadius={22} style={{ marginBottom: 14 }} />
           <SkeletonLoader height={220} borderRadius={22} style={{ marginBottom: 16 }} />
@@ -165,7 +154,18 @@ export default function PostpartumCareScreen() {
         onRightAction={() => setModalVisible(true)}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Recovery Summary Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
