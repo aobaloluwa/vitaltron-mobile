@@ -24,6 +24,7 @@ import { WomensHealthHeader } from '../../../components/womens-health/WomensHeal
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
 import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
 import { DatePickerInput } from '../../../components/ui/DatePickerInput';
+import { PregnancyInsightsCard } from '../../../components/womens-health/PregnancyInsightsCard';
 
 export default function PregnancyHubScreen() {
   const { colors } = useTheme();
@@ -144,6 +145,9 @@ export default function PregnancyHubScreen() {
             </View>
           </View>
         </View>
+
+        {/* Personalized Real-Time Trimester Insights Card */}
+        <PregnancyInsightsCard insights={(data as any)?.pregnancyInsights} />
 
         {/* Pregnancy Quick Tools Grid */}
         <Text style={styles.sectionTitle}>Pregnancy Tools & Features</Text>

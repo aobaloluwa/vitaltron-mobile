@@ -50,6 +50,15 @@ export interface PregnancyMetrics {
   disclaimer: string;
 }
 
+export interface PregnancyInsights {
+  gestationalWeek: number;
+  currentTrimester: number;
+  trimesterName: string;
+  keyCareAdvice: string;
+  recommendedActions: string[];
+  safetyFlags: string[];
+}
+
 export interface SymptomInsights {
   todayLogged: boolean;
   todayMood?: string;
