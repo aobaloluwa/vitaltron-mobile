@@ -247,16 +247,6 @@ export default function WomensHealthDashboardScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickActionsScroll}>
           <Pressable
             style={styles.quickActionCard}
-            onPress={() => router.push('/womens-health/symptoms' as any)}
-          >
-            <View style={[styles.actionIconBg, { backgroundColor: '#FCE7F3' }]}>
-              <Ionicons name="pulse" size={20} color="#DB2777" />
-            </View>
-            <Text style={styles.actionText}>Log Symptoms</Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.quickActionCard}
             onPress={() => router.push('/womens-health/pregnancy/kick-counter' as any)}
           >
             <View style={[styles.actionIconBg, { backgroundColor: '#EDE7F6' }]}>
