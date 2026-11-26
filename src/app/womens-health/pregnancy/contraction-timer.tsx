@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
-import { logContractionSession } from '../../../services/womensHealth';
+import { getPregnancyProfile, logContractionSession } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
 
@@ -25,7 +25,23 @@ export default function ContractionTimerScreen() {
   const [intervalMin, setIntervalMin] = useState<number | null>(null);
   const [severity, setSeverity] = useState(5);
   const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+
+  const loadHistory = async () => {
+    try {
+      const res = await getPregnancyProfile();
+      if (res?.profile?.contractionSessions) {
+        setHistory(res.profile.contractionSessions);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    void loadHistory();
+  }, []);
 
   useEffect(() => {
     let interval: any;
@@ -48,6 +64,7 @@ export default function ContractionTimerScreen() {
       }
       setDurationSec(0);
       setTiming(true);
+      setSuccessMsg(false);
     } else {
       // Stop contraction & log
       setTiming(false);
@@ -58,16 +75,18 @@ export default function ContractionTimerScreen() {
   };
 
   const handleSave = async (durSec: number, intMin: number | null) => {
+    if (durSec === 0) return;
     setSaving(true);
     try {
-      const record = await logContractionSession({
+      await logContractionSession({
         startTime: (startTime || new Date()).toISOString(),
         endTime: new Date().toISOString(),
         durationSeconds: durSec,
         intervalMinutes: intMin || undefined,
         severity,
       });
-      setHistory((prev) => [record, ...prev]);
+      setSuccessMsg(true);
+      void loadHistory();
     } catch {
       // ignore
     } finally {
@@ -81,11 +100,30 @@ export default function ContractionTimerScreen() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  // Check 5-1-1 Labor Pattern (Contractions ~5 mins apart, ~60s duration)
+  const is511Pattern =
+    history.length >= 3 &&
+    history.slice(0, 3).every((h) => (h.durationSeconds || 0) >= 45) &&
+    history.slice(0, 3).some((h) => h.intervalMinutes && h.intervalMinutes <= 6);
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="Contraction Timer" subtitle="Labor Duration & Interval Tracker" />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* 5-1-1 Active Labor Warning Banner */}
+        {is511Pattern ? (
+          <View style={styles.alertBanner}>
+            <Ionicons name="warning" size={20} color="#DC2626" />
+            <View style={styles.alertTextWrapper}>
+              <Text style={styles.alertTitle}>Possible Active Labor Pattern (5-1-1)</Text>
+              <Text style={styles.alertSub}>
+                Your recent contractions are averaging ~5 minutes apart. Consider contacting your OB-GYN or maternity hospital triage.
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
         {/* Main Contraction Timer Card */}
         <View style={styles.timerCard}>
           <Text style={styles.timerTitle}>{timing ? 'Contraction Active...' : 'Ready to Time'}</Text>
@@ -100,12 +138,23 @@ export default function ContractionTimerScreen() {
           <Pressable
             style={[styles.startStopBtn, timing ? styles.stopBtnBg : styles.startBtnBg]}
             onPress={toggleTimer}
+            disabled={saving}
           >
-            <Ionicons name={timing ? 'stop-circle' : 'play-circle'} size={28} color={colors.white} />
-            <Text style={styles.startStopBtnText}>
-              {timing ? 'Stop Contraction' : 'Start Contraction'}
-            </Text>
+            {saving ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <>
+                <Ionicons name={timing ? 'stop-circle' : 'play-circle'} size={28} color={colors.white} />
+                <Text style={styles.startStopBtnText}>
+                  {timing ? 'Stop Contraction' : 'Start Contraction'}
+                </Text>
+              </>
+            )}
           </Pressable>
+
+          {successMsg ? (
+            <Text style={styles.successText}>✓ Contraction saved to database!</Text>
+          ) : null}
         </View>
 
         {/* Severity Selector */}
@@ -127,20 +176,34 @@ export default function ContractionTimerScreen() {
         </View>
 
         {/* Contraction History */}
-        {history.length > 0 ? (
+        <Text style={styles.sectionTitle}>Recent Contraction Log</Text>
+        {history.length === 0 ? (
           <View style={styles.historySection}>
-            <Text style={styles.historyTitle}>Logged Contractions</Text>
+            <Text style={styles.historyEmptyText}>No contractions logged in this session.</Text>
+          </View>
+        ) : (
+          <View style={styles.historySection}>
             {history.map((item, idx) => (
-              <View key={idx} style={styles.historyRow}>
-                <Text style={styles.histText}>Duration: {item.durationSeconds || 0}s</Text>
-                <Text style={styles.histText}>
-                  {item.intervalMinutes ? `Interval: ${item.intervalMinutes}m` : 'First'}
-                </Text>
-                <Text style={styles.histText}>Intensity: {item.severity || 5}/10</Text>
+              <View key={item.id || idx} style={styles.historyRow}>
+                <View style={styles.historyCol}>
+                  <Text style={styles.histTitle}>
+                    {item.durationSeconds || 0} seconds long
+                  </Text>
+                  <Text style={styles.histSub}>
+                    {new Date(item.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+
+                <View style={styles.historyColRight}>
+                  <Text style={styles.histMeta}>
+                    {item.intervalMinutes ? `${item.intervalMinutes}m apart` : 'First'}
+                  </Text>
+                  <Text style={styles.histMetaSub}>Intensity: {item.severity || 5}/10</Text>
+                </View>
               </View>
             ))}
           </View>
-        ) : null}
+        )}
 
         <SafetyDisclaimerBanner
           text="CLINICAL ADVICE: If contractions occur 5 minutes apart, last 60 seconds each, for over 1 hour (5-1-1 rule), or if your water breaks, call your maternity care unit immediately."
@@ -159,6 +222,32 @@ const createStyles = (colors: any) =>
     scrollContent: {
       paddingHorizontal: 20,
       paddingBottom: 32,
+    },
+    alertBanner: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 10,
+      backgroundColor: '#FEF2F2',
+      borderRadius: 18,
+      padding: 14,
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: '#FCA5A5',
+    },
+    alertTextWrapper: {
+      flex: 1,
+    },
+    alertTitle: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: '#991B1B',
+    },
+    alertSub: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: '#B91C1C',
+      marginTop: 2,
+      lineHeight: 16,
     },
     timerCard: {
       backgroundColor: colors.white,
@@ -208,6 +297,12 @@ const createStyles = (colors: any) =>
       fontSize: 16,
       fontWeight: '800',
     },
+    successText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.success,
+      marginTop: 12,
+    },
     severityCard: {
       backgroundColor: colors.white,
       borderRadius: 20,
@@ -245,6 +340,13 @@ const createStyles = (colors: any) =>
     sevPillTextActive: {
       color: colors.white,
     },
+    sectionTitle: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.darkText,
+      marginTop: 6,
+      marginBottom: 10,
+    },
     historySection: {
       backgroundColor: colors.white,
       borderRadius: 20,
@@ -253,22 +355,46 @@ const createStyles = (colors: any) =>
       borderWidth: 1,
       borderColor: colors.softBackground,
     },
-    historyTitle: {
-      fontSize: 14,
-      fontWeight: '800',
-      color: colors.darkText,
-      marginBottom: 10,
+    historyEmptyText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textMuted,
+      textAlign: 'center',
     },
     historyRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      paddingVertical: 8,
+      alignItems: 'center',
+      paddingVertical: 10,
       borderBottomWidth: 1,
       borderBottomColor: colors.softBackground,
     },
-    histText: {
-      fontSize: 12,
-      fontWeight: '600',
+    historyCol: {
+      flex: 1,
+    },
+    historyColRight: {
+      alignItems: 'flex-end',
+    },
+    histTitle: {
+      fontSize: 13,
+      fontWeight: '800',
       color: colors.darkText,
+    },
+    histSub: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    histMeta: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    histMetaSub: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textMuted,
+      marginTop: 2,
     },
   });
