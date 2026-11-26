@@ -50,6 +50,15 @@ export interface PregnancyMetrics {
   disclaimer: string;
 }
 
+export interface SymptomInsights {
+  todayLogged: boolean;
+  todayMood?: string;
+  todaySymptoms: string[];
+  todayNotes?: string;
+  topRecentSymptoms: { name: string; count: number }[];
+  personalizedTip: string;
+}
+
 export interface WomensHealthDashboardData {
   user: { name: string };
   activeMode: TrackingMode;
@@ -58,6 +67,8 @@ export interface WomensHealthDashboardData {
   cycleMetrics: CycleMetrics;
   pregnancyMetrics?: PregnancyMetrics;
   menopauseSummary?: any;
+  todayLog?: any;
+  symptomInsights?: SymptomInsights;
   recentLogs: any[];
   upcomingReminders: any[];
 }

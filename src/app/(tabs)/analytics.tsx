@@ -22,6 +22,7 @@ import { SafetyDisclaimerBanner } from '../../components/womens-health/SafetyDis
 import { SkeletonLoader } from '../../components/ui/SkeletonLoader';
 import { WomensHealthOnboardingModal } from '../../components/womens-health/WomensHealthOnboardingModal';
 import { MaleAccessRestrictedView } from '../../components/womens-health/MaleAccessRestrictedView';
+import { TodaySymptomsCard } from '../../components/womens-health/TodaySymptomsCard';
 
 export default function WomensHealthTabScreen() {
   const { colors } = useTheme();
@@ -238,6 +239,12 @@ export default function WomensHealthTabScreen() {
             </Pressable>
           </View>
         )}
+
+        {/* Today's Symptoms & Mood Insights */}
+        <TodaySymptomsCard
+          insights={dashboard?.symptomInsights}
+          onLogPress={() => router.push('/womens-health/symptoms' as any)}
+        />
 
         {/* Quick Actions Bar */}
         <Text style={styles.sectionHeader}>Quick Actions</Text>

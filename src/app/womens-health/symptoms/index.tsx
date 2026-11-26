@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
-import { logDailyCycle } from '../../../services/womensHealth';
+import { getWomensHealthDashboard, logDailyCycle } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 
 const COMMON_SYMPTOMS = [
@@ -38,6 +38,28 @@ export default function SymptomsTrackerScreen() {
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  useEffect(() => {
+    async function loadTodayLog() {
+      try {
+        const dashboard = await getWomensHealthDashboard();
+        if (dashboard?.todayLog) {
+          if (dashboard.todayLog.mood) {
+            setSelectedMood(dashboard.todayLog.mood);
+          }
+          if (dashboard.todayLog.symptoms && typeof dashboard.todayLog.symptoms === 'object') {
+            setSelectedSymptoms(dashboard.todayLog.symptoms);
+          }
+          if (dashboard.todayLog.notes) {
+            setNotes(dashboard.todayLog.notes);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+    void loadTodayLog();
+  }, []);
 
   const toggleSymptom = (sym: string) => {
     setSelectedSymptoms((prev) => {
@@ -128,7 +150,9 @@ export default function SymptomsTrackerScreen() {
           )}
         </Pressable>
 
-        {savedSuccess ? <Text style={styles.successText}>✓ Daily symptoms logged!</Text> : null}
+        {savedSuccess ? (
+          <Text style={styles.successText}>✓ Daily symptoms logged & dashboard updated!</Text>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
