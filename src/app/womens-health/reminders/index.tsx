@@ -21,6 +21,8 @@ import {
   deleteWomensHealthReminder,
 } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
+import { DatePickerInput } from '../../../components/ui/DatePickerInput';
+import { TimePickerInput } from '../../../components/ui/TimePickerInput';
 
 const REMINDER_CATEGORIES = [
   'MEDICATION',
@@ -42,6 +44,7 @@ export default function RemindersScreen() {
   // Form State
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('MEDICATION');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('09:00 AM');
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -61,7 +64,7 @@ export default function RemindersScreen() {
     void loadReminders();
   }, []);
 
-  const triggerLocalPush = async (titleStr: string, catStr: string, timeStr: string) => {
+  const triggerLocalPush = async (titleStr: string, catStr: string, fullTimeStr: string) => {
     try {
       const { status } = await Notifications.getPermissionsAsync();
       let finalStatus = status;
@@ -74,11 +77,11 @@ export default function RemindersScreen() {
         await Notifications.scheduleNotificationAsync({
           content: {
             title: `🔔 Reminder Scheduled: ${titleStr}`,
-            body: `Your ${catStr.toLowerCase().replace('_', ' ')} reminder is active for ${timeStr}. Check your Notifications tab!`,
+            body: `Your ${catStr.toLowerCase().replace('_', ' ')} reminder is active for ${fullTimeStr}. Check your Notifications tab!`,
             sound: true,
             data: { type: 'REMINDER' },
           },
-          trigger: null, // null trigger = fires immediately as push notification!
+          trigger: null, // null trigger = fires immediately as push notification on device!
         });
       }
     } catch (err) {
@@ -93,16 +96,23 @@ export default function RemindersScreen() {
       return;
     }
 
+    if (!date) {
+      setErrorMessage('⚠️ Please select a start date for your reminder.');
+      return;
+    }
+
     setSaving(true);
+    const fullScheduleTime = `${date} at ${time}`;
+
     try {
       await createWomensHealthReminder({
         title: title.trim(),
         category,
-        reminderTime: time,
+        reminderTime: fullScheduleTime,
       });
 
       // Fire real push notification on device
-      void triggerLocalPush(title.trim(), category, time);
+      void triggerLocalPush(title.trim(), category, fullScheduleTime);
 
       setTitle('');
       setErrorMessage(null);
@@ -180,7 +190,7 @@ export default function RemindersScreen() {
         )}
       </ScrollView>
 
-      {/* Modal Entry with Category Selector */}
+      {/* Modal Entry with DatePickerInput & TimePickerInput */}
       <Modal visible={modalVisible} transparent animationType="slide">
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -224,12 +234,17 @@ export default function RemindersScreen() {
                 placeholder="Prenatal Vitamin / Fertile Window"
               />
 
-              <Text style={styles.label}>Preferred Reminder Time</Text>
-              <TextInput
-                style={styles.input}
+              <DatePickerInput
+                label="Reminder Start Date"
+                value={date}
+                onChange={setDate}
+                placeholder="Select Date"
+              />
+
+              <TimePickerInput
+                label="Preferred Reminder Time"
                 value={time}
-                onChangeText={setTime}
-                placeholder="09:00 AM"
+                onChange={setTime}
               />
 
               {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
