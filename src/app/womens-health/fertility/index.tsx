@@ -20,6 +20,7 @@ import {
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
 import { SkeletonLoader } from '../../../components/ui/SkeletonLoader';
+import { FertilityInsightsCard } from '../../../components/womens-health/FertilityInsightsCard';
 
 export default function FertilityTrackerScreen() {
   const { colors } = useTheme();
@@ -39,6 +40,17 @@ export default function FertilityTrackerScreen() {
     try {
       const data = await getWomensHealthDashboard();
       setDashboard(data);
+      if (data?.todayLog) {
+        if (data.todayLog.bbt) {
+          setBbt(String(data.todayLog.bbt));
+        }
+        if (data.todayLog.cervicalMucus) {
+          setMucus(data.todayLog.cervicalMucus as CervicalMucusType);
+        }
+        if (data.todayLog.ovulationTestResult) {
+          setLhTest(data.todayLog.ovulationTestResult);
+        }
+      }
     } catch {
       setDashboard(null);
     } finally {
@@ -61,6 +73,7 @@ export default function FertilityTrackerScreen() {
         ovulationTestResult: lhTest,
       });
       setSavedSuccess(true);
+      void loadData();
     } catch {
       // ignore
     } finally {
@@ -111,6 +124,9 @@ export default function FertilityTrackerScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Personalized Real-Time Fertility Insights Card */}
+        <FertilityInsightsCard insights={dashboard?.fertilityInsights} />
 
         {/* Observation Entry Section */}
         <Text style={styles.sectionTitle}>Log Today's Fertility Observations</Text>
@@ -164,7 +180,9 @@ export default function FertilityTrackerScreen() {
           </Pressable>
 
           {savedSuccess ? (
-            <Text style={styles.successMsg}>✓ Fertility observations logged successfully!</Text>
+            <Text style={styles.successMsg}>
+              ✓ Fertility observations logged & insights updated!
+            </Text>
           ) : null}
         </View>
 

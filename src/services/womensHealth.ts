@@ -59,6 +59,16 @@ export interface SymptomInsights {
   personalizedTip: string;
 }
 
+export interface FertilityInsights {
+  todayLogged: boolean;
+  todayBbt?: number;
+  todayMucus?: string;
+  todayLhTest?: string;
+  fertilityStatus: 'PEAK' | 'HIGH' | 'MODERATE' | 'LOW' | 'POST_OVULATION';
+  statusDisplayName: string;
+  personalizedTip: string;
+}
+
 export interface WomensHealthDashboardData {
   user: { name: string };
   activeMode: TrackingMode;
@@ -69,6 +79,7 @@ export interface WomensHealthDashboardData {
   menopauseSummary?: any;
   todayLog?: any;
   symptomInsights?: SymptomInsights;
+  fertilityInsights?: FertilityInsights;
   recentLogs: any[];
   upcomingReminders: any[];
 }
