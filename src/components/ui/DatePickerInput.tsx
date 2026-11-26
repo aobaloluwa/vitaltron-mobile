@@ -6,7 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerChangeEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 
@@ -45,11 +45,11 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     return new Date();
   };
 
-  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+  const handleDateChange = (event: DateTimePickerChangeEvent, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowPicker(false);
     }
-    if (event.type === 'set' && selectedDate) {
+    if (selectedDate) {
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
@@ -84,7 +84,8 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
           value={parseDate(value)}
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleDateChange}
+          onValueChange={handleDateChange}
+          onDismiss={() => setShowPicker(false)}
         />
       )}
     </View>

@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   androidBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 37,
   },
   topGlossHighlight: {

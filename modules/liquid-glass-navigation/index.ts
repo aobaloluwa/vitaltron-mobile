@@ -1,4 +1,4 @@
-import { requireNativeViewManager } from 'expo-modules-core';
+import { requireNativeView } from 'expo';
 import * as React from 'react';
 import { ViewProps } from 'react-native';
 
@@ -9,4 +9,4 @@ export type LiquidGlassNavigationViewProps = {
 } & ViewProps;
 
 export const LiquidGlassNavigationView: React.ComponentType<LiquidGlassNavigationViewProps> =
-  requireNativeViewManager('LiquidGlassNavigation');
+  requireNativeView('LiquidGlassNavigation');
