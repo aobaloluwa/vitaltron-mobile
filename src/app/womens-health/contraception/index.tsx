@@ -47,19 +47,28 @@ export default function ContraceptionScreen() {
     void loadData();
   }, []);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleSave = async () => {
-    setSaving(true);
+    setErrorMessage(null);
     setSuccess(false);
+    if (!startDate || !startDate.trim()) {
+      setErrorMessage('⚠️ Please enter a start date for your contraception method.');
+      return;
+    }
+
+    setSaving(true);
     try {
       await updateContraception({
         type: methodType,
-        brandName,
-        startDate,
-        replacementDate: replacementDate || undefined,
+        brandName: brandName ? brandName.trim() : undefined,
+        startDate: startDate.trim(),
+        replacementDate: replacementDate ? replacementDate.trim() : undefined,
       });
       setSuccess(true);
-    } catch {
-      // ignore
+      setErrorMessage(null);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to update contraception method. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -121,6 +130,8 @@ export default function ContraceptionScreen() {
             onChangeText={setReplacementDate}
             placeholder="YYYY-MM-DD"
           />
+
+          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
           <Pressable style={styles.saveBtn} onPress={() => void handleSave()} disabled={saving}>
             {saving ? (
@@ -228,6 +239,13 @@ const createStyles = (colors: any) =>
       fontSize: 12,
       fontWeight: '700',
       color: colors.success,
+      textAlign: 'center',
+      marginTop: 10,
+    },
+    errorText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#EF4444',
       textAlign: 'center',
       marginTop: 10,
     },

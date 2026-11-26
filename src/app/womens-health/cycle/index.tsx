@@ -56,10 +56,18 @@ export default function MenstrualCycleScreen() {
     void loadData();
   }, []);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleSavePeriod = async () => {
+    setErrorMessage(null);
+    if (!startDate || !startDate.trim()) {
+      setErrorMessage('⚠️ Please select a valid period start date.');
+      return;
+    }
+
     setSaving(true);
     try {
-      const cleanStartDate = startDate ? startDate.trim() : new Date().toISOString().split('T')[0];
+      const cleanStartDate = startDate.trim();
       const cleanEndDate = endDate && endDate.trim().length > 0 ? endDate.trim() : undefined;
 
       await createPeriodRecord({
@@ -72,10 +80,11 @@ export default function MenstrualCycleScreen() {
 
       setNotes('');
       setEndDate('');
+      setErrorMessage(null);
       setModalVisible(false);
       void loadData();
     } catch (err: any) {
-      console.error('Failed to save period record:', err?.message || err);
+      setErrorMessage(err?.message || 'Failed to save period record. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -261,6 +270,10 @@ export default function MenstrualCycleScreen() {
                 placeholder="Any symptoms or observations..."
                 multiline
               />
+
+              {errorMessage ? (
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              ) : null}
 
               <Pressable style={styles.saveBtn} onPress={() => void handleSavePeriod()} disabled={saving}>
                 {saving ? (
@@ -478,5 +491,13 @@ const createStyles = (colors: any) =>
       color: colors.white,
       fontSize: 15,
       fontWeight: '800',
+    },
+    errorText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#EF4444',
+      textAlign: 'center',
+      marginTop: 12,
+      marginBottom: 2,
     },
   });

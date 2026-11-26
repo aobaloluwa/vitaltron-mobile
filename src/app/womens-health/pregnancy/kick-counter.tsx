@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../../theme';
-import { logKickSession } from '../../../services/womensHealth';
+import { getPregnancyProfile, logKickSession } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
 
@@ -24,6 +24,23 @@ export default function KickCounterScreen() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [kickHistory, setKickHistory] = useState<any[]>([]);
+
+  const loadHistory = async () => {
+    try {
+      const res = await getPregnancyProfile();
+      if (res?.profile?.kickSessions) {
+        setKickHistory(res.profile.kickSessions);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    void loadHistory();
+  }, []);
 
   useEffect(() => {
     let timer: any;
@@ -41,6 +58,7 @@ export default function KickCounterScreen() {
     setStartTime(new Date());
     setIsActive(true);
     setSuccessMsg(false);
+    setErrorMessage(null);
   };
 
   const handleTapKick = () => {
@@ -53,7 +71,11 @@ export default function KickCounterScreen() {
   };
 
   const handleSaveSession = async () => {
-    if (kickCount === 0) return;
+    setErrorMessage(null);
+    if (kickCount === 0) {
+      setErrorMessage('⚠️ Tap the footprint button to count kicks before saving.');
+      return;
+    }
     setSaving(true);
     try {
       await logKickSession({
@@ -63,8 +85,9 @@ export default function KickCounterScreen() {
       });
       setIsActive(false);
       setSuccessMsg(true);
-    } catch {
-      // ignore
+      void loadHistory();
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to save kick session. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -102,6 +125,7 @@ export default function KickCounterScreen() {
                 onPress={() => {
                   setKickCount(0);
                   setIsActive(false);
+                  setErrorMessage(null);
                 }}
               >
                 <Text style={styles.resetBtnText}>Reset</Text>
@@ -121,10 +145,40 @@ export default function KickCounterScreen() {
             </View>
           ) : null}
 
+          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
           {successMsg ? (
-            <Text style={styles.successText}>✓ Kick count session saved successfully!</Text>
+            <Text style={styles.successText}>✓ Kick count session saved to database!</Text>
           ) : null}
         </View>
+
+        {/* Kick Sessions History List */}
+        <Text style={styles.sectionTitle}>Recent Saved Kick Sessions</Text>
+
+        {kickHistory.length === 0 ? (
+          <View style={styles.historyCard}>
+            <Text style={styles.historyEmptyText}>No kick sessions saved yet.</Text>
+          </View>
+        ) : (
+          <View style={styles.historyCard}>
+            {kickHistory.map((item, idx) => (
+              <View key={item.id || idx} style={styles.historyItem}>
+                <View style={styles.historyIconWrapper}>
+                  <MaterialCommunityIcons name="foot-print" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.historyInfo}>
+                  <Text style={styles.historyTitle}>
+                    {item.kickCount} Movements ({item.kickCount >= 10 ? 'Target Met ✓' : 'Partial Session'})
+                  </Text>
+                  <Text style={styles.historyDate}>
+                    {new Date(item.startTime).toLocaleDateString()} at{' '}
+                    {new Date(item.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
         <SafetyDisclaimerBanner
           text="IMPORTANT: If you notice a sudden decrease, reduction, or absence of fetal movement, do not wait for an app threshold. Immediately contact your maternity care provider or hospital triage."
@@ -222,10 +276,68 @@ const createStyles = (colors: any) =>
       fontWeight: '800',
       color: colors.white,
     },
+    errorText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#EF4444',
+      textAlign: 'center',
+      marginTop: 14,
+    },
     successText: {
       fontSize: 13,
       fontWeight: '700',
       color: colors.success,
       marginTop: 14,
+    },
+    sectionTitle: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.darkText,
+      marginTop: 16,
+      marginBottom: 10,
+    },
+    historyCard: {
+      backgroundColor: colors.white,
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.softBackground,
+    },
+    historyEmptyText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    historyItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.softBackground,
+    },
+    historyIconWrapper: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: '#FCE7F3',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    historyInfo: {
+      flex: 1,
+    },
+    historyTitle: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.darkText,
+    },
+    historyDate: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textMuted,
+      marginTop: 2,
     },
   });

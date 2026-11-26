@@ -57,17 +57,26 @@ export default function PregnancyHubScreen() {
     void loadData();
   }, []);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleSaveProfile = async () => {
+    setErrorMessage(null);
+    if (!dueDate || !dueDate.trim()) {
+      setErrorMessage('⚠️ Please select your estimated due date.');
+      return;
+    }
+
     setSaving(true);
     try {
       await createPregnancyProfile({
         confirmedDueDate: dueDate,
         healthcareProvider: provider,
       });
+      setErrorMessage(null);
       setModalVisible(false);
       void loadData();
-    } catch {
-      // ignore
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -227,7 +236,11 @@ export default function PregnancyHubScreen() {
                 placeholder="Dr. Sarah Jenkins"
               />
 
-              <Pressable style={styles.saveBtn} onPress={() => void handleSaveProfile()} disabled={saving || !dueDate}>
+              {errorMessage ? (
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              ) : null}
+
+              <Pressable style={styles.saveBtn} onPress={() => void handleSaveProfile()} disabled={saving}>
                 {saving ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
@@ -439,5 +452,13 @@ const createStyles = (colors: any) =>
       color: colors.white,
       fontSize: 15,
       fontWeight: '800',
+    },
+    errorText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#EF4444',
+      textAlign: 'center',
+      marginTop: 12,
+      marginBottom: 2,
     },
   });

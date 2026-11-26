@@ -50,20 +50,28 @@ export default function RemindersScreen() {
     void loadReminders();
   }, []);
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleCreate = async () => {
-    if (!title) return;
+    setErrorMessage(null);
+    if (!title || !title.trim()) {
+      setErrorMessage('⚠️ Please enter a title for your reminder.');
+      return;
+    }
+
     setSaving(true);
     try {
       await createWomensHealthReminder({
-        title,
+        title: title.trim(),
         category,
         reminderTime: time,
       });
       setTitle('');
+      setErrorMessage(null);
       setModalVisible(false);
       void loadReminders();
-    } catch {
-      // ignore
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to create reminder. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -163,7 +171,11 @@ export default function RemindersScreen() {
                 placeholder="09:00 AM"
               />
 
-              <Pressable style={styles.saveBtn} onPress={() => void handleCreate()} disabled={saving || !title}>
+              {errorMessage ? (
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              ) : null}
+
+              <Pressable style={styles.saveBtn} onPress={() => void handleCreate()} disabled={saving}>
                 {saving ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
@@ -311,5 +323,13 @@ const createStyles = (colors: any) =>
       color: colors.white,
       fontSize: 15,
       fontWeight: '800',
+    },
+    errorText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#EF4444',
+      textAlign: 'center',
+      marginTop: 12,
+      marginBottom: 2,
     },
   });

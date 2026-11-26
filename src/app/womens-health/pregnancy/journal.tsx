@@ -100,13 +100,24 @@ export default function PregnancyJournalScreen() {
     }
   };
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleCreateEntry = async () => {
-    if (!title || !content) return;
+    setErrorMessage(null);
+    if (!title || !title.trim()) {
+      setErrorMessage('⚠️ Please enter a title for your journal entry.');
+      return;
+    }
+    if (!content || !content.trim()) {
+      setErrorMessage('⚠️ Please enter reflection notes for your entry.');
+      return;
+    }
+
     setSaving(true);
     try {
       await createPregnancyJournal({
-        title,
-        content,
+        title: title.trim(),
+        content: content.trim(),
         weekNumber: parseInt(weekNumber, 10) || 14,
         mood,
         photoUrl: photoUrl || undefined,
@@ -114,10 +125,11 @@ export default function PregnancyJournalScreen() {
       setTitle('');
       setContent('');
       setPhotoUrl(null);
+      setErrorMessage(null);
       setModalVisible(false);
       void loadJournals();
-    } catch {
-      // ignore
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to save entry. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -281,10 +293,14 @@ export default function PregnancyJournalScreen() {
                 </View>
               )}
 
+              {errorMessage ? (
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              ) : null}
+
               <Pressable
                 style={styles.saveBtn}
                 onPress={() => void handleCreateEntry()}
-                disabled={saving || !title || !content}
+                disabled={saving}
               >
                 {saving ? (
                   <ActivityIndicator color={colors.white} />
@@ -536,5 +552,13 @@ const createStyles = (colors: any) =>
       color: colors.white,
       fontSize: 15,
       fontWeight: '800',
+    },
+    errorText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#EF4444',
+      textAlign: 'center',
+      marginTop: 12,
+      marginBottom: 2,
     },
   });
