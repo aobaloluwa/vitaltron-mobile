@@ -14,27 +14,34 @@ import { useTheme } from '../../../theme';
 import { getContraception, updateContraception } from '../../../services/womensHealth';
 import { WomensHealthHeader } from '../../../components/womens-health/WomensHealthHeader';
 import { SafetyDisclaimerBanner } from '../../../components/womens-health/SafetyDisclaimerBanner';
+import { DatePickerInput } from '../../../components/ui/DatePickerInput';
+import { ContraceptionInsightsCard } from '../../../components/womens-health/ContraceptionInsightsCard';
 
 export default function ContraceptionScreen() {
   const { colors } = useTheme();
   const styles = createStyles(colors);
 
   const [loading, setLoading] = useState(true);
+  const [contraceptionData, setContraceptionData] = useState<any>(null);
+
   const [methodType, setMethodType] = useState('PILL');
   const [brandName, setBrandName] = useState('Yasmin');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [replacementDate, setReplacementDate] = useState('');
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
       const data = await getContraception();
-      if (data) {
-        setMethodType(data.type || 'PILL');
-        setBrandName(data.brandName || '');
-        if (data.startDate) setStartDate(data.startDate.split('T')[0]);
-        if (data.replacementDate) setReplacementDate(data.replacementDate.split('T')[0]);
+      setContraceptionData(data);
+      const profile = data?.profile;
+      if (profile) {
+        setMethodType(profile.type || 'PILL');
+        setBrandName(profile.brandName || '');
+        if (profile.startDate) setStartDate(profile.startDate.split('T')[0]);
+        if (profile.replacementDate) setReplacementDate(profile.replacementDate.split('T')[0]);
       }
     } catch {
       // ignore
@@ -47,13 +54,11 @@ export default function ContraceptionScreen() {
     void loadData();
   }, []);
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const handleSave = async () => {
     setErrorMessage(null);
     setSuccess(false);
     if (!startDate || !startDate.trim()) {
-      setErrorMessage('⚠️ Please enter a start date for your contraception method.');
+      setErrorMessage('⚠️ Please select a start date for your contraception method.');
       return;
     }
 
@@ -67,6 +72,7 @@ export default function ContraceptionScreen() {
       });
       setSuccess(true);
       setErrorMessage(null);
+      await loadData();
     } catch (err: any) {
       setErrorMessage(err?.message || 'Failed to update contraception method. Please try again.');
     } finally {
@@ -90,8 +96,13 @@ export default function ContraceptionScreen() {
       <WomensHealthHeader title="Birth Control Tracker" subtitle="Contraceptive Schedule & Method" />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Real-Time Contraception Insights Card */}
+        <ContraceptionInsightsCard insights={contraceptionData?.contraceptionInsights} />
+
         {/* Method Setup Card */}
         <View style={styles.inputCard}>
+          <Text style={styles.sectionHeader}>Contraceptive Method Setup</Text>
+
           <Text style={styles.label}>Contraceptive Method</Text>
           <View style={styles.pillRow}>
             {['PILL', 'IUD_HORMONAL', 'IMPLANT', 'PATCH', 'RING', 'CONDOM'].map((type) => (
@@ -115,20 +126,19 @@ export default function ContraceptionScreen() {
             placeholder="Yasmin / Mirena / Nexplanon"
           />
 
-          <Text style={styles.label}>Start / Insertion Date (YYYY-MM-DD)</Text>
-          <TextInput
-            style={styles.input}
+          <DatePickerInput
+            label="Start / Insertion Date"
             value={startDate}
-            onChangeText={setStartDate}
-            placeholder="YYYY-MM-DD"
+            onChange={setStartDate}
+            placeholder="Select Start Date"
           />
 
-          <Text style={styles.label}>Expected Replacement / Renewal Date</Text>
-          <TextInput
-            style={styles.input}
+          <DatePickerInput
+            label="Expected Replacement / Renewal Date"
             value={replacementDate}
-            onChangeText={setReplacementDate}
-            placeholder="YYYY-MM-DD"
+            onChange={setReplacementDate}
+            placeholder="Select Replacement Date"
+            optional
           />
 
           {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
@@ -180,9 +190,15 @@ const createStyles = (colors: any) =>
       backgroundColor: colors.white,
       borderRadius: 22,
       padding: 18,
-      marginVertical: 12,
+      marginVertical: 10,
       borderWidth: 1,
       borderColor: colors.softBackground,
+    },
+    sectionHeader: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: colors.darkText,
+      marginBottom: 10,
     },
     label: {
       fontSize: 12,

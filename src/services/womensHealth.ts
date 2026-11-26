@@ -78,6 +78,17 @@ export interface MenopauseInsights {
   personalizedTip: string;
 }
 
+export interface ContraceptionInsights {
+  hasProfile: boolean;
+  methodTitle: string;
+  type?: string;
+  brandName?: string;
+  startDate?: string;
+  replacementDate?: string;
+  daysUntilReplacement?: number | null;
+  personalizedTip: string;
+}
+
 export interface SymptomInsights {
   todayLogged: boolean;
   todayMood?: string;
