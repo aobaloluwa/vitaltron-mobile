@@ -59,6 +59,15 @@ export interface PregnancyInsights {
   safetyFlags: string[];
 }
 
+export interface PostpartumInsights {
+  weeksPostpartum: number;
+  daysPostpartum: number;
+  milestoneTitle: string;
+  keyCareAdvice: string;
+  recommendedActions: string[];
+  safetyFlags: string[];
+}
+
 export interface SymptomInsights {
   todayLogged: boolean;
   todayMood?: string;
