@@ -56,6 +56,48 @@ export default function EducationCenterScreen() {
     void loadArticles();
   }, [selectedCat]);
 
+  const renderArticleContent = (content: string) => {
+    if (!content) return null;
+
+    const lines = content.split('\n');
+    return lines.map((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) return <View key={idx} style={{ height: 10 }} />;
+
+      if (trimmed.startsWith('## ')) {
+        return (
+          <Text key={idx} style={styles.heading2}>
+            {trimmed.replace('## ', '')}
+          </Text>
+        );
+      }
+
+      if (trimmed.startsWith('### ')) {
+        return (
+          <Text key={idx} style={styles.heading3}>
+            {trimmed.replace('### ', '')}
+          </Text>
+        );
+      }
+
+      if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+        const cleanBullet = trimmed.replace(/^[*\-]\s+/, '');
+        return (
+          <View key={idx} style={styles.bulletRow}>
+            <Text style={styles.bulletDot}>•</Text>
+            <Text style={styles.bulletText}>{cleanBullet}</Text>
+          </View>
+        );
+      }
+
+      return (
+        <Text key={idx} style={styles.paragraphText}>
+          {trimmed}
+        </Text>
+      );
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <WomensHealthHeader title="Education Center" subtitle="Medically Reviewed Resources" />
@@ -66,7 +108,7 @@ export default function EducationCenterScreen() {
           <Ionicons name="search-outline" size={18} color={colors.textMuted} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search health topics, hormones, ultrasound..."
+            placeholder="Search 12+ health topics, authors, hormones..."
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={() => void loadArticles()}
@@ -132,10 +174,7 @@ export default function EducationCenterScreen() {
       <Modal visible={!!selectedArticle} transparent animationType="slide">
         <SafeAreaView style={styles.readerModalOverlay} edges={['top', 'bottom']}>
           <View style={styles.readerHeader}>
-            <Pressable
-              style={styles.closeBtn}
-              onPress={() => setSelectedArticle(null)}
-            >
+            <Pressable style={styles.closeBtn} onPress={() => setSelectedArticle(null)}>
               <Ionicons name="close" size={24} color={colors.darkText} />
             </Pressable>
             <Text style={styles.readerCategoryTag}>
@@ -189,28 +228,7 @@ export default function EducationCenterScreen() {
               {/* Full Article Text Body */}
               <View style={styles.bodyWrapper}>
                 {selectedArticle.content ? (
-                  selectedArticle.content.split('\n\n').map((paragraph: string, idx: number) => {
-                    if (paragraph.startsWith('## ')) {
-                      return (
-                        <Text key={idx} style={styles.heading2}>
-                          {paragraph.replace('## ', '')}
-                        </Text>
-                      );
-                    }
-                    if (paragraph.startsWith('* ')) {
-                      return (
-                        <View key={idx} style={styles.bulletRow}>
-                          <Text style={styles.bulletDot}>•</Text>
-                          <Text style={styles.bulletText}>{paragraph.replace('* ', '')}</Text>
-                        </View>
-                      );
-                    }
-                    return (
-                      <Text key={idx} style={styles.paragraphText}>
-                        {paragraph}
-                      </Text>
-                    );
-                  })
+                  renderArticleContent(selectedArticle.content)
                 ) : (
                   <Text style={styles.paragraphText}>{selectedArticle.summary}</Text>
                 )}
@@ -457,12 +475,19 @@ const createStyles = (colors: any) =>
       marginTop: 14,
       marginBottom: 8,
     },
+    heading3: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.primary,
+      marginTop: 10,
+      marginBottom: 6,
+    },
     paragraphText: {
       fontSize: 14,
       fontWeight: '500',
       color: colors.darkText,
       lineHeight: 22,
-      marginBottom: 12,
+      marginBottom: 8,
     },
     bulletRow: {
       flexDirection: 'row',
